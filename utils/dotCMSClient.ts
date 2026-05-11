@@ -1,14 +1,19 @@
 import { createDotCMSClient } from "@dotcms/client";
 
 /*
- * Singleton DotCMS API client used throughout the app.
- * Reads connection details from environment variables — set these in .env.local:
- *   NEXT_PUBLIC_DOTCMS_HOST         — base URL of your DotCMS instance
- *   NEXT_PUBLIC_DOTCMS_AUTH_TOKEN   — API token for authentication
- *   NEXT_PUBLIC_DOTCMS_SITE_ID      — identifier of the site to serve content from
+ * Creates a DotCMS API client for the given site.
+ * Connection details come from environment variables (without NEXT_PUBLIC_ prefix
+ * so they stay server-side and are never bundled into client JS):
+ *   DOTCMS_HOST       — base URL of your DotCMS instance
+ *   DOTCMS_AUTH_TOKEN — API token for authentication
+ *
+ * The siteId is resolved per-request via getSiteConfig() so that different
+ * hostnames can serve different DotCMS sites from a single deployment.
  */
-export const dotCMSClient = createDotCMSClient({
-  dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST ?? "",
-  authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN ?? "",
-  siteId: process.env.NEXT_PUBLIC_DOTCMS_SITE_ID ?? "",
-});
+export function createClient(siteId: string) {
+  return createDotCMSClient({
+    dotcmsUrl: process.env.DOTCMS_HOST ?? "",
+    authToken: process.env.DOTCMS_AUTH_TOKEN ?? "",
+    siteId,
+  });
+}

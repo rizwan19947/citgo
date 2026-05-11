@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
+import { getSiteConfig } from "@/utils/site-config";
 import { fragmentNav, navigationQuery } from "@/utils/queries";
 import { Page } from "@/views/Page";
 import Header from "@/components/Header";
@@ -7,8 +8,9 @@ import Footer from "@/components/Footer";
 
 /*
  * Catch-all route — handles every URL in the app (e.g. /, /about, /blog/post-1).
- * On each request it fetches the matching page from DotCMS, then renders
- * Header, the page body, and Footer based on the layout flags DotCMS returns.
+ * On each request it resolves the site from the hostname, fetches the matching
+ * page from DotCMS, then renders Header, the page body, and Footer based on
+ * the layout flags DotCMS returns.
  * If DotCMS returns nothing for the path, Next.js shows the 404 page.
  */
 
@@ -27,9 +29,10 @@ function resolvePath(slug?: string[]): string {
 export default async function CatchAllPage({ params }: PageProps) {
   const { slug } = await params;
   const path = resolvePath(slug);
+  const siteId = await getSiteConfig();
 
   /* Fetch the page data from DotCMS, including the nav tree via GraphQL. */
-  const pageContent = await getDotCMSPage(path, {
+  const pageContent = await getDotCMSPage(path, siteId, {
     content: { navigation: navigationQuery },
     fragments: [fragmentNav],
   });

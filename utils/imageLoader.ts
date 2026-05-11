@@ -5,7 +5,7 @@
  * The width parameter maps to DotCMS's /{width}w resizing suffix.
  */
 const ImageLoader = ({ src, width = 250 }: { src: string; width: number }) => {
-  const dotcmsURL = new URL(process.env.NEXT_PUBLIC_DOTCMS_HOST as string)
+  const dotcmsURL = new URL(process.env.DOTCMS_HOST as string)
     .origin;
   /* If src already contains /dA/ it's a full asset path; otherwise prepend it. */
   const imageSRC = src.includes("/dA/") ? src : `/dA/${src}`;
