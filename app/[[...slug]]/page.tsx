@@ -48,6 +48,7 @@ export default async function CatchAllPage({ params }: PageProps) {
 
   return (
     <>
+      {pageContent?.pageAsset.site}
       {layout?.header && <Header navItems={navItems} />}
       <Page pageContent={pageContent} />
       {layout?.footer && <Footer />}
