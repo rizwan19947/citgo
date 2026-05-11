@@ -33,6 +33,9 @@ export default async function CatchAllPage({ params }: PageProps) {
     content: { navigation: navigationQuery },
     fragments: [fragmentNav],
   });
+
+  console.warn(pageContent?.pageAsset.site);
+
   if (!pageContent) return notFound();
 
   /* layout flags (header/footer) come from the DotCMS page layout config. */
