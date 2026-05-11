@@ -13,3 +13,10 @@ export async function getSiteConfig(): Promise<string> {
   const host = h.get("host")?.replace(/:\d+$/, "") ?? DEFAULT_HOST;
   return SITE_CONFIGS[host] ?? SITE_CONFIGS[DEFAULT_HOST];
 }
+
+//TODO Remove Later
+export async function getSiteHost(): Promise<string> {
+  const h = await headers();
+  const host = h.get("host")?.replace(/:\d+$/, "") ?? DEFAULT_HOST;
+  return host;
+}

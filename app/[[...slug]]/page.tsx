@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
-import { getSiteConfig } from "@/utils/site-config";
+import {getSiteConfig, getSiteHost} from "@/utils/site-config";
 import { fragmentNav, navigationQuery } from "@/utils/queries";
 import { Page } from "@/views/Page";
 import Header from "@/components/Header";
@@ -31,13 +31,16 @@ export default async function CatchAllPage({ params }: PageProps) {
   const path = resolvePath(slug);
   const siteId = await getSiteConfig();
 
+  //TODO Remove Later
+  const siteHost = await getSiteHost();
+
   /* Fetch the page data from DotCMS, including the nav tree via GraphQL. */
   const pageContent = await getDotCMSPage(path, siteId, {
     content: { navigation: navigationQuery },
     fragments: [fragmentNav],
   });
 
-  console.warn(pageContent?.pageAsset.site);
+  console.warn(siteHost);
 
   if (!pageContent) return notFound();
 
@@ -48,8 +51,8 @@ export default async function CatchAllPage({ params }: PageProps) {
 
   return (
     <>
-      {pageContent?.pageAsset.site}
       {layout?.header && <Header navItems={navItems} />}
+      <pre>{siteHost}</pre>
       <Page pageContent={pageContent} />
       {layout?.footer && <Footer />}
     </>
