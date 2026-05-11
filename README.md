@@ -31,14 +31,14 @@ A headless CMS frontend built with **Next.js 16** and the **DotCMS React SDK**. 
 | @dotcms/types | 1.4.0 | Shared TypeScript types for DotCMS data shapes |
 | Tailwind CSS | 4 | Utility-first styling |
 | TypeScript | 5 | Static typing |
-| pnpm | — | Package manager |
+| npm | — | Package manager |
 
 ---
 
 ## Prerequisites
 
 - Node.js 18+
-- pnpm (`npm i -g pnpm`)
+- npm (bundled with Node.js)
 - A running DotCMS instance (local or cloud) with at least one published page
 
 ---
@@ -66,18 +66,18 @@ NEXT_PUBLIC_DOTCMS_SITE_ID=
 
 ```bash
 # Install dependencies
-pnpm install
+npm install
 
 # Start the development server
-pnpm dev
+npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The app will serve whatever page DotCMS has published at the `/` URL.
 
 ```bash
 # Production build
-pnpm build
-pnpm start
+npm run build
+npm start
 ```
 
 ---
