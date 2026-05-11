@@ -29,7 +29,7 @@ function resolvePath(slug?: string[]): string {
 export default async function CatchAllPage({ params }: PageProps) {
   const { slug } = await params;
   const path = resolvePath(slug);
-  const siteId = await getSiteConfig();
+  const { siteId, assetSlug } = await getSiteConfig();
 
   //TODO Remove Later
   const siteHost = await getSiteHost();
@@ -51,10 +51,10 @@ export default async function CatchAllPage({ params }: PageProps) {
 
   return (
     <>
-      {layout?.header && <Header navItems={navItems} />}
+      {layout?.header && <Header navItems={navItems} assetSlug={assetSlug} />}
       <pre>{siteHost}</pre>
       <Page pageContent={pageContent} />
-      {layout?.footer && <Footer />}
+      {layout?.footer && <Footer assetSlug={assetSlug} />}
     </>
   );
 }

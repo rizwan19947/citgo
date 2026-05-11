@@ -15,7 +15,7 @@ const LEGAL_LINKS = [
     { label: "Terms & Conditions", href: "#" },
 ];
 
-export default function Footer() {
+export default function Footer({ assetSlug }: { assetSlug: string }) {
     const [sitesOpen, setSitesOpen] = useState(false);
 
     return (
@@ -26,9 +26,7 @@ export default function Footer() {
                     <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 lg:flex-1">
                         {/* Logo placeholder */}
                         <div className="flex-shrink-0">
-                            <div className="w-20 h-20 bg-gray-200 border border-gray-300 flex items-center justify-center text-[10px] text-gray-500 tracking-wider">
-                                LOGO
-                            </div>
+                            <img src={`/assets/${assetSlug}/logo-footer.svg`} alt="CITGO" className="w-20 h-20" />
                         </div>
 
                         <div className="max-w-2xl">

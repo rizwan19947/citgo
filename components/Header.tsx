@@ -5,7 +5,7 @@ import type { DotCMSNavigationItem } from "@dotcms/types";
 
 interface HeaderProps {
   navItems: DotCMSNavigationItem[];
-  logo?: string;
+  assetSlug: string;
   logoAlt?: string;
 }
 
@@ -22,7 +22,7 @@ const NAV_ITEMS: { label: string; href: string; children?: { label: string; href
   { label: "ARCHIVES", href: "#" },
 ];
 
-export default function Header({ logo, logoAlt = "CITGO Retail Connections" }: HeaderProps) {
+export default function Header({ assetSlug, logoAlt = "CITGO Retail Connections" }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
 
@@ -40,13 +40,7 @@ export default function Header({ logo, logoAlt = "CITGO Retail Connections" }: H
           <div className="flex items-center justify-between h-20 lg:h-28">
             {/* Logo */}
             <a href="/" className="flex-shrink-0" aria-label={logoAlt}>
-              {logo ? (
-                  <img src={logo} alt={logoAlt} className="h-10 lg:h-14" />
-              ) : (
-                  <div className="flex items-center justify-center h-10 lg:h-14 w-48 lg:w-72 bg-white/10 border border-white/30 text-xs tracking-wider">
-                    LOGO PLACEHOLDER
-                  </div>
-              )}
+              <img src={`/assets/${assetSlug}/logo.svg`} alt={logoAlt} className="h-10 lg:h-14" />
             </a>
 
             {/* Desktop Nav */}
