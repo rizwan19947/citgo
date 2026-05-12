@@ -3,7 +3,6 @@
 import { useState } from "react"
 import type { DotCMSNavigationItem } from "@dotcms/types"
 import Link from "next/link"
-import Image from "next/image"
 
 interface HeaderProps {
 	navItems: DotCMSNavigationItem[]
@@ -42,8 +41,8 @@ export default function Header({ assetSlug, logoAlt = "CITGO Retail Connections"
 				<div className="flex items-center justify-between h-20 lg:h-28">
 					{/* Logo */}
 					<Link href="/" className="shrink-0" aria-label={logoAlt}>
-						<Image
-							src={`/assets/${assetSlug}/logo.svg`}
+						<img
+							src={`/assets/${assetSlug}/header-logo.svg`}
 							alt={logoAlt}
 							className="h-10 lg:h-14"
 						/>

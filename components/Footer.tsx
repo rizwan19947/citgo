@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 
 const CITGO_SITES = [
 	{ label: "CITGO", href: "https://www.citgo.com/" },
@@ -29,8 +28,8 @@ export default function Footer({ assetSlug }: { assetSlug: string }) {
 					<div className="flex flex-col lg:flex-row gap-6 lg:gap-10 lg:flex-1">
 						{/* Logo placeholder */}
 						<div className="shrink-0">
-							<Image
-								src={`/assets/${assetSlug}/logo-footer.svg`}
+							<img
+								src={`/assets/global/logo.svg`}
 								alt="CITGO"
 								className="w-20 h-20"
 							/>
@@ -81,6 +80,7 @@ export default function Footer({ assetSlug }: { assetSlug: string }) {
 										<a
 											key={site.label}
 											href={site.href}
+											target="_blank"
 											className="block px-4 py-2 text-sm hover:bg-gray-100"
 										>
 											{site.label}
