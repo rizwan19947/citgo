@@ -1,12 +1,12 @@
-import { notFound } from "next/navigation";
-import { getDotCMSPage } from "@/utils/getDotCMSPage";
+import {notFound} from "next/navigation";
+import {getDotCMSPage} from "@/utils/getDotCMSPage";
 import {getSiteConfig, getSiteHost} from "@/utils/site-config";
-import { fragmentNav, navigationQuery } from "@/utils/queries";
-import { Page } from "@/views/Page";
+import {fragmentNav, navigationQuery} from "@/utils/queries";
+import {Page} from "@/views/Page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-/*
+/* 
  * Catch-all route — handles every URL in the app (e.g. /, /about, /blog/post-1).
  * On each request it resolves the site from the hostname, fetches the matching
  * page from DotCMS, then renders Header, the page body, and Footer based on
@@ -52,11 +52,11 @@ export default async function CatchAllPage({ params }: PageProps) {
 
   return (
     <>
-      {layout?.header && <Header navItems={navItems} assetSlug={assetSlug} />}
-      {/*TODO Remove Later*/}
-      <pre>{siteHost}</pre>
-      <Page pageContent={pageContent} />
-      {layout?.footer && <Footer assetSlug={assetSlug} />}
+      { layout?.header && <Header navItems={ navItems } assetSlug={ assetSlug } /> }
+      { /*TODO Remove Later*/ }
+      <pre>{ siteHost }</pre>
+      <Page pageContent={ pageContent } />
+      { layout?.footer && <Footer assetSlug={ assetSlug } /> }
     </>
   );
 }
