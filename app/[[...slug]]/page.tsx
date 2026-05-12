@@ -1,10 +1,10 @@
-import {notFound} from "next/navigation";
-import {getDotCMSPage} from "@/utils/getDotCMSPage";
-import {getSiteConfig, getSiteHost} from "@/utils/site-config";
-import {fragmentNav, navigationQuery} from "@/utils/queries";
-import {Page} from "@/views/Page";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { notFound } from "next/navigation"
+import { getDotCMSPage } from "@/utils/getDotCMSPage"
+import { getSiteConfig, getSiteHost } from "@/utils/site-config"
+import { fragmentNav, navigationQuery } from "@/utils/queries"
+import { Page } from "@/views/Page"
+import Header from "@/components/Header"
+import Footer from "@/components/Footer"
 
 /*
  * Catch-all route — handles every URL in the app (e.g. /, /about, /blog/post-1).
@@ -15,7 +15,7 @@ import Footer from "@/components/Footer";
  */
 
 interface PageProps {
-    params: Promise<{ slug?: string[] }>;
+	params: Promise<{ slug?: string[] }>
 }
 
 /*
@@ -23,40 +23,40 @@ interface PageProps {
  * e.g. ["blog", "my-post"] → "/blog/my-post", undefined → "/"
  */
 function resolvePath(slug?: string[]): string {
-    return `/${(slug ?? []).join("/")}`;
+	return `/${(slug ?? []).join("/")}`
 }
 
-export default async function CatchAllPage({params}: PageProps) {
-    const {slug} = await params;
-    const path = resolvePath(slug);
-    const {siteId, assetSlug} = await getSiteConfig();
+export default async function CatchAllPage({ params }: PageProps) {
+	const { slug } = await params
+	const path = resolvePath(slug)
+	const { siteId, assetSlug } = await getSiteConfig()
 
-    // TODO Remove Later
-    const siteHost = await getSiteHost();
+	// TODO Remove Later
+	const siteHost = await getSiteHost()
 
-    /* Fetch the page data from DotCMS, including the nav tree via GraphQL. */
-    const pageContent = await getDotCMSPage(path, siteId, {
-        content: {navigation: navigationQuery},
-        fragments: [fragmentNav],
-    });
+	/* Fetch the page data from DotCMS, including the nav tree via GraphQL. */
+	const pageContent = await getDotCMSPage(path, siteId, {
+		content: { navigation: navigationQuery },
+		fragments: [fragmentNav],
+	})
 
-    // TODO Remove Later
-    console.warn(siteHost);
+	// TODO Remove Later
+	console.warn(siteHost)
 
-    if (!pageContent) return notFound();
+	if (!pageContent) return notFound()
 
-    /* layout flags (header/footer) come from the DotCMS page layout config. */
-    const layout = pageContent.pageAsset?.layout;
-    /* Top-level nav children are passed to Header to build the navigation menu. */
-    const navItems = pageContent.content?.navigation?.children ?? [];
+	/* layout flags (header/footer) come from the DotCMS page layout config. */
+	const layout = pageContent.pageAsset?.layout
+	/* Top-level nav children are passed to Header to build the navigation menu. */
+	const navItems = pageContent.content?.navigation?.children ?? []
 
-    return (
-        <>
-            {layout?.header && <Header navItems={navItems} assetSlug={assetSlug}/>}
-            { /*TODO Remove Later*/}
-            <pre>{siteHost}</pre>
-            <Page pageContent={pageContent}/>
-            {layout?.footer && <Footer assetSlug={assetSlug}/>}
-        </>
-    );
+	return (
+		<>
+			{layout?.header && <Header navItems={navItems} assetSlug={assetSlug} />}
+			{/*TODO Remove Later*/}
+			<pre>{siteHost}</pre>
+			<Page pageContent={pageContent} />
+			{layout?.footer && <Footer assetSlug={assetSlug} />}
+		</>
+	)
 }
