@@ -20,9 +20,13 @@ const SITE_CONFIGS: Record<string, SiteConfig> = {
 	},
 }
 
-const DEFAULT_HOST = process.env.DEFAULT_FRONTEND_HOST ?? "citgoretailconnections.com"
+const DEFAULT_HOST = "citgoretailconnections.com"
 
 export async function getSiteConfig(): Promise<SiteConfig> {
+	if (process.env.FRONTEND_HOST_OVERRIDE) {
+		return SITE_CONFIGS[process.env.FRONTEND_HOST_OVERRIDE]
+	}
+
 	const h = await headers()
 	const host = h.get("host")?.replace(/:\d+$/, "") ?? DEFAULT_HOST
 	return SITE_CONFIGS[host] ?? SITE_CONFIGS[DEFAULT_HOST]
