@@ -31,7 +31,7 @@ export default async function CatchAllPage({ params }: PageProps) {
   const path = resolvePath(slug);
   const { siteId, assetSlug } = await getSiteConfig();
 
-  //TODO Remove Later
+  // TODO Remove Later
   const siteHost = await getSiteHost();
 
   /* Fetch the page data from DotCMS, including the nav tree via GraphQL. */
@@ -40,6 +40,7 @@ export default async function CatchAllPage({ params }: PageProps) {
     fragments: [fragmentNav],
   });
 
+  // TODO Remove Later
   console.warn(siteHost);
 
   if (!pageContent) return notFound();
@@ -52,6 +53,7 @@ export default async function CatchAllPage({ params }: PageProps) {
   return (
     <>
       {layout?.header && <Header navItems={navItems} assetSlug={assetSlug} />}
+      {/*TODO Remove Later*/}
       <pre>{siteHost}</pre>
       <Page pageContent={pageContent} />
       {layout?.footer && <Footer assetSlug={assetSlug} />}
