@@ -44,7 +44,7 @@ export default function Header({ assetSlug, logoAlt = "CITGO Retail Connections"
 						<img
 							src={`/assets/${assetSlug}/header-logo.svg`}
 							alt={logoAlt}
-							className="h-10 lg:h-14"
+							className="h-10 lg:h-14 max-h-11"
 						/>
 					</Link>
 

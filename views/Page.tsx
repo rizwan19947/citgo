@@ -6,6 +6,7 @@ import type {
   DotCMSPageResponse,
 } from "@dotcms/types";
 import { pageComponents } from "@/components/content-types";
+import { UVESiteDetector } from "@/components/UVESiteDetector";
 
 /*
  * Client-side page renderer. Wraps the raw DotCMS page data with
@@ -17,13 +18,15 @@ import { pageComponents } from "@/components/content-types";
 
 interface PageProps {
   pageContent: DotCMSComposedPageResponse<DotCMSPageResponse>;
+  serverSiteId: string;
 }
 
-export function Page({ pageContent }: PageProps) {
+export function Page({ pageContent, serverSiteId }: PageProps) {
   const { pageAsset } = useEditableDotCMSPage(pageContent);
 
   return (
     <main className="container mx-auto ">
+      <UVESiteDetector pageAsset={pageAsset} serverSiteId={serverSiteId} />
       <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
     </main>
   );
