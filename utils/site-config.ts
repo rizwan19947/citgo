@@ -5,22 +5,24 @@ interface SiteConfig {
 	assetSlug: string;
 }
 
-const SITE_CONFIGS: Record<string, SiteConfig> = {
-	"citgonow.com": {
-		siteId: process.env.CITGO_NOW_IDENTIFIER ?? "",
-		assetSlug: "citgonow",
-	},
-	"citgonowlubes.com": {
-		siteId: process.env.CITGO_LUBES_IDENTIFIER ?? "",
-		assetSlug: "citgolubes",
-	},
-	"citgoretailconnections.com": {
-		siteId: process.env.CITGO_RETAIL_IDENTIFIER ?? "",
-		assetSlug: "citgoretail",
-	},
-};
+/**
+ * When deployingn a new site, all that is needed is to add a new environment variable
+ * corresponding to the site in the format: SITE_1=<hostname>|<siteId>|<assetSlug>
+ */
+function buildSiteConfigs(): Record<string, SiteConfig> {
+	const configs: Record<string, SiteConfig> = {};
+	let i = 1;
+	while (process.env[`SITE_${i}`]) {
+		const [hostname, siteId, assetSlug] = process.env[`SITE_${i}`]!.split("|");
+		configs[hostname] = { siteId, assetSlug };
+		i++;
+	}
+	return configs;
+}
 
-const DEFAULT_HOST = "citgoretailconnections.com";
+const SITE_CONFIGS: Record<string, SiteConfig> = buildSiteConfigs();
+
+const DEFAULT_HOST = process.env.DEFAULT_SITE_HOST ?? "";
 
 /** Reverse map: siteId → hostname. Used client-side by UVESiteDetector */
 export function getSiteIdToHostnameMap(): Record<string, string> {
