@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
-import { getSiteConfig, getSiteHost } from "@/utils/site-config";
+import { getSiteConfig, getSiteHost, getSiteIdToHostnameMap } from "@/utils/site-config";
 import { fragmentNav, navigationQuery } from "@/utils/queries";
 import { Page } from "@/views/Page";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
 /*
  * Catch-all route — handles every URL in the app (e.g. /, /about, /blog/post-1).
  * On each request it resolves the site from the hostname, fetches the matching
@@ -30,7 +31,7 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 	const { slug } = await params;
 	const sp = await searchParams;
 	const path = resolvePath(slug);
-	const { siteId, assetSlug } = await getSiteConfig(sp);
+	const { siteId, assetSlug, hostname: serverHostname } = await getSiteConfig(sp);
 
 	// TODO Remove Later
 	const siteHost = await getSiteHost();
@@ -40,9 +41,6 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 		content: { navigation: navigationQuery },
 		fragments: [fragmentNav],
 	});
-
-	// TODO Remove Later
-	console.warn(siteHost);
 
 	if (!pageContent) {
 		return notFound();
@@ -58,7 +56,11 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 			{layout?.header && <Header navItems={navItems} assetSlug={assetSlug} />}
 			{/*TODO Remove Later*/}
 			<pre>{siteHost}</pre>
-			<Page pageContent={pageContent} serverSiteId={siteId} />
+			<Page
+				pageContent={pageContent}
+				serverHostname={serverHostname}
+				siteIdMap={getSiteIdToHostnameMap()}
+			/>
 			{layout?.footer && <Footer assetSlug={assetSlug} />}
 		</>
 	);

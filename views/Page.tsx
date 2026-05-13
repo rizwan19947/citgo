@@ -18,15 +18,16 @@ import { UVESiteDetector } from "@/components/UVESiteDetector";
 
 interface PageProps {
   pageContent: DotCMSComposedPageResponse<DotCMSPageResponse>;
-  serverSiteId: string;
+  serverHostname: string;
+  siteIdMap: Record<string, string>;
 }
 
-export function Page({ pageContent, serverSiteId }: PageProps) {
+export function Page({ pageContent, serverHostname, siteIdMap }: PageProps) {
   const { pageAsset } = useEditableDotCMSPage(pageContent);
 
   return (
     <main className="container mx-auto ">
-      <UVESiteDetector pageAsset={pageAsset} serverSiteId={serverSiteId} />
+      <UVESiteDetector serverHostname={serverHostname} siteIdMap={siteIdMap} />
       <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
     </main>
   );

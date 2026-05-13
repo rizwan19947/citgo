@@ -1,43 +1,52 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react";
 
 interface UVESiteDetectorProps {
-	pageAsset: {
-		site?: {
-			identifier?: string
-			hostname?: string
-		}
-	}
-	serverSiteId: string
+	serverHostname: string;
+	siteIdMap: Record<string, string>; // siteId → hostname (values used as known-hosts check)
 }
 
 /**
- * Detects when the DotCMS UVE is showing a different site than the one the
- * server rendered. When a mismatch is found it persists the correct site
- * hostname in a cookie + query parameter and reloads the iframe so the
- * server can render the right site on the next pass.
+ * Detects when the DotCMS UVE wants a different site than the one the server
+ * rendered. Reads `pageAsset.site.hostName` from the UVE postMessage — this is
+ * the site the editor actually wants. `requestMetadata.variables.siteId` is NOT
+ * usable because it echoes back the frontend's own request, not the editor's intent.
  *
- * Only active inside the UVE iframe; no-op in production.
+ * Only active inside the UVE iframe.
  */
-export function UVESiteDetector({ pageAsset, serverSiteId }: UVESiteDetectorProps) {
+function switchSite(hostname: string) {
+	document.cookie = `dotcms-uve-site=${encodeURIComponent(hostname)}; path=/; max-age=2592000; SameSite=None; Secure`;
+	const url = new URL(window.location.href);
+	url.searchParams.set("dotcms_site", hostname);
+	window.location.href = url.toString();
+}
+
+export function UVESiteDetector({ serverHostname, siteIdMap }: UVESiteDetectorProps) {
+	const switchingRef = useRef(false);
+
 	useEffect(() => {
-		// Only run inside the UVE iframe
-		if (typeof window === "undefined" || window.parent === window) return
+		if (typeof window === "undefined" || window.parent === window) return;
 
-		const siteId = pageAsset?.site?.identifier
-		const hostname = pageAsset?.site?.hostname
+		switchingRef.current = false;
+		const knownHosts = new Set(Object.values(siteIdMap));
 
-		if (!siteId || !hostname || siteId === serverSiteId) return
+		const handler = (event: MessageEvent) => {
+			if (switchingRef.current) return;
 
-		// Persist the correct site for future requests
-		document.cookie = `dotcms-uve-site=${encodeURIComponent(hostname)}; path=/; max-age=2592000; SameSite=None; Secure`
+			const hostName = event.data?.payload?.pageAsset?.site?.hostName;
 
-		// Also add as a query param (fallback if third-party cookies are blocked)
-		const url = new URL(window.location.href)
-		url.searchParams.set("dotcms_site", hostname)
-		window.location.href = url.toString()
-	}, [pageAsset?.site?.identifier, serverSiteId])
+			if (!hostName || !knownHosts.has(hostName)) return;
 
-	return null
+			if (hostName !== serverHostname) {
+				switchingRef.current = true;
+				switchSite(hostName);
+			}
+		};
+
+		window.addEventListener("message", handler);
+		return () => window.removeEventListener("message", handler);
+	}, [serverHostname, siteIdMap]);
+
+	return null;
 }
