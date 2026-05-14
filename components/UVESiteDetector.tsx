@@ -36,24 +36,21 @@ export function UVESiteDetector({ serverHostname, siteIdMap }: UVESiteDetectorPr
 		switchingRef.current = false;
 		const knownHosts = new Set(Object.values(siteIdMap));
 
-		const subscription = createUVESubscription(
-			UVEEventType.CONTENT_CHANGES,
-			(pageResponse) => {
-				if (switchingRef.current) return;
+		const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, (pageResponse) => {
+			if (switchingRef.current) return;
 
-				const site = pageResponse.pageAsset?.site as unknown as
-					| Record<string, unknown>
-					| undefined;
+			const site = pageResponse.pageAsset?.site as unknown as
+				| Record<string, unknown>
+				| undefined;
 
-				const hostname = (site?.hostName as string) ?? (site?.hostname as string);
-				if (!hostname || !knownHosts.has(hostname)) return;
+			const hostname = (site?.hostName as string) ?? (site?.hostname as string);
+			if (!hostname || !knownHosts.has(hostname)) return;
 
-				if (hostname !== serverHostname) {
-					switchingRef.current = true;
-					switchSite(hostname);
-				}
-			},
-		);
+			if (hostname !== serverHostname) {
+				switchingRef.current = true;
+				switchSite(hostname);
+			}
+		});
 
 		return () => subscription.unsubscribe();
 	}, [serverHostname, siteIdMap]);
