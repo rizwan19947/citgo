@@ -1,8 +1,11 @@
-/*
- * Maps DotCMS content-types to React components.
- * DotCMSLayoutBody uses this map to decide which component to render for each
- * content block on the page. Add entries as you build out content types, e.g.:
- *   import HeroCard from "./HeroCard";
- *   export const pageComponents = { HeroCard: HeroCard};
- */
-export const pageComponents = {};
+import Banner from "./Banner"
+import FooterContent from "./FooterContent"
+import Issue from "./Issue"
+import Article from "./Article"
+
+export const pageComponents = {
+	Banner: Banner,
+	FooterContent: FooterContent,
+	Issue: Issue,
+	Article: Article,
+}
