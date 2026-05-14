@@ -1,28 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import ImageLoader from "@/utils/imageLoader";
+import type { IssueContentlet } from "@/types/content-types";
 
-interface ArticleItem {
-	identifier: string;
-	title?: string;
-	slug?: string;
-	teaser?: string;
-	image?: string;
-	[key: string]: unknown;
-}
-
-interface IssueProps {
-	identifier: string;
-	title?: string;
-	slug?: string;
-	publishDate?: string;
-	expireDate?: string;
-	image?: string;
-	articles?: ArticleItem[];
-	[key: string]: unknown;
-}
-
-export default function Issue({ title, slug, publishDate, image, articles }: IssueProps) {
+export default function Issue({ title, slug, publishDate, image, articles }: IssueContentlet) {
 	const formattedDate = publishDate
 		? new Date(publishDate).toLocaleDateString("en-US", {
 				year: "numeric",

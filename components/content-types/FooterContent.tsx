@@ -1,15 +1,7 @@
 import { DotCMSBlockEditorRenderer } from "@dotcms/react";
-import type { BlockEditorNode } from "@dotcms/types";
+import type { FooterContentContentlet } from "@/types/content-types";
 
-interface FooterContentProps {
-	identifier: string;
-	title?: string;
-	content?: BlockEditorNode;
-	showNewsletterLinks?: boolean | string;
-	[key: string]: unknown;
-}
-
-export default function FooterContent({ title, content, showNewsletterLinks }: FooterContentProps) {
+export default function FooterContent({ title, content, showNewsletterLinks }: FooterContentContentlet) {
 	const showLinks = showNewsletterLinks === true || showNewsletterLinks === "true";
 
 	return (

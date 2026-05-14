@@ -1,28 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import ImageLoader from "@/utils/imageLoader";
+import type { BannerContentlet } from "@/types/content-types";
 
-interface BannerProps {
-	identifier: string;
-	title: string;
-	image?: string;
-	mobileImage?: string;
-	detail?: string;
-	articleSlug?: string;
-	issue?: Record<string, unknown>[];
-	[key: string]: unknown;
-}
-
-export default function Banner({
-	title,
-	image,
-	mobileImage,
-	detail,
-	articleSlug,
-	issue,
-}: BannerProps) {
+export default function Banner({ title, image, mobileImage, detail, articleSlug, issue }: BannerContentlet) {
 	const relatedIssue = Array.isArray(issue) ? issue[0] : issue;
-	const issueSlug = (relatedIssue as Record<string, unknown>)?.slug as string | undefined;
+	const issueSlug = relatedIssue?.slug;
 	const href = issueSlug && articleSlug ? `/issue/${issueSlug}/${articleSlug}` : undefined;
 
 	const inner = (

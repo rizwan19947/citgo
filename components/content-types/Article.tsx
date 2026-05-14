@@ -1,30 +1,9 @@
 import Image from "next/image";
 import ImageLoader from "@/utils/imageLoader";
 import { DotCMSBlockEditorRenderer } from "@dotcms/react";
-import type { BlockEditorNode } from "@dotcms/types";
+import type { ArticleContentlet } from "@/types/content-types";
 
-interface ArticleProps {
-	identifier: string;
-	title?: string;
-	slug?: string;
-	teaser?: string;
-	image?: string;
-	mobileImage?: string;
-	heroImage?: string;
-	content?: BlockEditorNode;
-	tags?: string | string[];
-	[key: string]: unknown;
-}
-
-export default function Article({
-	title,
-	teaser,
-	image,
-	mobileImage,
-	heroImage,
-	content,
-	tags,
-}: ArticleProps) {
+export default function Article({ title, teaser, image, mobileImage, heroImage, content, tags }: ArticleContentlet) {
 	const tagList = Array.isArray(tags) ? tags : tags ? [tags] : [];
 	const displayImage = heroImage || image;
 
