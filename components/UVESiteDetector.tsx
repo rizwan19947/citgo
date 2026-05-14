@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createUVESubscription } from "@dotcms/uve";
+import { UVEEventType } from "@dotcms/types";
 
 interface UVESiteDetectorProps {
 	serverHostname: string;
@@ -9,11 +11,14 @@ interface UVESiteDetectorProps {
 
 /**
  * Detects when the DotCMS UVE wants a different site than the one the server
- * rendered. Reads `pageAsset.site.hostName` from the UVE postMessage — this is
- * the site the editor actually wants. `requestMetadata.variables.siteId` is NOT
- * usable because it echoes back the frontend's own request, not the editor's intent.
+ * rendered. Uses the SDK's createUVESubscription to listen for CONTENT_CHANGES
+ * events, which provide the site the editor is actually viewing via
+ * pageAsset.site.hostname.
  *
- * Only active inside the UVE iframe.
+ * Deferred by one tick to ensure initUVE (called by useEditableDotCMSPage)
+ * has set up the internal message dispatcher first.
+ *
+ * Only active inside the UVE iframe; no-op in production.
  */
 function switchSite(hostname: string) {
 	document.cookie = `dotcms-uve-site=${encodeURIComponent(hostname)}; path=/; max-age=2592000; SameSite=None; Secure`;
@@ -31,22 +36,37 @@ export function UVESiteDetector({ serverHostname, siteIdMap }: UVESiteDetectorPr
 		switchingRef.current = false;
 		const knownHosts = new Set(Object.values(siteIdMap));
 
-		const handler = (event: MessageEvent) => {
-			if (switchingRef.current) return;
+		// Deferred to next tick so initUVE (from useEditableDotCMSPage) runs first
+		const timer = setTimeout(() => {
+			const subscription = createUVESubscription(
+				UVEEventType.CONTENT_CHANGES,
+				(pageResponse) => {
+					if (switchingRef.current) return;
 
-			const hostName = event.data?.payload?.pageAsset?.site?.hostName;
+					const site = pageResponse.pageAsset?.site as unknown as
+						| Record<string, unknown>
+						| undefined;
 
-			if (!hostName || !knownHosts.has(hostName)) return;
+					const hostname = (site?.hostName as string) ?? (site?.hostname as string);
+					if (!hostname || !knownHosts.has(hostname)) return;
 
-			if (hostName !== serverHostname) {
-				switchingRef.current = true;
-				switchSite(hostName);
-			}
+					if (hostname !== serverHostname) {
+						switchingRef.current = true;
+						switchSite(hostname);
+					}
+				},
+			);
+
+			subscriptionRef.current = subscription;
+		}, 0);
+
+		return () => {
+			clearTimeout(timer);
+			subscriptionRef.current?.unsubscribe();
 		};
-
-		window.addEventListener("message", handler);
-		return () => window.removeEventListener("message", handler);
 	}, [serverHostname, siteIdMap]);
+
+	const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
 
 	return null;
 }

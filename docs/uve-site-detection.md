@@ -32,9 +32,11 @@ On the first UVE load, none of 1-4 match the editor's site, so the default rende
 
 This React component renders nothing visually. It only activates when the page is inside an iframe (i.e. the UVE).
 
-It listens for `uve-set-page-data` messages that DotCMS posts to the iframe. These messages contain the page data for the site the editor is actually viewing at `payload.pageAsset.site.hostName`.
+It uses the SDK's `createUVESubscription(UVEEventType.CONTENT_CHANGES, ...)` to subscribe to page data updates from the UVE. The subscription callback receives the full page response, including the site the editor is actually viewing at `pageAsset.site.hostName`.
 
-If that hostname differs from the one the server rendered (`serverHostname` prop), the component triggers a site switch:
+The subscription setup is deferred by one tick (`setTimeout(fn, 0)`) because `useEditableDotCMSPage` (in the parent `Page` component) calls `initUVE` internally, and React runs child effects before parent effects. The deferral ensures the UVE's internal message dispatcher is ready before the subscription is created.
+
+If the hostname from the subscription differs from the one the server rendered (`serverHostname` prop), the component triggers a site switch:
 - Sets a `dotcms-uve-site` cookie (for HTTPS environments)
 - Adds a `dotcms_site` query parameter to the URL
 - Reloads the page
@@ -55,27 +57,31 @@ The server component (`page.tsx`) calls `getSiteConfig(searchParams)` to resolve
 Editor switches site in DotCMS
   └─ UVE loads iframe with frontend URL (no site identifier)
       └─ Server renders default site (Host header doesn't match)
-          └─ UVESiteDetector mounts, listens for postMessage
-              └─ UVE sends uve-set-page-data with pageAsset.site.hostName
-                  └─ Hostname differs from serverHostname
-                      └─ switchSite() sets cookie + query param, reloads
-                          └─ Server reads query param → renders correct site
-                              └─ UVE sends same hostName → matches → no action
+          └─ UVESiteDetector mounts, defers subscription by one tick
+              └─ initUVE runs (from useEditableDotCMSPage)
+                  └─ Subscription activates, receives CONTENT_CHANGES
+                      └─ pageAsset.site.hostName differs from serverHostname
+                          └─ switchSite() sets cookie + query param, reloads
+                              └─ Server reads query param → renders correct site
+                                  └─ Next CONTENT_CHANGES → hostnames match → no action
 ```
 
-## Important: which field to read from the UVE message
+## Important: which field to read
 
-The `uve-set-page-data` message contains two site-related fields:
+The CONTENT_CHANGES callback provides the full page response. Two site-related fields exist:
 
 | Field | Value | Usable? |
 |---|---|---|
-| `payload.pageAsset.site.hostName` | The site the editor is viewing | Yes |
-| `payload.requestMetadata.variables.siteId` | The site the frontend requested via GraphQL | No (echoes the frontend's own request) |
+| `pageAsset.site.hostName` | The site the editor is viewing | Yes |
+| `requestMetadata.variables.siteId` | The site the frontend requested via GraphQL | No (echoes the frontend's own request) |
 
 `requestMetadata.variables.siteId` reflects whatever the frontend sent to DotCMS, which on the first load is the default site, not the editor's intended site. Always use `pageAsset.site.hostName`.
 
+## SDK type caveat
+
+The `DotCMSSite` type in `@dotcms/types` defines the field as `hostname` (lowercase), but the runtime data from DotCMS uses `hostName` (camelCase). The detector checks both fields to handle a potential future SDK fix.
+
 ## Adding a new site
 
-1. Add an entry to `SITE_CONFIGS` in `utils/site-config.ts` with the hostname as key
-2. Add the corresponding `*_IDENTIFIER` env var with the DotCMS site UUID
-3. No changes needed in UVESiteDetector or the page components
+1. Add a new `SITE_N` env var in the format `hostname|siteId|assetSlug`
+2. No changes needed in UVESiteDetector or the page components
