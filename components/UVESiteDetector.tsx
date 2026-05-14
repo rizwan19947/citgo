@@ -36,37 +36,27 @@ export function UVESiteDetector({ serverHostname, siteIdMap }: UVESiteDetectorPr
 		switchingRef.current = false;
 		const knownHosts = new Set(Object.values(siteIdMap));
 
-		// Deferred to next tick so initUVE (from useEditableDotCMSPage) runs first
-		const timer = setTimeout(() => {
-			const subscription = createUVESubscription(
-				UVEEventType.CONTENT_CHANGES,
-				(pageResponse) => {
-					if (switchingRef.current) return;
+		const subscription = createUVESubscription(
+			UVEEventType.CONTENT_CHANGES,
+			(pageResponse) => {
+				if (switchingRef.current) return;
 
-					const site = pageResponse.pageAsset?.site as unknown as
-						| Record<string, unknown>
-						| undefined;
+				const site = pageResponse.pageAsset?.site as unknown as
+					| Record<string, unknown>
+					| undefined;
 
-					const hostname = (site?.hostName as string) ?? (site?.hostname as string);
-					if (!hostname || !knownHosts.has(hostname)) return;
+				const hostname = (site?.hostName as string) ?? (site?.hostname as string);
+				if (!hostname || !knownHosts.has(hostname)) return;
 
-					if (hostname !== serverHostname) {
-						switchingRef.current = true;
-						switchSite(hostname);
-					}
-				},
-			);
+				if (hostname !== serverHostname) {
+					switchingRef.current = true;
+					switchSite(hostname);
+				}
+			},
+		);
 
-			subscriptionRef.current = subscription;
-		}, 0);
-
-		return () => {
-			clearTimeout(timer);
-			subscriptionRef.current?.unsubscribe();
-		};
+		return () => subscription.unsubscribe();
 	}, [serverHostname, siteIdMap]);
-
-	const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
 
 	return null;
 }
