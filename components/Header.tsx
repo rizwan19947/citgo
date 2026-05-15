@@ -1,11 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import type { DotCMSNavigationItem } from "@dotcms/types"
 import Link from "next/link"
 
 interface HeaderProps {
-	navItems: DotCMSNavigationItem[]
 	assetSlug: string
 	logoAlt?: string
 }

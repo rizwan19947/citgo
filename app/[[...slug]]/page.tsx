@@ -1,17 +1,22 @@
 import { notFound } from "next/navigation";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
-import { getSiteConfig, getSiteHost, getSiteIdToHostnameMap } from "@/utils/site-config";
-import { fragmentNav, navigationQuery } from "@/utils/queries";
+import { getArticleBySlug } from "@/utils/getDotCMSContent";
+import { getSiteConfig, getSiteIdToHostnameMap } from "@/utils/site-config";
 import { Page } from "@/views/Page";
+import Article from "@/components/content-types/Article";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 /*
- * Catch-all route — handles every URL in the app (e.g. /, /about, /blog/post-1).
- * On each request it resolves the site from the hostname, fetches the matching
- * page from DotCMS, then renders Header, the page body, and Footer based on
- * the layout flags DotCMS returns.
- * If DotCMS returns nothing for the path, Next.js shows the 404 page.
+ * Catch-all route — handles every URL in the app.
+ *
+ * 1. Try fetching a DotCMS page via the Page API (GraphQL).
+ *    Handles regular editor-composed pages (/, /about, etc.).
+ *
+ * 2. If no page is found and the URL has two segments (/{issueSlug}/{articleSlug}),
+ *    try fetching an Article via the Content API (Approach C).
+ *
+ * 3. If neither resolves, show 404.
  */
 
 interface PageProps {
@@ -19,10 +24,6 @@ interface PageProps {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-/*
- * Converts the slug array from Next.js params into a URL path string.
- * e.g. ["blog", "my-post"] → "/blog/my-post", undefined → "/"
- */
 function resolvePath(slug?: string[]): string {
 	return `/${(slug ?? []).join("/")}`;
 }
@@ -33,35 +34,42 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 	const path = resolvePath(slug);
 	const { siteId, assetSlug, hostname: serverHostname } = await getSiteConfig(sp);
 
-	// TODO Remove Later
-	const siteHost = await getSiteHost();
+	/* 1. Try DotCMS Page API first */
+	const pageContent = await getDotCMSPage(path, siteId);
 
-	/* Fetch the page data from DotCMS, including the nav tree via GraphQL. */
-	const pageContent = await getDotCMSPage(path, siteId, {
-		content: { navigation: navigationQuery },
-		fragments: [fragmentNav],
-	});
+	if (pageContent) {
+		const layout = pageContent.pageAsset?.layout;
 
-	if (!pageContent) {
-		return notFound();
+		return (
+			<>
+				{layout?.header && <Header assetSlug={assetSlug} />}
+				<Page
+					pageContent={pageContent}
+					serverHostname={serverHostname}
+					siteIdMap={getSiteIdToHostnameMap()}
+				/>
+				{layout?.footer && <Footer assetSlug={assetSlug} />}
+			</>
+		);
 	}
 
-	/* layout flags (header/footer) come from the DotCMS page layout config. */
-	const layout = pageContent.pageAsset?.layout;
-	/* Top-level nav children are passed to Header to build the navigation menu. */
-	const navItems = pageContent.content?.navigation?.children ?? [];
+	/* 2. Try Content API for article detail pages (/{issueSlug}/{articleSlug}) */
+	if (slug?.length === 2) {
+		const [issueSlug, articleSlug] = slug;
+		const article = await getArticleBySlug(siteId, issueSlug, articleSlug);
 
-	return (
-		<>
-			{layout?.header && <Header navItems={navItems} assetSlug={assetSlug} />}
-			{/*TODO Remove Later*/}
-			<pre>{siteHost}</pre>
-			<Page
-				pageContent={pageContent}
-				serverHostname={serverHostname}
-				siteIdMap={getSiteIdToHostnameMap()}
-			/>
-			{layout?.footer && <Footer assetSlug={assetSlug} />}
-		</>
-	);
+		if (article) {
+			return (
+				<>
+					<Header assetSlug={assetSlug} />
+					<main className="container mx-auto">
+						<Article {...article} />
+					</main>
+					<Footer assetSlug={assetSlug} />
+				</>
+			);
+		}
+	}
+
+	return notFound();
 }
