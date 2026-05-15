@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
+import { useState } from "react";
+import Link from "next/link";
 
 interface HeaderProps {
-	assetSlug: string
-	logoAlt?: string
+	assetSlug: string;
+	logoAlt?: string;
 }
 
 const NAV_ITEMS: { label: string; href: string; children?: { label: string; href: string }[] }[] = [
@@ -18,20 +18,23 @@ const NAV_ITEMS: { label: string; href: string; children?: { label: string; href
 			{ label: "Resources", href: "#" },
 		],
 	},
-	{ label: "ARCHIVES", href: "#" },
-]
+	{
+		label: "ARCHIVES",
+		href: "/issue/july-sept-2025/article/unlocking-more-savings-with-premier-status", //TODO to test in deployed env - remove later
+	},
+];
 
 export default function Header({ assetSlug, logoAlt = "CITGO Retail Connections" }: HeaderProps) {
-	const [mobileOpen, setMobileOpen] = useState(false)
-	const [issueOpen, setIssueOpen] = useState(false)
+	const [mobileOpen, setMobileOpen] = useState(false);
+	const [issueOpen, setIssueOpen] = useState(false);
 
 	const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault()
-		const formData = new FormData(e.currentTarget)
-		const q = formData.get("q")
+		e.preventDefault();
+		const formData = new FormData(e.currentTarget);
+		const q = formData.get("q");
 		// placeholder: route to /search?q=... when search page exists
-		console.log("search:", q)
-	}
+		console.log("search:", q);
+	};
 
 	return (
 		<header className="bg-[#C8102E] text-white">
@@ -211,5 +214,5 @@ export default function Header({ assetSlug, logoAlt = "CITGO Retail Connections"
 				)}
 			</div>
 		</header>
-	)
+	);
 }
