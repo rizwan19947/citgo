@@ -28,6 +28,7 @@ export interface ArticleFields {
 	title?: string;
 	slug?: string;
 	teaser?: string;
+	issueSlug?: string;
 	image?: string;
 	mobileImage?: string;
 	heroImage?: string;
