@@ -39,7 +39,7 @@ export default function Issue({ title, slug, publishDate, image, articles }: Iss
 					{articles.map((article) => (
 						<li key={article.identifier}>
 							<Link
-								href={`/issue/${slug}/${article.slug}`}
+								href={`/issue/${slug}/article/${article.slug}`}
 								className="text-lg font-medium hover:underline"
 							>
 								{article.title}

@@ -6,7 +6,7 @@ import type { BannerContentlet } from "@/types/content-types";
 export default function Banner({ title, image, mobileImage, detail, articleSlug, issue }: BannerContentlet) {
 	const relatedIssue = Array.isArray(issue) ? issue[0] : issue;
 	const issueSlug = relatedIssue?.slug;
-	const href = issueSlug && articleSlug ? `/issue/${issueSlug}/${articleSlug}` : undefined;
+	const href = issueSlug && articleSlug ? `/issue/${issueSlug}/article/${articleSlug}` : undefined;
 
 	const inner = (
 		<div className="relative w-full overflow-hidden">
