@@ -32,5 +32,5 @@ export function DetailPage({ pageContent }: DetailPageProps) {
 		return null;
 	}
 
-	return <Component {...contentMap} />;
+	return <Component contentlet={contentMap} />;
 }

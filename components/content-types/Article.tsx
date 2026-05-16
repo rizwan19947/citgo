@@ -1,6 +1,6 @@
 import Image from "next/image";
 import ImageLoader from "@/utils/imageLoader";
-import { DotCMSBlockEditorRenderer } from "@dotcms/react";
+import { DotCMSBlockEditorRenderer, DotCMSEditableText } from "@dotcms/react";
 import type { ArticleContentlet } from "@/types/content-types";
 
 function resolveImage(field: unknown): string | undefined {
@@ -9,10 +9,27 @@ function resolveImage(field: unknown): string | undefined {
 	return undefined;
 }
 
-export default function Article({ title, teaser, image, mobileImage, heroImage, content, tags }: ArticleContentlet) {
+/*
+ * Article detail component.
+ * Accepts either { contentlet } (from DetailPage) or spread props (from DotCMSLayoutBody).
+ * When a contentlet reference is available, text fields use DotCMSEditableText for UVE inline editing.
+ */
+
+type ArticleProps =
+	| { contentlet: ArticleContentlet }
+	| ArticleContentlet;
+
+function getContentlet(props: ArticleProps): ArticleContentlet {
+	return "contentlet" in props ? props.contentlet : props;
+}
+
+export default function Article(props: ArticleProps) {
+	const contentlet = getContentlet(props);
+	const { title, teaser, image, mobileImage, heroImage, content, tags } = contentlet;
 	const tagList = Array.isArray(tags) ? tags : tags ? [tags] : [];
 	const displayImage = resolveImage(heroImage) || resolveImage(image);
 	const resolvedMobileImage = resolveImage(mobileImage);
+	const isEditable = "contentlet" in props;
 
 	return (
 		<article data-component="Article">
@@ -43,11 +60,34 @@ export default function Article({ title, teaser, image, mobileImage, heroImage, 
 				</div>
 			)}
 			<div className="mt-6">
-				{title && <h1 className="text-3xl font-bold md:text-4xl">{title}</h1>}
-				{teaser && <p className="mt-3 text-lg text-gray-600">{teaser}</p>}
+				<h1 className="text-3xl font-bold md:text-4xl">
+					{isEditable ? (
+						<DotCMSEditableText contentlet={contentlet} fieldName="title" mode="plain" />
+					) : (
+						title
+					)}
+				</h1>
+				{teaser && (
+					<p className="mt-3 text-lg text-gray-600">
+						{isEditable ? (
+							<DotCMSEditableText contentlet={contentlet} fieldName="teaser" mode="minimal" />
+						) : (
+							teaser
+						)}
+					</p>
+				)}
 			</div>
 			{content && (
-				<div className="prose prose-lg mt-6 max-w-none">
+				<div
+					className="prose prose-lg mt-6 max-w-none"
+					{...(isEditable ? {
+						"data-block-editor-content": JSON.stringify(content),
+						"data-inode": contentlet.inode,
+						"data-language": String(contentlet.languageId ?? 1),
+						"data-content-type": contentlet.contentType,
+						"data-field-name": "content",
+					} : {})}
+				>
 					<DotCMSBlockEditorRenderer blocks={content} />
 				</div>
 			)}
