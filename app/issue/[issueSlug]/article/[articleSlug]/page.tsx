@@ -24,9 +24,5 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
 		return notFound();
 	}
 
-	return (
-		<main className="container mx-auto">
-			<Article {...article} />
-		</main>
-	);
+	return <Article {...article} />;
 }

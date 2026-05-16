@@ -26,9 +26,9 @@ export function Page({ pageContent, serverHostname, siteIdMap }: PageProps) {
   const { pageAsset } = useEditableDotCMSPage(pageContent);
 
   return (
-    <main className="container mx-auto ">
+    <>
       <UVESiteDetector serverHostname={serverHostname} siteIdMap={siteIdMap} />
       <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
-    </main>
+    </>
   );
 }

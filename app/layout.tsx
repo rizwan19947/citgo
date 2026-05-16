@@ -20,7 +20,9 @@ export default async function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Header assetSlug={assetSlug} />
-        {children}
+        <main className="container mx-auto">
+          {children}
+        </main>
         <Footer assetSlug={assetSlug} />
       </body>
     </html>
