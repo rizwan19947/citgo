@@ -1,19 +1,28 @@
 import { Inter } from "next/font/google";
+import { getSiteConfig } from "@/utils/site-config";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 /*
  * Root layout — wraps every page in the app.
- * Sets the Inter font and applies global CSS.
- * Any UI added here (e.g. a toast provider) will appear on all routes.
+ * Renders the shared Header and Footer so individual pages don't need to.
+ * Site config is resolved from the Host header / cookie (no searchParams needed).
  */
 const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const { assetSlug } = await getSiteConfig();
+
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <Header assetSlug={assetSlug} />
+        {children}
+        <Footer assetSlug={assetSlug} />
+      </body>
     </html>
   );
 }
