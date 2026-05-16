@@ -19,8 +19,12 @@ const NAV_ITEMS: { label: string; href: string; children?: { label: string; href
 		],
 	},
 	{
-		label: "ARCHIVES",
+		label: "specific article",
 		href: "/issue/july-sept-2025/article/unlocking-more-savings-with-premier-status", //TODO to test in deployed env - remove later
+	},
+	{
+		label: "ARCHIVES",
+		href: "/archives",
 	},
 ];
 

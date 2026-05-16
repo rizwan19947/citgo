@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { getSiteConfig } from "@/utils/site-config";
-import { getArticleBySlug } from "@/utils/getDotCMSContent";
+import { getArticleBySlugAndMatchByIssueSlug } from "@/utils/getDotCMSContent";
 import Article from "@/components/content-types/Article";
+import { ArticleFields } from "@/types/content-types";
+import { Contentlet } from "@dotcms/types";
 
 /*
  * Article detail page — /issue/{issueSlug}/article/{articleSlug}
@@ -18,7 +20,8 @@ export default async function ArticlePage({ params, searchParams }: ArticlePageP
 	const sp = await searchParams;
 	const { siteId } = await getSiteConfig(sp);
 
-	const article = await getArticleBySlug(siteId, issueSlug, articleSlug);
+	const article: Contentlet<Contentlet<ArticleFields>> | undefined =
+		await getArticleBySlugAndMatchByIssueSlug(siteId, issueSlug, articleSlug);
 
 	if (!article) {
 		return notFound();

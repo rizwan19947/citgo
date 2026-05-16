@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createClient } from "./dotCMSClient";
-import type { ArticleFields } from "@/types/content-types";
+import { ArticleFields, IssueFields } from "@/types/content-types";
 import type { Contentlet } from "@dotcms/types";
 
 /*
@@ -14,25 +14,34 @@ function escapeLucene(str: string): string {
 }
 
 /**
- * Fetches a single Article by its slug, then verifies the issueSlug matches.
+ * Fetches a single Article by its slug, then verifies if the issueSlug matches or not.
  */
-export const getArticleBySlug = cache(
+export const getArticleBySlugAndMatchByIssueSlug = cache(
 	async (siteId: string, issueSlug: string, articleSlug: string) => {
 		const client = createClient(siteId);
 		const response = await client.content
 			.getCollection<Contentlet<ArticleFields>>("Article")
 			.limit(1)
-			.query(
-				`+Article.slug:"${escapeLucene(articleSlug)}" +live:true`,
-			)
+			.query(`+Article.slug:"${escapeLucene(articleSlug)}" +live:true`)
 			.depth(1)
 			.language(1);
 
 		const article = response.contentlets[0];
 		if (!article || article.issueSlug !== issueSlug) {
-			return null;
+			return undefined;
 		}
 
 		return article;
 	},
 );
+
+export const getAllIssues = cache(async (siteId: string) => {
+	const client = createClient(siteId);
+	const response = await client.content
+		.getCollection<Contentlet<IssueFields>>("Issue")
+		.query("+live:true")
+		.depth(1)
+		.language(1);
+
+	return response.total > 0 ? response.contentlets : undefined;
+});

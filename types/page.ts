@@ -8,10 +8,15 @@ import type { DotCMSNavigationItem } from "@dotcms/types";
  *                        extend this interface as you add more GraphQL queries.
  */
 
+export interface PageProps {
+	params: Promise<{ slug?: string[] }>;
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
 export interface DotCMSPageNavigation extends DotCMSNavigationItem {
-  children: DotCMSNavigationItem[];
+	children: DotCMSNavigationItem[];
 }
 
 export interface DotCMSPageContent {
-  navigation: DotCMSPageNavigation;
+	navigation: DotCMSPageNavigation;
 }

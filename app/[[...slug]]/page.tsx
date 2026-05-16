@@ -2,17 +2,13 @@ import { notFound } from "next/navigation";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 import { getSiteConfig, getSiteIdToHostnameMap } from "@/utils/site-config";
 import { Page } from "@/views/Page";
+import { PageProps } from "@/types/page";
 
 /*
  * Catch-all route — handles DotCMS editor-composed pages (/, /about, etc.).
  * Content detail pages (articles, issues) are handled by dedicated routes.
  * Header and Footer are rendered by the root layout.
  */
-
-interface PageProps {
-	params: Promise<{ slug?: string[] }>;
-	searchParams: Promise<Record<string, string | string[] | undefined>>;
-}
 
 function resolvePath(slug?: string[]): string {
 	return `/${(slug ?? []).join("/")}`;

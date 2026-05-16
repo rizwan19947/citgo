@@ -1,10 +1,7 @@
 "use client";
 
 import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
-import type {
-  DotCMSComposedPageResponse,
-  DotCMSPageResponse,
-} from "@dotcms/types";
+import type { DotCMSComposedPageResponse, DotCMSPageResponse } from "@dotcms/types";
 import { pageComponents } from "@/components/content-types";
 import { UVESiteDetector } from "@/components/UVESiteDetector";
 
@@ -17,18 +14,18 @@ import { UVESiteDetector } from "@/components/UVESiteDetector";
  */
 
 interface PageProps {
-  pageContent: DotCMSComposedPageResponse<DotCMSPageResponse>;
-  serverHostname: string;
-  siteIdMap: Record<string, string>;
+	pageContent: DotCMSComposedPageResponse<DotCMSPageResponse>;
+	serverHostname: string;
+	siteIdMap: Record<string, string>;
 }
 
 export function Page({ pageContent, serverHostname, siteIdMap }: PageProps) {
-  const { pageAsset } = useEditableDotCMSPage(pageContent);
+	const { pageAsset } = useEditableDotCMSPage(pageContent);
 
-  return (
-    <>
-      <UVESiteDetector serverHostname={serverHostname} siteIdMap={siteIdMap} />
-      <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
-    </>
-  );
+	return (
+		<>
+			<UVESiteDetector serverHostname={serverHostname} siteIdMap={siteIdMap} />
+			<DotCMSLayoutBody page={pageAsset} components={pageComponents} />
+		</>
+	);
 }
