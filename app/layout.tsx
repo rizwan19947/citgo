@@ -1,8 +1,12 @@
-import { Inter } from "next/font/google";
+import { Inter, Geist } from "next/font/google";
 import { getSiteConfig } from "@/utils/site-config";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
 
 /*
  * Root layout — wraps every page in the app.
@@ -17,7 +21,7 @@ export default async function RootLayout({
   const { assetSlug } = await getSiteConfig();
 
   return (
-    <html lang="en">
+    <html lang="en" className={cn("font-sans", geist.variable)}>
       <body className={inter.className}>
         <Header assetSlug={assetSlug} />
         <main className="container mx-auto">
