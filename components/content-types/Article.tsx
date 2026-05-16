@@ -3,17 +3,24 @@ import ImageLoader from "@/utils/imageLoader";
 import { DotCMSBlockEditorRenderer } from "@dotcms/react";
 import type { ArticleContentlet } from "@/types/content-types";
 
+function resolveImage(field: unknown): string | undefined {
+	if (typeof field === "string" && field.length > 0) return field;
+	if (field && typeof field === "object" && "idPath" in field) return (field as { idPath: string }).idPath;
+	return undefined;
+}
+
 export default function Article({ title, teaser, image, mobileImage, heroImage, content, tags }: ArticleContentlet) {
 	const tagList = Array.isArray(tags) ? tags : tags ? [tags] : [];
-	const displayImage = heroImage || image;
+	const displayImage = resolveImage(heroImage) || resolveImage(image);
+	const resolvedMobileImage = resolveImage(mobileImage);
 
 	return (
 		<article data-component="Article">
 			{displayImage && (
 				<div className="relative w-full overflow-hidden">
-					{mobileImage && (
+					{resolvedMobileImage && (
 						<Image
-							src={`/dA/${mobileImage}`}
+							src={`/dA/${resolvedMobileImage}`}
 							loader={ImageLoader}
 							alt={title || ""}
 							width={0}
@@ -31,7 +38,7 @@ export default function Article({ title, teaser, image, mobileImage, heroImage, 
 						height={0}
 						sizes="(max-width: 768px) 100vw, 1200px"
 						quality={75}
-						className={`h-auto w-full ${mobileImage ? "hidden md:block" : ""}`}
+						className={`h-auto w-full ${resolvedMobileImage ? "hidden md:block" : ""}`}
 					/>
 				</div>
 			)}
