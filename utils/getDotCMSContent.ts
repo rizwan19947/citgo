@@ -18,30 +18,40 @@ function escapeLucene(str: string): string {
  */
 export const getArticleBySlugAndMatchByIssueSlug = cache(
 	async (siteId: string, issueSlug: string, articleSlug: string) => {
-		const client = createClient(siteId);
-		const response = await client.content
-			.getCollection<Contentlet<ArticleFields>>("Article")
-			.limit(1)
-			.query(`+Article.slug:"${escapeLucene(articleSlug)}" +live:true`)
-			.depth(1)
-			.language(1);
+		try {
+			const client = createClient(siteId);
+			const response = await client.content
+				.getCollection<Contentlet<ArticleFields>>("Article")
+				.limit(1)
+				.query(`+Article.slug:"${escapeLucene(articleSlug)}" +live:true`)
+				.depth(1)
+				.language(1);
 
-		const article = response.contentlets[0];
-		if (!article || article.issueSlug !== issueSlug) {
+			const article = response.contentlets[0];
+			if (!article || article.issueSlug !== issueSlug) {
+				return undefined;
+			}
+
+			return article;
+		} catch (e) {
+			console.error("ERROR FETCHING ARTICLE:", (e as Error).message);
 			return undefined;
 		}
-
-		return article;
 	},
 );
 
 export const getAllIssues = cache(async (siteId: string) => {
-	const client = createClient(siteId);
-	const response = await client.content
-		.getCollection<Contentlet<IssueFields>>("Issue")
-		.query("+live:true")
-		.depth(1)
-		.language(1);
+	try {
+		const client = createClient(siteId);
+		const response = await client.content
+			.getCollection<Contentlet<IssueFields>>("Issue")
+			.query("+live:true")
+			.depth(1)
+			.language(1);
 
-	return response.total > 0 ? response.contentlets : undefined;
+		return response.total > 0 ? response.contentlets : undefined;
+	} catch (e) {
+		console.error("ERROR FETCHING ISSUES:", (e as Error).message);
+		return undefined;
+	}
 });
