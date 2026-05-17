@@ -124,7 +124,7 @@ export default function Article(props: ArticleProps) {
 
 				{/* Right column — sidebar */}
 				<aside className="md:mt-6">
-					<h2 className="text-xl font-bold">Also In This Issue</h2>
+					<h2 className="text-xl font-bold uppercase">Also In This Issue</h2>
 					{/* TODO: populate with sibling articles from the same issue */}
 				</aside>
 			</div>
