@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import ImageLoader from "@/utils/imageLoader";
 import { DotCMSBlockEditorRenderer, DotCMSEditableText } from "@dotcms/react";
 import type { ArticleContentlet, IssueContentlet } from "@/types/content-types";
@@ -35,44 +36,16 @@ export default function Article(props: ArticleProps) {
 	const isEditable = "contentlet" in props;
 	const issue = "contentlet" in props ? props.issue : undefined;
 
-	// console.warn(contentlet);
-	// console.warn(issue);
-	console.warn(displayImage);
+	const siblingArticles = issue?.articles?.filter((a) => a.identifier !== contentlet.identifier);
 
 	return (
 		<>
 			<DefaultHeroBanner title={title} volumeTitle={issue?.title} />
 			<div
 				data-component="Article"
-				className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 mx-auto max-w-6xl"
+				className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 mx-auto max-w-6xl py-10"
 			>
 				<article>
-					{displayImage && (
-						<div className="relative w-full overflow-hidden">
-							{resolvedMobileImage && (
-								<Image
-									src={`/dA/${resolvedMobileImage}`}
-									loader={ImageLoader}
-									alt={title || ""}
-									width={0}
-									height={0}
-									sizes="100vw"
-									quality={75}
-									className="h-auto w-full md:hidden"
-								/>
-							)}
-							<Image
-								src={`/dA/${displayImage}`}
-								loader={ImageLoader}
-								alt={title || ""}
-								width={0}
-								height={0}
-								sizes="(max-width: 768px) 100vw, 1200px"
-								quality={75}
-								className={`h-auto w-full ${resolvedMobileImage ? "hidden md:block" : ""}`}
-							/>
-						</div>
-					)}
 					<div className="mt-6">
 						<h1 className="text-3xl font-bold md:text-4xl">
 							{isEditable ? (
@@ -129,9 +102,40 @@ export default function Article(props: ArticleProps) {
 					)}
 				</article>
 
-				<aside className="md:mt-6">
-					<h2 className="text-xl font-bold uppercase">Also In This Issue</h2>
-					{/* TODO: populate with sibling articles from the same issue */}
+				<aside className="md:mt-6 md:sticky md:top-6 md:self-start">
+					<h2 className="text-xl font-bold uppercase pb-5">Also In This Issue</h2>
+					{siblingArticles && siblingArticles.length > 0 && (
+						<ul className="space-y-4">
+							{siblingArticles.map((article) => {
+								const thumb = resolveImage(article.image);
+								return (
+									<li key={article.identifier}>
+										<Link
+											href={`/${article.issueSlug}/${article.slug}`}
+											className="flex items-start gap-3 no-underline"
+										>
+											{thumb ? (
+												<Image
+													src={`/dA/${thumb}`}
+													loader={ImageLoader}
+													alt={article.title || ""}
+													width={100}
+													height={65}
+													quality={75}
+													className="shrink-0 object-cover"
+												/>
+											) : (
+												<div className="shrink-0 w-[100px] h-[65px] bg-gray-200" />
+											)}
+											<span className="text-blue-600 font-medium leading-snug">
+												{article.title}
+											</span>
+										</Link>
+									</li>
+								);
+							})}
+						</ul>
+					)}
 				</aside>
 			</div>
 		</>
