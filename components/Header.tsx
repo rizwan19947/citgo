@@ -1,30 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import type { IssueContentlet } from "@/types/content-types";
+
+interface NavItem {
+	label: string;
+	href: string;
+	children?: { label: string; href: string }[];
+}
 
 interface HeaderProps {
 	assetSlug: string;
 	logoAlt?: string;
+	currentIssue?: IssueContentlet;
 }
 
-const NAV_ITEMS: { label: string; href: string; children?: { label: string; href: string }[] }[] = [
-	{
-		label: "IN THIS ISSUE",
-		href: "#",
-		children: [
-			{ label: "Featured Story", href: "#" },
-			{ label: "News & Updates", href: "#" },
-			{ label: "Resources", href: "#" },
-		],
-	},
-	{
-		label: "ARCHIVES",
-		href: "/archives",
-	},
-];
+export default function Header({
+	assetSlug,
+	logoAlt = "CITGO Retail Connections",
+	currentIssue,
+}: HeaderProps) {
+	const navItems: NavItem[] = useMemo(() => {
+		const issueChildren = (currentIssue?.articles ?? []).map((article) => ({
+			label: article.title,
+			href: `/${article.issueSlug}/${article.slug}`,
+		}));
 
-export default function Header({ assetSlug, logoAlt = "CITGO Retail Connections" }: HeaderProps) {
+		return [
+			{
+				label: "IN THIS ISSUE",
+				href: "#",
+				children: issueChildren,
+			},
+			{
+				label: "ARCHIVES",
+				href: "/archives",
+			},
+		];
+	}, [currentIssue]);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [issueOpen, setIssueOpen] = useState(false);
 
@@ -51,7 +65,7 @@ export default function Header({ assetSlug, logoAlt = "CITGO Retail Connections"
 
 					{/* Desktop Nav */}
 					<nav className="hidden lg:flex items-center gap-10">
-						{NAV_ITEMS.map((item) => (
+						{navItems.map((item) => (
 							<div key={item.label} className="relative">
 								{item.children ? (
 									<button
@@ -80,7 +94,7 @@ export default function Header({ assetSlug, logoAlt = "CITGO Retail Connections"
 									</a>
 								)}
 								{item.children && issueOpen && (
-									<div className="absolute top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded min-w-[200px] z-50 py-1">
+									<div className="absolute px-2 py-3 top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded min-w-[200px] z-50 py-1">
 										{item.children.map((child) => (
 											<a
 												key={child.label}
@@ -173,7 +187,7 @@ export default function Header({ assetSlug, logoAlt = "CITGO Retail Connections"
 				{mobileOpen && (
 					<div className="lg:hidden pb-6 pt-4 border-t border-white/20">
 						<nav className="flex flex-col gap-4">
-							{NAV_ITEMS.map((item) => (
+							{navItems.map((item) => (
 								<a
 									key={item.label}
 									href={item.href}

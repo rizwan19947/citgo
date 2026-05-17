@@ -1,5 +1,6 @@
 import { Geist, Inter } from "next/font/google";
 import { getSiteConfig } from "@/utils/site-config";
+import { getLatestIssue } from "@/utils/getDotCMSContent";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import "./globals.css";
@@ -15,12 +16,13 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const inter = Inter({ subsets: ["latin"] });
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-	const { assetSlug } = await getSiteConfig();
+	const { assetSlug, siteId } = await getSiteConfig();
+	const currentIssue = await getLatestIssue(siteId);
 
 	return (
 		<html lang="en" className={cn("font-sans", geist.variable)}>
 			<body className={inter.className}>
-				<Header assetSlug={assetSlug} />
+				<Header assetSlug={assetSlug} currentIssue={currentIssue} />
 				<main>{children}</main>
 				<Footer assetSlug={assetSlug} />
 			</body>
