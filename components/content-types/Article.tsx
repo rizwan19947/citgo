@@ -75,7 +75,7 @@ export default function Article(props: ArticleProps) {
 					</div>
 					{content && (
 						<div
-							className={`prose prose-lg mt-6 max-w-none${isEditable ? " hover:bg-blue-50 transition-colors rounded p-2 -m-2 cursor-pointer" : ""}`}
+							className="prose prose-lg mt-6 max-w-none"
 							{...(isEditable
 								? {
 										"data-block-editor-content": JSON.stringify(content),

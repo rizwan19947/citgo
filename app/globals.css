@@ -117,13 +117,45 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
+
+    body {
+        @apply bg-background text-foreground;
     }
-  html {
-    @apply font-sans;
+
+    html {
+        @apply font-sans;
     }
+}
+
+/* UVE block editor hover indicator — only when data attribute is present */
+[data-block-editor-content]:hover {
+    background-color: oklch(0.97 0.014 254.6); /* ~blue-50 */
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+/* Block editor table styles */
+.prose table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.prose th,
+.prose td {
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+}
+
+.prose th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+}
+
+.prose tr:nth-child(even) {
+    background-color: #f9fafb;
 }
