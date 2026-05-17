@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useEditableDotCMSPage } from "@dotcms/react";
 import type { DotCMSComposedPageResponse, DotCMSPageResponse } from "@dotcms/types";
 import type { IssueContentlet } from "@/types/content-types";
@@ -26,6 +27,14 @@ interface DetailPageProps {
 export function DetailPage({ pageContent, issue }: DetailPageProps) {
 	const { pageAsset } = useEditableDotCMSPage(pageContent);
 	const contentMap = pageAsset.urlContentMap;
+
+	useEffect(() => {
+		const isInUVE = typeof window !== "undefined" && window.parent !== window;
+		if (isInUVE) {
+			document.body.classList.add("dotcms-uve-active");
+			return () => document.body.classList.remove("dotcms-uve-active");
+		}
+	}, []);
 
 	const contentType = contentMap?.contentType as string | undefined;
 	const Component = contentType ? detailComponents[contentType] : undefined;

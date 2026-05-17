@@ -132,13 +132,20 @@
     }
 }
 
-/* UVE block editor hover indicator — only when data attribute is present */
-[data-block-editor-content]:hover {
+/* UVE block editor hover indicator — only active inside UVE iframe */
+.dotcms-uve-active [data-block-editor-content]:hover {
     background-color: oklch(0.97 0.014 254.6); /* ~blue-50 */
-    border-radius: 0.25rem;
+    border-radius: 0.5rem;
     cursor: pointer;
     transition: background-color 0.15s ease;
+    /*border: 2px solid dodgerblue;*/
 }
+
+.dotcms-uve-active [data-block-editor-content] {
+    border-radius: 0.5rem;
+    border: 2px solid dodgerblue;
+}
+
 
 /* Block editor — preserve empty paragraphs as spacers */
 .prose p:empty,
