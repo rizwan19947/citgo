@@ -3,14 +3,26 @@ import Link from "next/link";
 import ImageLoader from "@/utils/imageLoader";
 import type { BannerContentlet } from "@/types/content-types";
 
-export default function Banner({ title, image, mobileImage, detail, articleSlug, issue }: BannerContentlet) {
+import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
+
+export default function Banner({
+	title,
+	image,
+	mobileImage,
+	detail,
+	articleSlug,
+	issue,
+}: BannerContentlet) {
 	const relatedIssue = Array.isArray(issue) ? issue[0] : issue;
 	const issueSlug = relatedIssue?.slug;
-	const href = issueSlug && articleSlug ? `/issue/${issueSlug}/article/${articleSlug}` : undefined;
+	const href =
+		issueSlug && articleSlug ? `/issue/${issueSlug}/article/${articleSlug}` : undefined;
+	const hasImage = typeof image === "string" && image.length > 0;
+	const hasMobileImage = typeof mobileImage === "string" && mobileImage.length > 0;
 
 	const inner = (
-		<div className="relative w-full overflow-hidden">
-			{image && (
+		<div className="relative w-full overflow-hidden min-h-[200px] md:min-h-[300px]">
+			{hasImage ? (
 				<Image
 					src={`/dA/${image}`}
 					loader={ImageLoader}
@@ -19,10 +31,12 @@ export default function Banner({ title, image, mobileImage, detail, articleSlug,
 					height={0}
 					sizes="100vw"
 					quality={75}
-					className={`h-auto w-full ${mobileImage ? "hidden md:block" : ""}`}
+					className={`h-auto w-full ${hasMobileImage ? "hidden md:block" : ""}`}
 				/>
+			) : (
+				<DefaultHeroBanner title={title} />
 			)}
-			{mobileImage && (
+			{hasMobileImage && (
 				<Image
 					src={`/dA/${mobileImage}`}
 					loader={ImageLoader}
