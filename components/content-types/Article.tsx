@@ -6,8 +6,11 @@ import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
 
 function resolveImage(field: unknown): string | undefined {
 	if (typeof field === "string" && field.length > 0) return field;
-	if (field && typeof field === "object" && "idPath" in field)
-		return (field as { idPath: string }).idPath;
+	if (field && typeof field === "object") {
+		const obj = field as Record<string, unknown>;
+		if ("idPath" in obj && typeof obj.idPath === "string") return obj.idPath;
+		if ("identifier" in obj && typeof obj.identifier === "string") return obj.identifier;
+	}
 	return undefined;
 }
 
@@ -25,14 +28,16 @@ function getContentlet(props: ArticleProps): ArticleContentlet {
 
 export default function Article(props: ArticleProps) {
 	const contentlet = getContentlet(props);
-	const { title, teaser, image, mobileImage, heroImage, content, tags } = contentlet;
+	const { title, teaser, image, mobileImage, content, tags } = contentlet;
 	const tagList = Array.isArray(tags) ? tags : tags ? [tags] : [];
-	const displayImage = resolveImage(heroImage) || resolveImage(image);
+	const displayImage = resolveImage(image);
 	const resolvedMobileImage = resolveImage(mobileImage);
 	const isEditable = "contentlet" in props;
 	const issue = "contentlet" in props ? props.issue : undefined;
 
-	console.warn(issue);
+	// console.warn(contentlet);
+	// console.warn(issue);
+	console.warn(displayImage);
 
 	return (
 		<>

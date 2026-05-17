@@ -31,7 +31,6 @@ export interface ArticleFields {
 	issueSlug: string;
 	image?: string;
 	mobileImage?: string;
-	heroImage?: string;
 	content?: BlockEditorNode;
 	tags?: string | string[];
 }
