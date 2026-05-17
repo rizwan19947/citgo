@@ -2,6 +2,7 @@
 
 import { useEditableDotCMSPage } from "@dotcms/react";
 import type { DotCMSComposedPageResponse, DotCMSPageResponse } from "@dotcms/types";
+import type { IssueContentlet } from "@/types/content-types";
 import Article from "@/components/content-types/Article";
 
 /*
@@ -19,9 +20,10 @@ const detailComponents: Record<string, React.ComponentType<any>> = {
 
 interface DetailPageProps {
 	pageContent: DotCMSComposedPageResponse<DotCMSPageResponse>;
+	issue?: IssueContentlet;
 }
 
-export function DetailPage({ pageContent }: DetailPageProps) {
+export function DetailPage({ pageContent, issue }: DetailPageProps) {
 	const { pageAsset } = useEditableDotCMSPage(pageContent);
 	const contentMap = pageAsset.urlContentMap;
 
@@ -32,5 +34,5 @@ export function DetailPage({ pageContent }: DetailPageProps) {
 		return null;
 	}
 
-	return <Component contentlet={contentMap} />;
+	return <Component contentlet={contentMap} issue={issue} />;
 }

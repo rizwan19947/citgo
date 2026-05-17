@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
+import { getIssueBySlug } from "@/utils/getDotCMSContent";
 import { getSiteConfig, getSiteIdToHostnameMap } from "@/utils/site-config";
 import { Page } from "@/views/Page";
 import { DetailPage } from "@/views/DetailPage";
@@ -34,12 +35,14 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 		return notFound();
 	}
 
-	console.warn(pageContent.pageAsset.urlContentMap);
-
 	if (
 		hasUrlContentMap(pageContent.pageAsset.urlContentMap as unknown as Record<string, unknown>)
 	) {
-		return <DetailPage pageContent={pageContent} />;
+		const contentMap = pageContent.pageAsset.urlContentMap as unknown as Record<string, unknown>;
+		const issueSlug = contentMap.issueSlug as string | undefined;
+		const issue = issueSlug ? await getIssueBySlug(siteId, issueSlug) : undefined;
+
+		return <DetailPage pageContent={pageContent} issue={issue} />;
 	}
 
 	return (

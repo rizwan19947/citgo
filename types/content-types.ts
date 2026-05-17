@@ -16,8 +16,8 @@ export interface FooterContentFields {
 }
 
 export interface IssueFields {
-	title?: string;
-	slug?: string;
+	title: string;
+	slug: string;
 	publishDate?: string;
 	expireDate?: string;
 	image?: string;
@@ -25,10 +25,10 @@ export interface IssueFields {
 }
 
 export interface ArticleFields {
-	title?: string;
-	slug?: string;
+	title: string;
+	slug: string;
 	teaser?: string;
-	issueSlug?: string;
+	issueSlug: string;
 	image?: string;
 	mobileImage?: string;
 	heroImage?: string;

@@ -38,6 +38,7 @@ export function DefaultHeroBanner({ title, volumeTitle }: HeroBannerProps) {
 					{volumeTitle}
 				</h1>
 			</div>
+			<br />
 			<div className="relative z-10 flex items-center justify-center">
 				<h1 className="text-4xl font-bold text-center text-white md:text-5xl">{title}</h1>
 			</div>

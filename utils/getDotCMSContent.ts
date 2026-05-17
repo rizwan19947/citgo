@@ -40,6 +40,29 @@ export const getArticleBySlugAndMatchByIssueSlug = cache(
 	},
 );
 
+export const getIssueBySlug = cache(async (siteId: string, issueSlug: string) => {
+	try {
+		const client = createClient(siteId);
+		const response = await client.content
+			.getCollection<Contentlet<IssueFields>>("Issue")
+			.limit(1)
+			.query(`+Issue.slug:"${escapeLucene(issueSlug)}" +live:true`)
+			.depth(1)
+			.language(1);
+
+		const issue = response.contentlets[0];
+
+		if (!issue || issue.slug !== issueSlug) {
+			return undefined;
+		}
+
+		return issue;
+	} catch (e) {
+		console.error("ERROR FETCHING ISSUE:", (e as Error).message);
+		return undefined;
+	}
+});
+
 export const getAllIssues = cache(async (siteId: string) => {
 	try {
 		const client = createClient(siteId);

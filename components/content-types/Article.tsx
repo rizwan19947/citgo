@@ -1,7 +1,7 @@
 import Image from "next/image";
 import ImageLoader from "@/utils/imageLoader";
 import { DotCMSBlockEditorRenderer, DotCMSEditableText } from "@dotcms/react";
-import type { ArticleContentlet } from "@/types/content-types";
+import type { ArticleContentlet, IssueContentlet } from "@/types/content-types";
 import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
 
 function resolveImage(field: unknown): string | undefined {
@@ -17,7 +17,7 @@ function resolveImage(field: unknown): string | undefined {
  * When a contentlet reference is available, text fields use DotCMSEditableText for UVE inline editing.
  */
 
-type ArticleProps = { contentlet: ArticleContentlet } | ArticleContentlet;
+type ArticleProps = { contentlet: ArticleContentlet; issue?: IssueContentlet } | ArticleContentlet;
 
 function getContentlet(props: ArticleProps): ArticleContentlet {
 	return "contentlet" in props ? props.contentlet : props;
@@ -30,15 +30,17 @@ export default function Article(props: ArticleProps) {
 	const displayImage = resolveImage(heroImage) || resolveImage(image);
 	const resolvedMobileImage = resolveImage(mobileImage);
 	const isEditable = "contentlet" in props;
+	const issue = "contentlet" in props ? props.issue : undefined;
+
+	console.warn(issue);
 
 	return (
 		<>
-			<DefaultHeroBanner title={title} volumeTitle={"Article Volume Here"} />
+			<DefaultHeroBanner title={title} volumeTitle={issue?.title} />
 			<div
 				data-component="Article"
 				className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 mx-auto max-w-6xl"
 			>
-				{/* Left column — article content */}
 				<article>
 					{displayImage && (
 						<div className="relative w-full overflow-hidden">
@@ -122,7 +124,6 @@ export default function Article(props: ArticleProps) {
 					)}
 				</article>
 
-				{/* Right column — sidebar */}
 				<aside className="md:mt-6">
 					<h2 className="text-xl font-bold uppercase">Also In This Issue</h2>
 					{/* TODO: populate with sibling articles from the same issue */}
