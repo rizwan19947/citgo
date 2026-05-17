@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
-import { getIssueBySlug } from "@/utils/getDotCMSContent";
+import { getIssueBySlug, getLatestIssue } from "@/utils/getDotCMSContent";
 import { getSiteConfig, getSiteIdToHostnameMap } from "@/utils/site-config";
 import { Page } from "@/views/Page";
 import { DetailPage } from "@/views/DetailPage";
@@ -29,7 +29,10 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 	const path = resolvePath(slug);
 	const { siteId, hostname: serverHostname } = await getSiteConfig(sp);
 
-	const pageContent = await getDotCMSPage(path, siteId);
+	const [pageContent, currentIssue] = await Promise.all([
+		getDotCMSPage(path, siteId),
+		getLatestIssue(siteId),
+	]);
 
 	if (!pageContent) {
 		return notFound();
@@ -50,6 +53,7 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 			pageContent={pageContent}
 			serverHostname={serverHostname}
 			siteIdMap={getSiteIdToHostnameMap()}
+			currentIssue={currentIssue}
 		/>
 	);
 }

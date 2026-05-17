@@ -63,12 +63,31 @@ export const getIssueBySlug = cache(async (siteId: string, issueSlug: string) =>
 	}
 });
 
-export const getAllIssues = cache(async (siteId: string) => {
+export const getLatestIssue = cache(async (siteId: string) => {
 	try {
 		const client = createClient(siteId);
 		const response = await client.content
 			.getCollection<Contentlet<IssueFields>>("Issue")
+			.limit(1)
+			.sortBy([{ field: "Issue.publishDate", order: "desc" }])
 			.query("+live:true")
+			.depth(1)
+			.language(1);
+
+		return response.contentlets[0] ?? undefined;
+	} catch (e) {
+		console.error("ERROR FETCHING LATEST ISSUE:", (e as Error).message);
+		return undefined;
+	}
+});
+
+export const getAllIssues = cache(async (siteId: string, excludeIdentifier?: string) => {
+	try {
+		const client = createClient(siteId);
+		const excludeClause = excludeIdentifier ? ` -identifier:${excludeIdentifier}` : "";
+		const response = await client.content
+			.getCollection<Contentlet<IssueFields>>("Issue")
+			.query(`+live:true${excludeClause}`)
 			.depth(1)
 			.language(1);
 

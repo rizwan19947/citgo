@@ -1,6 +1,6 @@
 import { PageProps } from "@/types/page";
 import { getSiteConfig } from "@/utils/site-config";
-import { getAllIssues } from "@/utils/getDotCMSContent";
+import { getAllIssues, getLatestIssue } from "@/utils/getDotCMSContent";
 import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
 import { IssueAccordion } from "@/components/IssueAccordion";
 
@@ -8,7 +8,8 @@ export default async function ArchivesPage({ searchParams }: PageProps) {
 	const sp = await searchParams;
 	const { siteId } = await getSiteConfig(sp);
 
-	const issues = await getAllIssues(siteId);
+	const latestIssue = await getLatestIssue(siteId);
+	const issues = await getAllIssues(siteId, latestIssue?.identifier);
 
 	return (
 		<>

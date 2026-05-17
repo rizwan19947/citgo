@@ -2,6 +2,7 @@
 
 import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
 import type { DotCMSComposedPageResponse, DotCMSPageResponse } from "@dotcms/types";
+import type { IssueContentlet } from "@/types/content-types";
 import { pageComponents } from "@/components/content-types";
 import { UVESiteDetector } from "@/components/UVESiteDetector";
 
@@ -17,9 +18,10 @@ interface PageProps {
 	pageContent: DotCMSComposedPageResponse<DotCMSPageResponse>;
 	serverHostname: string;
 	siteIdMap: Record<string, string>;
+	currentIssue?: IssueContentlet;
 }
 
-export function Page({ pageContent, serverHostname, siteIdMap }: PageProps) {
+export function Page({ pageContent, serverHostname, siteIdMap, currentIssue }: PageProps) {
 	const { pageAsset } = useEditableDotCMSPage(pageContent);
 
 	return (
