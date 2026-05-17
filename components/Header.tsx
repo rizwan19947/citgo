@@ -94,12 +94,12 @@ export default function Header({
 									</a>
 								)}
 								{item.children && issueOpen && (
-									<div className="absolute px-2 py-3 top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded min-w-[200px] z-50 py-1">
+									<div className="absolute px-2 py-3 top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded w-max z-50 py-1">
 										{item.children.map((child) => (
 											<a
 												key={child.label}
 												href={child.href}
-												className="block px-4 py-2 text-sm hover:bg-gray-100"
+												className="block px-4 py-2 text-sm hover:bg-gray-100 w-full"
 											>
 												{child.label}
 											</a>
