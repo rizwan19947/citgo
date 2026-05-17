@@ -15,9 +15,9 @@ const CITGO_SITES = [
 ];
 
 const LEGAL_LINKS = [
-	{ label: "Privacy Policy", href: "#" },
-	{ label: "Site Accessibility", href: "#" },
-	{ label: "Terms & Conditions", href: "#" },
+	{ label: "Privacy Policy", href: "https://www.citgoprivacy.com/" },
+	{ label: "Site Accessibility", href: "https://www.citgo.com/site-accessibility/" },
+	{ label: "Terms & Conditions", href: "https://www.citgoprivacy.com/CITGOTermsConditions.html" },
 ];
 
 interface FooterProps {
@@ -137,9 +137,13 @@ export default function Footer({ contentlet }: FooterProps) {
 					<ul className="flex flex-col lg:flex-row gap-3 lg:gap-6 text-sm">
 						{LEGAL_LINKS.map((link) => (
 							<li key={link.label}>
-								<a href={link.href} className="hover:text-gray-900">
+								<Link
+									target={"_blank"}
+									href={link.href}
+									className="hover:text-gray-900"
+								>
 									{link.label}
-								</a>
+								</Link>
 							</li>
 						))}
 					</ul>
