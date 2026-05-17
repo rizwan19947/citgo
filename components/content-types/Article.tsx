@@ -40,24 +40,25 @@ export default function Article(props: ArticleProps) {
 
 	return (
 		<>
-			<DefaultHeroBanner title={title} volumeTitle={issue?.title} />
+			<DefaultHeroBanner
+				title={title}
+				volumeTitle={issue?.title}
+				titleSlot={
+					isEditable ? (
+						<DotCMSEditableText
+							contentlet={contentlet}
+							fieldName="title"
+							mode="plain"
+						/>
+					) : undefined
+				}
+			/>
 			<div
 				data-component="Article"
 				className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 mx-auto max-w-6xl py-10"
 			>
 				<article>
 					<div className="mt-6">
-						<h1 className="text-3xl font-bold md:text-4xl">
-							{isEditable ? (
-								<DotCMSEditableText
-									contentlet={contentlet}
-									fieldName="title"
-									mode="plain"
-								/>
-							) : (
-								title
-							)}
-						</h1>
 						{teaser && (
 							<p className="mt-3 text-lg text-gray-600">
 								{isEditable ? (
@@ -74,7 +75,7 @@ export default function Article(props: ArticleProps) {
 					</div>
 					{content && (
 						<div
-							className="prose prose-lg mt-6 max-w-none"
+							className={`prose prose-lg mt-6 max-w-none${isEditable ? " hover:bg-blue-50 transition-colors rounded p-2 -m-2 cursor-pointer" : ""}`}
 							{...(isEditable
 								? {
 										"data-block-editor-content": JSON.stringify(content),

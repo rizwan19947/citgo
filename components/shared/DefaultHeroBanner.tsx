@@ -6,6 +6,7 @@
 interface HeroBannerProps {
 	title: string;
 	volumeTitle?: string;
+	titleSlot?: React.ReactNode;
 }
 
 export function TriangleBackground() {
@@ -29,7 +30,11 @@ export function TriangleBackground() {
 	);
 }
 
-export function DefaultHeroBanner({ title, volumeTitle }: HeroBannerProps) {
+export function DefaultHeroBanner({
+	title,
+	volumeTitle,
+	titleSlot,
+}: HeroBannerProps) {
 	return (
 		<div className="relative w-screen py-16 md:py-20 px-8">
 			<TriangleBackground />
@@ -40,7 +45,9 @@ export function DefaultHeroBanner({ title, volumeTitle }: HeroBannerProps) {
 			</div>
 			<br />
 			<div className="relative z-10 flex items-center justify-center">
-				<h1 className="text-4xl font-bold text-center text-white md:text-5xl">{title}</h1>
+				<h1 className="text-4xl font-bold text-center text-white md:text-5xl">
+					{titleSlot ?? title}
+				</h1>
 			</div>
 		</div>
 	);
