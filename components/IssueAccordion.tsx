@@ -1,12 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion";
 import type { IssueContentlet } from "@/types/content-types";
 
 interface IssueAccordionProps {
@@ -22,7 +17,7 @@ export function IssueAccordion({ issues }: IssueAccordionProps) {
 					value={issue.title ?? issue.identifier}
 					className="font-bold capitalize"
 				>
-					<AccordionTrigger className="text-gray-600 font-bold text-2xl uppercase no-underline py-5">
+					<AccordionTrigger className="text-gray-600 font-bold text-2xl uppercase no-underline py-5 px-5">
 						{issue.title}
 					</AccordionTrigger>
 					<AccordionContent>
