@@ -19,10 +19,6 @@ const NAV_ITEMS: { label: string; href: string; children?: { label: string; href
 		],
 	},
 	{
-		label: "specific article",
-		href: "/july-sept-2025/unlocking-more-savings-with-premier-status", //TODO to test in deployed env - remove later
-	},
-	{
 		label: "ARCHIVES",
 		href: "/archives",
 	},
