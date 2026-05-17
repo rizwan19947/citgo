@@ -1,6 +1,6 @@
 import { Geist, Inter } from "next/font/google";
 import { getSiteConfig } from "@/utils/site-config";
-import { getLatestIssue } from "@/utils/getDotCMSContent";
+import { getFooterContent, getLatestIssue } from "@/utils/getDotCMSContent";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import "./globals.css";
@@ -17,14 +17,17 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	const { assetSlug, siteId } = await getSiteConfig();
-	const currentIssue = await getLatestIssue(siteId);
+	const [currentIssue, footerContentlet] = await Promise.all([
+		await getLatestIssue(siteId),
+		await getFooterContent(siteId),
+	]);
 
 	return (
 		<html lang="en" className={cn("font-sans", geist.variable)}>
 			<body className={inter.className}>
 				<Header assetSlug={assetSlug} currentIssue={currentIssue} />
 				<main>{children}</main>
-				<Footer assetSlug={assetSlug} />
+				<Footer contentlet={footerContentlet} />
 			</body>
 		</html>
 	);

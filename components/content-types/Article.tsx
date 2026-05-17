@@ -29,7 +29,7 @@ function getContentlet(props: ArticleProps): ArticleContentlet {
 
 export default function Article(props: ArticleProps) {
 	const contentlet = getContentlet(props);
-	const { title, teaser, image, mobileImage, content, tags } = contentlet;
+	const { title, image, mobileImage, content, tags } = contentlet;
 	const tagList = Array.isArray(tags) ? tags : tags ? [tags] : [];
 	const displayImage = resolveImage(image);
 	const resolvedMobileImage = resolveImage(mobileImage);
@@ -58,24 +58,9 @@ export default function Article(props: ArticleProps) {
 				className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 mx-auto max-w-6xl py-10"
 			>
 				<article>
-					<div className="mt-6">
-						{teaser && (
-							<p className="mt-3 text-lg text-gray-600">
-								{isEditable ? (
-									<DotCMSEditableText
-										contentlet={contentlet}
-										fieldName="teaser"
-										mode="minimal"
-									/>
-								) : (
-									teaser
-								)}
-							</p>
-						)}
-					</div>
 					{content && (
 						<div
-							className="prose prose-lg mt-6 max-w-none"
+							className="prose mt-6 max-w-none"
 							{...(isEditable
 								? {
 										"data-block-editor-content": JSON.stringify(content),

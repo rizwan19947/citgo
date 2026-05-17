@@ -1,6 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
+import type { FooterContentContentlet } from "@/types/content-types";
+import { DotCMSBlockEditorRenderer } from "@dotcms/react";
+import Link from "next/link";
 
 const CITGO_SITES = [
 	{ label: "CITGO", href: "https://www.citgo.com/" },
@@ -9,23 +12,28 @@ const CITGO_SITES = [
 	{ label: "MarketNet", href: "https://www.citgomarketnet.com/" },
 	{ label: "MyCITGOStore", href: "https://www.mycitgostore.com/" },
 	{ label: "Mystik Lubricants", href: "https://www.mystiklubes.com/" },
-]
+];
 
 const LEGAL_LINKS = [
 	{ label: "Privacy Policy", href: "#" },
 	{ label: "Site Accessibility", href: "#" },
 	{ label: "Terms & Conditions", href: "#" },
-]
+];
 
-export default function Footer({ assetSlug }: { assetSlug: string }) {
-	const [sitesOpen, setSitesOpen] = useState(false)
+interface FooterProps {
+	contentlet?: FooterContentContentlet;
+}
+
+export default function Footer({ contentlet }: FooterProps) {
+	const [sitesOpen, setSitesOpen] = useState(false);
+	const { title, content, showNewsletterLinks } = contentlet ?? {};
 
 	return (
-		<footer className="bg-white border-t border-gray-200 text-gray-700">
-			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 lg:py-12">
+		<footer className="bg-white text-gray-700">
+			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-6 py-10 lg:py-12 border-t border-gray-200">
 				{/* Top row */}
 				<div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
-					<div className="flex flex-col lg:flex-row gap-6 lg:gap-10 lg:flex-1">
+					<div className="flex flex-col lg:flex-row gap-6 lg:gap-6 lg:flex-1">
 						{/* Logo placeholder */}
 						<div className="shrink-0">
 							<img
@@ -35,22 +43,54 @@ export default function Footer({ assetSlug }: { assetSlug: string }) {
 							/>
 						</div>
 
-						<div className="max-w-2xl">
-							<h2 className="text-[#C8102E] font-bold text-base mb-3">
-								CITGO Retail Connections
-							</h2>
-							<p className="text-sm leading-relaxed mb-4">
-								CITGO Retail Connections is a quarterly digital newsletter intended
-								to inform, engage and fuel the success of CITGO gas station
-								Retailers. The publication features a wide variety of timely topics
-								from operational, initiative, and program updates to resources,
-								meetings and education opportunities.
-							</p>
-							<p className="text-sm leading-relaxed">
-								This publication is designed and produced by the CITGO Corporate
-								Communications Department together with CITGO Brand Equity.
-							</p>
+						<div className="max-w-lg">
+							<h2 className="text-[#C8102E] font-bold text-base mb-3">{title}</h2>
+							{content && (
+								<div
+									className="prose prose-sm mt-6 max-w-none"
+									{...{
+										"data-block-editor-content": JSON.stringify(content),
+										"data-inode": contentlet?.inode,
+										"data-language": String(contentlet?.languageId ?? 1),
+										"data-content-type": contentlet?.contentType,
+										"data-field-name": "content",
+									}}
+								>
+									<DotCMSBlockEditorRenderer blocks={content} />
+								</div>
+							)}
 						</div>
+						{showNewsletterLinks && (
+							<div className="max-w-2xl">
+								<h2 className="text-[#C8102E] font-bold text-base mb-3">
+									CITGO Newsletters
+								</h2>
+								<div className={"my-4"}>
+									<Link
+										className={"text-sm hover:underline"}
+										href={"https://www.citgonow.com"}
+									>
+										CITGO Now
+									</Link>
+								</div>
+								<div className={"my-4"}>
+									<Link
+										className={"text-sm hover:underline"}
+										href={"https://www.citgonowlubes.com/"}
+									>
+										CITGO Now Lubes
+									</Link>
+								</div>
+								<div className={"my-4"}>
+									<Link
+										className={"text-sm hover:underline"}
+										href={"https://www.citgoretailconnections.com/"}
+									>
+										CITGO Retail Connections
+									</Link>
+								</div>
+							</div>
+						)}
 					</div>
 
 					{/* Sites Dropdown */}
@@ -110,5 +150,5 @@ export default function Footer({ assetSlug }: { assetSlug: string }) {
 				</div>
 			</div>
 		</footer>
-	)
+	);
 }

@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createClient } from "./dotCMSClient";
-import { ArticleFields, IssueFields } from "@/types/content-types";
+import { ArticleFields, FooterContentFields, IssueFields } from "@/types/content-types";
 import type { Contentlet } from "@dotcms/types";
 
 /*
@@ -94,6 +94,23 @@ export const getAllIssues = cache(async (siteId: string, excludeIdentifier?: str
 		return response.total > 0 ? response.contentlets : undefined;
 	} catch (e) {
 		console.error("ERROR FETCHING ISSUES:", (e as Error).message);
+		return undefined;
+	}
+});
+
+export const getFooterContent = cache(async (siteId: string) => {
+	try {
+		const client = createClient(siteId);
+		const response = await client.content
+			.getCollection<Contentlet<FooterContentFields>>("FooterContent")
+			.limit(1)
+			.query(`+live:true`)
+			.depth(1)
+			.language(1);
+
+		return response.contentlets[0] ?? undefined;
+	} catch (e) {
+		console.error("ERROR FETCHING FOOTER CONTENT:", (e as Error).message);
 		return undefined;
 	}
 });
