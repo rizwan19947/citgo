@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@plugin "@tailwindcss/typography";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -138,6 +140,12 @@
     transition: background-color 0.15s ease;
 }
 
+/* Block editor — preserve empty paragraphs as spacers */
+.prose p:empty,
+.prose p:has(> br:only-child) {
+    min-height: 1.5em;
+}
+
 /* Block editor table styles */
 .prose table {
     width: 100%;
@@ -147,8 +155,9 @@
 .prose th,
 .prose td {
     border: 1px solid #d1d5db;
-    padding: 0.5rem 0.75rem;
+    padding: 0.75rem;
     text-align: center;
+    vertical-align: middle;
 }
 
 .prose th {
@@ -156,6 +165,12 @@
     font-weight: 600;
 }
 
+.prose td p:empty,
+.prose th p:empty {
+    min-height: 0.5em;
+}
+
 .prose tr:nth-child(even) {
     background-color: #f9fafb;
 }
+
