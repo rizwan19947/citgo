@@ -5,6 +5,7 @@
 
 interface HeroBannerProps {
 	title: string;
+	volumeTitle?: string;
 }
 
 export function TriangleBackground() {
@@ -28,12 +29,17 @@ export function TriangleBackground() {
 	);
 }
 
-export function DefaultHeroBanner({ title }: HeroBannerProps) {
+export function DefaultHeroBanner({ title, volumeTitle }: HeroBannerProps) {
 	return (
-		<div className="relative w-screen py-16 md:py-20">
+		<div className="relative w-screen py-16 md:py-20 px-8">
 			<TriangleBackground />
 			<div className="relative z-10 flex items-center justify-center">
-				<h1 className="text-4xl font-bold text-white md:text-5xl">{title}</h1>
+				<h1 className="text-base font-bold text-center text-white uppercase">
+					{volumeTitle}
+				</h1>
+			</div>
+			<div className="relative z-10 flex items-center justify-center">
+				<h1 className="text-4xl font-bold text-center text-white md:text-5xl">{title}</h1>
 			</div>
 		</div>
 	);
