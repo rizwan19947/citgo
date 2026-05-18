@@ -4,6 +4,7 @@ import { getIssueBySlug, getLatestIssue } from "@/utils/getDotCMSContent";
 import { getSiteConfig, getSiteIdToHostnameMap } from "@/utils/site-config";
 import { Page } from "@/views/Page";
 import { DetailPage } from "@/views/DetailPage";
+import { HomePage } from "@/components/HomePage";
 import { PageProps } from "@/types/page";
 
 /*
@@ -36,6 +37,10 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 
 	if (!pageContent) {
 		return notFound();
+	}
+
+	if (path === "/" && currentIssue) {
+		return <HomePage currentIssue={currentIssue} />;
 	}
 
 	if (

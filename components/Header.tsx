@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import ImageLoader from "@/utils/imageLoader";
+
 import type { ArticleContentlet, IssueContentlet } from "@/types/content-types";
 import { handleSearch, searchArticles } from "@/utils/searchArticles";
 
@@ -99,7 +99,7 @@ export default function Header({
 						{thumb ? (
 							<Image
 								src={`/dA/${thumb}`}
-								loader={ImageLoader}
+								
 								alt={result.title || ""}
 								width={100}
 								height={65}

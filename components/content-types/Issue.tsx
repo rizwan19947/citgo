@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import ImageLoader from "@/utils/imageLoader";
+
 import type { IssueContentlet } from "@/types/content-types";
 
 export default function Issue({ title, slug, publishDate, image, articles }: IssueContentlet) {
@@ -17,7 +17,7 @@ export default function Issue({ title, slug, publishDate, image, articles }: Iss
 			{image && (
 				<Image
 					src={`/dA/${image}`}
-					loader={ImageLoader}
+
 					alt={title || ""}
 					width={0}
 					height={0}

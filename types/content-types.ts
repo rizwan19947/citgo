@@ -5,8 +5,8 @@ export interface BannerFields {
 	image?: string;
 	mobileImage?: string;
 	detail?: string;
-	articleSlug?: string;
-	issue?: IssueContentlet[];
+	issue?: IssueContentlet;
+	article?: ArticleContentlet;
 }
 
 export interface FooterContentFields {
@@ -22,6 +22,7 @@ export interface IssueFields {
 	expireDate?: string;
 	image?: string;
 	articles?: ArticleContentlet[];
+	banner?: BannerContentlet;
 }
 
 export interface ArticleFields {
@@ -33,6 +34,7 @@ export interface ArticleFields {
 	mobileImage?: string;
 	content?: BlockEditorNode;
 	tags?: string | string[];
+	featuredArticle?: boolean;
 }
 
 export type BannerContentlet = Contentlet<BannerFields>;

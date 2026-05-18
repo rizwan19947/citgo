@@ -1,19 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import ImageLoader from "@/utils/imageLoader";
+
+import { resolveImage } from "@/utils/resolveImage";
 import { DotCMSBlockEditorRenderer, DotCMSEditableText } from "@dotcms/react";
 import type { ArticleContentlet, IssueContentlet } from "@/types/content-types";
 import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
-
-function resolveImage(field: unknown): string | undefined {
-	if (typeof field === "string" && field.length > 0) return field;
-	if (field && typeof field === "object") {
-		const obj = field as Record<string, unknown>;
-		if ("idPath" in obj && typeof obj.idPath === "string") return obj.idPath;
-		if ("identifier" in obj && typeof obj.identifier === "string") return obj.identifier;
-	}
-	return undefined;
-}
 
 /*
  * Article detail component.
@@ -103,7 +94,7 @@ export default function Article(props: ArticleProps) {
 											{thumb ? (
 												<Image
 													src={`/dA/${thumb}`}
-													loader={ImageLoader}
+													
 													alt={article.title || ""}
 													width={100}
 													height={65}

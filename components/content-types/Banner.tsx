@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import ImageLoader from "@/utils/imageLoader";
+
 import type { BannerContentlet } from "@/types/content-types";
 
 import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
@@ -10,13 +10,13 @@ export default function Banner({
 	image,
 	mobileImage,
 	detail,
-	articleSlug,
 	issue,
+	article,
 }: BannerContentlet) {
 	const relatedIssue = Array.isArray(issue) ? issue[0] : issue;
 	const issueSlug = relatedIssue?.slug;
 	const href =
-		issueSlug && articleSlug ? `/issue/${issueSlug}/article/${articleSlug}` : undefined;
+		issueSlug && article?.slug ? `/issue/${issueSlug}/article/${article?.slug}` : undefined;
 	const hasImage = typeof image === "string" && image.length > 0;
 	const hasMobileImage = typeof mobileImage === "string" && mobileImage.length > 0;
 
@@ -25,7 +25,6 @@ export default function Banner({
 			{hasImage ? (
 				<Image
 					src={`/dA/${image}`}
-					loader={ImageLoader}
 					alt={title || ""}
 					width={0}
 					height={0}
@@ -39,7 +38,6 @@ export default function Banner({
 			{hasMobileImage && (
 				<Image
 					src={`/dA/${mobileImage}`}
-					loader={ImageLoader}
 					alt={title || ""}
 					width={0}
 					height={0}
