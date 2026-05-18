@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { ArticleContentlet, IssueContentlet } from "@/types/content-types";
-import { searchArticles } from "@/utils/searchArticles";
+import { handleSearch, searchArticles } from "@/utils/searchArticles";
 
 interface NavItem {
 	label: string;
@@ -73,10 +73,6 @@ export default function Header({
 				setSearchOpen(false);
 			}
 		}, 300);
-	};
-
-	const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
 	};
 
 	const searchDropdown = searchOpen && searchResults.length > 0 && (
@@ -170,25 +166,28 @@ export default function Header({
 									onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
 									className="bg-white text-gray-900 placeholder-gray-500 rounded px-4 py-2.5 pr-10 w-72 text-sm focus:outline-none focus:ring-2 focus:ring-white/60"
 								/>
-								<button
-									type="submit"
-									aria-label="Submit search"
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]"
-								>
-									<svg
-										className="w-4 h-4"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										strokeWidth={2.5}
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
-										/>
-									</svg>
-								</button>
+								<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]">
+									{loading ? (
+										<svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+											<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+											<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+										</svg>
+									) : searchQuery ? (
+										<button
+											type="button"
+											aria-label="Clear search"
+											onClick={() => { setSearchQuery(""); setSearchResults([]); setSearchOpen(false); }}
+										>
+											<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+											</svg>
+										</button>
+									) : (
+										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+											<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z" />
+										</svg>
+									)}
+								</span>
 							</form>
 							{searchDropdown}
 						</div>
@@ -265,25 +264,28 @@ export default function Header({
 										onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
 										className="bg-white text-gray-900 placeholder-gray-500 rounded px-4 py-2.5 pr-10 w-full text-sm focus:outline-none"
 									/>
-									<button
-										type="submit"
-										aria-label="Submit search"
-										className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]"
-									>
-										<svg
-											className="w-4 h-4"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-											strokeWidth={2.5}
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
-											/>
-										</svg>
-									</button>
+									<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]">
+										{loading ? (
+											<svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+												<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+												<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+											</svg>
+										) : searchQuery ? (
+											<button
+												type="button"
+												aria-label="Clear search"
+												onClick={() => { setSearchQuery(""); setSearchResults([]); setSearchOpen(false); }}
+											>
+												<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+													<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+												</svg>
+											</button>
+										) : (
+											<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z" />
+											</svg>
+										)}
+									</span>
 								</form>
 								{searchDropdown}
 							</div>
