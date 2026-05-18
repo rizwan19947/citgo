@@ -69,7 +69,6 @@ export default function Header({
 				setLoading(false);
 				setSearchResults(results);
 				setSearchOpen(results.length > 0);
-				console.warn(results);
 			} catch {
 				setLoading(false);
 				setSearchResults([]);
@@ -99,7 +98,6 @@ export default function Header({
 						{thumb ? (
 							<Image
 								src={`/dA/${thumb}`}
-								
 								alt={result.title || ""}
 								width={100}
 								height={65}

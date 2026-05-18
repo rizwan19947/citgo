@@ -22,7 +22,6 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTitle: string }) {
 	const bgImage = resolveImage(banner.image);
 	const article = Array.isArray(banner.article) ? banner.article[0] : banner.article;
-	console.warn("article", banner.article);
 	if (!article) return null;
 
 	return (
@@ -144,7 +143,6 @@ function AlsoInThisIssueCard({
 }
 
 export function HomePage({ currentIssue }: HomePageProps) {
-	console.warn(currentIssue);
 	const banner = Array.isArray(currentIssue.banner)
 		? currentIssue.banner[0]
 		: currentIssue.banner;
