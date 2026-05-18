@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import type { IssueContentlet } from "@/types/content-types";
+import type { ArticleContentlet, IssueContentlet } from "@/types/content-types";
+import { searchArticles } from "@/utils/searchArticles";
 
 interface NavItem {
 	label: string;
@@ -14,12 +15,14 @@ interface HeaderProps {
 	assetSlug: string;
 	logoAlt?: string;
 	currentIssue?: IssueContentlet;
+	siteId?: string;
 }
 
 export default function Header({
 	assetSlug,
 	logoAlt = "CITGO Retail Connections",
 	currentIssue,
+	siteId,
 }: HeaderProps) {
 	const navItems: NavItem[] = useMemo(() => {
 		const issueChildren = (currentIssue?.articles ?? []).map((article) => ({
@@ -41,14 +44,59 @@ export default function Header({
 	}, [currentIssue]);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [issueOpen, setIssueOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState<ArticleContentlet[]>([]);
+	const [searchOpen, setSearchOpen] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const handleSearchInput = (value: string) => {
+		setSearchQuery(value);
+		if (debounceRef.current) clearTimeout(debounceRef.current);
+
+		if (!value.trim() || !siteId) {
+			setSearchResults([]);
+			setSearchOpen(false);
+			return;
+		}
+
+		debounceRef.current = setTimeout(async () => {
+			try {
+				setLoading(true);
+				const results = await searchArticles(value.trim(), siteId);
+				setLoading(false);
+				setSearchResults(results);
+				setSearchOpen(results.length > 0);
+			} catch {
+				setLoading(false);
+				setSearchResults([]);
+				setSearchOpen(false);
+			}
+		}, 300);
+	};
 
 	const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
-		const q = formData.get("q");
-		// placeholder: route to /search?q=... when search page exists
-		console.log("search:", q);
 	};
+
+	const searchDropdown = searchOpen && searchResults.length > 0 && (
+		<div className="absolute top-full right-0 mt-2 bg-white text-gray-900 shadow-lg rounded w-80 z-50 max-h-96 overflow-y-auto">
+			{searchResults.map((result) => (
+				<Link
+					key={result.identifier}
+					href={`/${result.issueSlug}/${result.slug}`}
+					className="block px-4 py-3 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-0"
+					onClick={() => {
+						setSearchOpen(false);
+						setSearchQuery("");
+						setSearchResults([]);
+					}}
+				>
+					{result.title}
+				</Link>
+			))}
+		</div>
+	);
 
 	return (
 		<header className="bg-[#C8102E] text-white">
@@ -86,23 +134,23 @@ export default function Header({
 										</svg>
 									</button>
 								) : (
-									<a
+									<Link
 										href={item.href}
 										className="text-sm font-bold tracking-widest hover:opacity-80"
 									>
 										{item.label}
-									</a>
+									</Link>
 								)}
 								{item.children && issueOpen && (
 									<div className="absolute px-2 py-3 top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded w-max z-50 py-1">
 										{item.children.map((child) => (
-											<a
+											<Link
 												key={child.label}
 												href={child.href}
 												className="block px-4 py-2 text-sm hover:bg-gray-100 w-full"
 											>
 												{child.label}
-											</a>
+											</Link>
 										))}
 									</div>
 								)}
@@ -110,33 +158,40 @@ export default function Header({
 						))}
 
 						{/* Search */}
-						<form onSubmit={handleSearch} className="relative">
-							<input
-								type="search"
-								name="q"
-								placeholder="Search"
-								className="bg-white text-gray-900 placeholder-gray-500 rounded px-4 py-2.5 pr-10 w-72 text-sm focus:outline-none focus:ring-2 focus:ring-white/60"
-							/>
-							<button
-								type="submit"
-								aria-label="Submit search"
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]"
-							>
-								<svg
-									className="w-4 h-4"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									strokeWidth={2.5}
+						<div className="relative">
+							<form onSubmit={handleSearch}>
+								<input
+									type="search"
+									name="q"
+									placeholder="Search"
+									value={searchQuery}
+									onChange={(e) => handleSearchInput(e.target.value)}
+									onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
+									onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
+									className="bg-white text-gray-900 placeholder-gray-500 rounded px-4 py-2.5 pr-10 w-72 text-sm focus:outline-none focus:ring-2 focus:ring-white/60"
+								/>
+								<button
+									type="submit"
+									aria-label="Submit search"
+									className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]"
 								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
-									/>
-								</svg>
-							</button>
-						</form>
+									<svg
+										className="w-4 h-4"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+										strokeWidth={2.5}
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
+										/>
+									</svg>
+								</button>
+							</form>
+							{searchDropdown}
+						</div>
 					</nav>
 
 					{/* Mobile Icons */}
@@ -188,41 +243,50 @@ export default function Header({
 					<div className="lg:hidden pb-6 pt-4 border-t border-white/20">
 						<nav className="flex flex-col gap-4">
 							{navItems.map((item) => (
-								<a
+								<Link
 									key={item.label}
 									href={item.href}
 									className="text-sm font-bold tracking-widest"
 								>
 									{item.label}
-								</a>
+								</Link>
 							))}
-							<form onSubmit={handleSearch} className="relative mt-2">
-								<input
-									type="search"
-									name="q"
-									placeholder="Search"
-									className="bg-white text-gray-900 placeholder-gray-500 rounded px-4 py-2.5 pr-10 w-full text-sm focus:outline-none"
-								/>
-								<button
-									type="submit"
-									aria-label="Submit search"
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]"
-								>
-									<svg
-										className="w-4 h-4"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										strokeWidth={2.5}
+							<div className="relative mt-2">
+								<form onSubmit={handleSearch}>
+									<input
+										type="search"
+										name="q"
+										placeholder="Search"
+										value={searchQuery}
+										onChange={(e) => handleSearchInput(e.target.value)}
+										onFocus={() =>
+											searchResults.length > 0 && setSearchOpen(true)
+										}
+										onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
+										className="bg-white text-gray-900 placeholder-gray-500 rounded px-4 py-2.5 pr-10 w-full text-sm focus:outline-none"
+									/>
+									<button
+										type="submit"
+										aria-label="Submit search"
+										className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]"
 									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
-										/>
-									</svg>
-								</button>
-							</form>
+										<svg
+											className="w-4 h-4"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+											strokeWidth={2.5}
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
+											/>
+										</svg>
+									</button>
+								</form>
+								{searchDropdown}
+							</div>
 						</nav>
 					</div>
 				)}

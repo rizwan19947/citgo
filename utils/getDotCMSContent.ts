@@ -114,3 +114,19 @@ export const getFooterContent = cache(async (siteId: string) => {
 		return undefined;
 	}
 });
+
+export const getArticlesByTitle = cache(async (siteId: string, title: string) => {
+	try {
+		const client = createClient(siteId);
+		const response = await client.content
+			.getCollection<Contentlet<ArticleFields>>("Article")
+			.query(`+Article.title:"${escapeLucene(title)}" +live:true`)
+			.depth(1)
+			.language(1);
+
+		return response.contentlets ?? undefined;
+	} catch (e) {
+		console.error("ERROR FETCHING ARTICLES:", (e as Error).message);
+		return undefined;
+	}
+});

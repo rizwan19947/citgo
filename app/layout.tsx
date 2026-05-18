@@ -25,7 +25,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 	return (
 		<html lang="en" className={cn("font-sans", geist.variable)}>
 			<body className={inter.className}>
-				<Header assetSlug={assetSlug} currentIssue={currentIssue} />
+				<Header siteId={siteId} assetSlug={assetSlug} currentIssue={currentIssue} />
 				<main>{children}</main>
 				<Footer contentlet={footerContentlet} />
 			</body>
