@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEditableDotCMSPage } from "@dotcms/react";
+import { DotCMSEditableText, useEditableDotCMSPage } from "@dotcms/react";
 import type { DotCMSComposedPageResponse, DotCMSPageResponse } from "@dotcms/types";
 import { resolveImage } from "@/utils/resolveImage";
 import type { ArticleContentlet, BannerContentlet, IssueContentlet } from "@/types/content-types";
@@ -48,11 +48,11 @@ function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTit
 					{issueTitle}
 				</p>
 				<h1 className="text-3xl md:text-5xl font-bold text-white max-w-xl text-shadow-lg leading-tight mb-4">
-					{article.title}
+					<DotCMSEditableText contentlet={article} fieldName="title" mode="plain" />
 				</h1>
 				{article.teaser && (
 					<p className="text-white/90 max-w-md text-sm md:text-base text-shadow-lg mb-6">
-						{article.teaser}
+						<DotCMSEditableText contentlet={article} fieldName="teaser" mode="plain" />
 					</p>
 				)}
 				<Link
@@ -93,9 +93,13 @@ function FeaturedArticleCard({
 				<p className="text-xs font-bold text-[#C8102E] uppercase tracking-wide mb-1">
 					{issueTitle}
 				</p>
-				<h3 className="font-bold text-lg leading-snug mb-2">{article.title}</h3>
+				<h3 className="font-bold text-lg leading-snug mb-2">
+					<DotCMSEditableText contentlet={article} fieldName="title" mode="plain" />
+				</h3>
 				{article.teaser && (
-					<p className="text-sm text-gray-600 mb-4 flex-1">{article.teaser}</p>
+					<p className="text-sm text-gray-600 mb-4 flex-1">
+						<DotCMSEditableText contentlet={article} fieldName="teaser" mode="plain" />
+					</p>
 				)}
 				<Link
 					href={`/${article.issueSlug}/${article.slug}`}
@@ -135,7 +139,9 @@ function AlsoInThisIssueCard({
 				<p className="text-xs font-bold text-[#C8102E] uppercase tracking-wide mb-1">
 					{issueTitle}
 				</p>
-				<h3 className="font-bold text-base leading-snug mb-2">{article.title}</h3>
+				<h3 className="font-bold text-base leading-snug mb-2">
+					<DotCMSEditableText contentlet={article} fieldName="title" mode="plain" />
+				</h3>
 				<Link
 					href={`/${article.issueSlug}/${article.slug}`}
 					className="text-sm font-bold text-[#C8102E] uppercase hover:underline"
