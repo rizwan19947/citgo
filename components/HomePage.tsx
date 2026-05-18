@@ -23,7 +23,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTitle: string }) {
 	const bgImage = resolveImage(banner.image);
 	const article = Array.isArray(banner.article) ? banner.article[0] : banner.article;
-
+	console.warn("article", banner.article);
 	if (!article) return null;
 
 	return (
@@ -32,7 +32,7 @@ function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTit
 			style={bgImage ? { backgroundImage: `url(/dA/${bgImage})` } : undefined}
 		>
 			{!bgImage && <div className="absolute inset-0 bg-[#C8102E]" />}
-			<div className="absolute inset-0 bg-gradient-to-r from-[#C8102E]/90 via-[#C8102E]/60 to-transparent" />
+			<div className="absolute inset-0" />
 			<div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-12 md:py-16">
 				<p className="text-sm font-bold tracking-widest text-yellow-400 uppercase mb-3">
 					{issueTitle}
@@ -70,7 +70,6 @@ function FeaturedArticleCard({
 			{thumb ? (
 				<Image
 					src={`/dA/${thumb}`}
-					
 					alt={article.title || ""}
 					width={400}
 					height={250}
@@ -113,7 +112,6 @@ function AlsoInThisIssueCard({
 			{thumb ? (
 				<Image
 					src={`/dA/${thumb}`}
-					
 					alt={article.title || ""}
 					width={200}
 					height={150}
@@ -140,6 +138,7 @@ function AlsoInThisIssueCard({
 }
 
 export function HomePage({ currentIssue }: HomePageProps) {
+	console.warn(currentIssue);
 	const banner = Array.isArray(currentIssue.banner)
 		? currentIssue.banner[0]
 		: currentIssue.banner;

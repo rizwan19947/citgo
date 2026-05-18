@@ -71,7 +71,7 @@ export const getLatestIssue = cache(async (siteId: string) => {
 			.limit(1)
 			.sortBy([{ field: "Issue.publishDate", order: "desc" }])
 			.query("+live:true")
-			.depth(2)
+			.depth(3)
 			.language(1);
 
 		return response.contentlets[0] ?? undefined;
