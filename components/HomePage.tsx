@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-
 import { resolveImage } from "@/utils/resolveImage";
 import type { ArticleContentlet, BannerContentlet, IssueContentlet } from "@/types/content-types";
 
