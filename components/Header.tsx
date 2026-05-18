@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import ImageLoader from "@/utils/imageLoader";
 import type { ArticleContentlet, IssueContentlet } from "@/types/content-types";
 import { handleSearch, searchArticles } from "@/utils/searchArticles";
 
@@ -67,6 +69,7 @@ export default function Header({
 				setLoading(false);
 				setSearchResults(results);
 				setSearchOpen(results.length > 0);
+				console.warn(results);
 			} catch {
 				setLoading(false);
 				setSearchResults([]);
@@ -76,21 +79,49 @@ export default function Header({
 	};
 
 	const searchDropdown = searchOpen && searchResults.length > 0 && (
-		<div className="absolute top-full right-0 mt-2 bg-white text-gray-900 shadow-lg rounded w-80 z-50 max-h-96 overflow-y-auto">
-			{searchResults.map((result) => (
-				<Link
-					key={result.identifier}
-					href={`/${result.issueSlug}/${result.slug}`}
-					className="block px-4 py-3 text-sm hover:bg-gray-100 border-b border-gray-100 last:border-0"
-					onClick={() => {
-						setSearchOpen(false);
-						setSearchQuery("");
-						setSearchResults([]);
-					}}
-				>
-					{result.title}
-				</Link>
-			))}
+		<div className="absolute top-full right-0 mt-2 bg-white text-gray-900 shadow-lg rounded w-max z-50 max-h-96 overflow-y-auto">
+			{searchResults.map((result) => {
+				const thumb =
+					typeof result.image === "string" && result.image.length > 0
+						? result.image
+						: null;
+				return (
+					<Link
+						key={result.identifier}
+						href={`/${result.issueSlug}/${result.slug}`}
+						className="flex items-start gap-3 px-4 py-3 hover:bg-gray-100 border-b border-gray-100 last:border-0 no-underline"
+						onClick={() => {
+							setSearchOpen(false);
+							setSearchQuery("");
+							setSearchResults([]);
+						}}
+					>
+						{thumb ? (
+							<Image
+								src={`/dA/${thumb}`}
+								loader={ImageLoader}
+								alt={result.title || ""}
+								width={100}
+								height={65}
+								quality={75}
+								className="shrink-0 object-cover"
+							/>
+						) : (
+							<div className="shrink-0 w-[100px] h-[65px] bg-gray-200 rounded" />
+						)}
+						<div className="flex flex-col min-w-0 w-full max-w-[calc(100vw-11rem)] md:max-w-md">
+							<span className="text-blue-600 font-medium text-sm">
+								{result.title}
+							</span>
+							{result.teaser && (
+								<span className="text-gray-500 text-xs mt-1 line-clamp-2">
+									{result.teaser}
+								</span>
+							)}
+						</div>
+					</Link>
+				);
+			})}
 		</div>
 	);
 
@@ -138,7 +169,7 @@ export default function Header({
 									</Link>
 								)}
 								{item.children && issueOpen && (
-									<div className="absolute px-2 py-3 top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded w-max z-50 py-1">
+									<div className="absolute px-2 py-3 top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded z-50 py-1">
 										{item.children.map((child) => (
 											<Link
 												key={child.label}
@@ -168,23 +199,62 @@ export default function Header({
 								/>
 								<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]">
 									{loading ? (
-										<svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-											<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-											<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+										<svg
+											className="w-4 h-4 animate-spin"
+											viewBox="0 0 24 24"
+											fill="none"
+										>
+											<circle
+												className="opacity-25"
+												cx="12"
+												cy="12"
+												r="10"
+												stroke="currentColor"
+												strokeWidth="3"
+											/>
+											<path
+												className="opacity-75"
+												fill="currentColor"
+												d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+											/>
 										</svg>
 									) : searchQuery ? (
 										<button
 											type="button"
 											aria-label="Clear search"
-											onClick={() => { setSearchQuery(""); setSearchResults([]); setSearchOpen(false); }}
+											onClick={() => {
+												setSearchQuery("");
+												setSearchResults([]);
+												setSearchOpen(false);
+											}}
 										>
-											<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-												<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+											<svg
+												className="w-4 h-4"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												strokeWidth={2.5}
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M6 18L18 6M6 6l12 12"
+												/>
 											</svg>
 										</button>
 									) : (
-										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-											<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z" />
+										<svg
+											className="w-4 h-4"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+											strokeWidth={2.5}
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
+											/>
 										</svg>
 									)}
 								</span>
@@ -266,23 +336,62 @@ export default function Header({
 									/>
 									<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]">
 										{loading ? (
-											<svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-												<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-												<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+											<svg
+												className="w-4 h-4 animate-spin"
+												viewBox="0 0 24 24"
+												fill="none"
+											>
+												<circle
+													className="opacity-25"
+													cx="12"
+													cy="12"
+													r="10"
+													stroke="currentColor"
+													strokeWidth="3"
+												/>
+												<path
+													className="opacity-75"
+													fill="currentColor"
+													d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+												/>
 											</svg>
 										) : searchQuery ? (
 											<button
 												type="button"
 												aria-label="Clear search"
-												onClick={() => { setSearchQuery(""); setSearchResults([]); setSearchOpen(false); }}
+												onClick={() => {
+													setSearchQuery("");
+													setSearchResults([]);
+													setSearchOpen(false);
+												}}
 											>
-												<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-													<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+												<svg
+													className="w-4 h-4"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+													strokeWidth={2.5}
+												>
+													<path
+														strokeLinecap="round"
+														strokeLinejoin="round"
+														d="M6 18L18 6M6 6l12 12"
+													/>
 												</svg>
 											</button>
 										) : (
-											<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-												<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z" />
+											<svg
+												className="w-4 h-4"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												strokeWidth={2.5}
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
+												/>
 											</svg>
 										)}
 									</span>

@@ -23,15 +23,7 @@ export async function GET(request: NextRequest) {
 			.limit(10)
 			.language(1);
 
-		const results = (response.contentlets ?? []).map((article) => ({
-			title: article.title,
-			slug: article.slug,
-			issueSlug: article.issueSlug,
-			identifier: article.identifier,
-			image: article.image,
-		}));
-
-		return NextResponse.json({ results });
+		return NextResponse.json({ results: response.contentlets ?? [] });
 	} catch (e) {
 		console.error("SEARCH ERROR:", (e as Error).message);
 		return NextResponse.json({ results: [] });
