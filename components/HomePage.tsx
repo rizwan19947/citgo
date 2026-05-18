@@ -27,27 +27,34 @@ function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTit
 	if (!article) return null;
 
 	return (
-		<div
-			className="relative w-full min-h-[400px] md:min-h-[500px] flex items-center bg-cover bg-center"
-			style={bgImage ? { backgroundImage: `url(/dA/${bgImage})` } : undefined}
-		>
-			{!bgImage && <div className="absolute inset-0 bg-[#C8102E]" />}
+		<div className="relative w-full min-h-[400px] md:min-h-[500px] flex items-center">
+			{bgImage ? (
+				<Image
+					src={`/dA/${bgImage}`}
+					alt=""
+					fill
+					quality={75}
+					className="absolute inset-0 object-cover"
+				/>
+			) : (
+				<div className="absolute inset-0 bg-[#C8102E]" />
+			)}
 			<div className="absolute inset-0" />
-			<div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-12 md:py-16">
-				<p className="text-sm font-bold tracking-widest text-yellow-400 uppercase mb-3">
+			<div className="relative z-10 max-w-7xl mx-8 md:mx-32 lg:mx-72 px-6 md:px-12 py-12 md:py-16">
+				<p className="text-lg font-bold tracking-widest text-white text-shadow-lg uppercase mb-3">
 					{issueTitle}
 				</p>
-				<h1 className="text-3xl md:text-5xl font-bold text-white max-w-xl leading-tight mb-4">
+				<h1 className="text-3xl md:text-5xl font-bold text-white max-w-xl text-shadow-lg leading-tight mb-4">
 					{article.title}
 				</h1>
 				{article.teaser && (
-					<p className="text-white/90 max-w-md text-sm md:text-base mb-6">
+					<p className="text-white/90 max-w-md text-sm md:text-base text-shadow-lg mb-6">
 						{article.teaser}
 					</p>
 				)}
 				<Link
 					href={`/${article.issueSlug}/${article.slug}`}
-					className="inline-block border-2 border-white text-white font-bold text-sm uppercase tracking-widest px-6 py-3 hover:bg-white hover:text-[#C8102E] transition-colors"
+					className="inline-block shadow-lg border-2 border-white text-white font-bold text-shadow-lg text-sm uppercase tracking-widest px-6 py-3 hover:bg-white hover:text-[#C8102E] transition-colors"
 				>
 					Read Article
 				</Link>
