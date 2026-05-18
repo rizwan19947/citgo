@@ -40,7 +40,7 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 	}
 
 	if (path === "/" && currentIssue) {
-		return <HomePage currentIssue={currentIssue} />;
+		return <HomePage currentIssue={currentIssue} pageContent={pageContent} />;
 	}
 
 	if (

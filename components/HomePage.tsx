@@ -1,10 +1,15 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEditableDotCMSPage } from "@dotcms/react";
+import type { DotCMSComposedPageResponse, DotCMSPageResponse } from "@dotcms/types";
 import { resolveImage } from "@/utils/resolveImage";
 import type { ArticleContentlet, BannerContentlet, IssueContentlet } from "@/types/content-types";
 
 interface HomePageProps {
 	currentIssue: IssueContentlet;
+	pageContent: DotCMSComposedPageResponse<DotCMSPageResponse>;
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -142,7 +147,8 @@ function AlsoInThisIssueCard({
 	);
 }
 
-export function HomePage({ currentIssue }: HomePageProps) {
+export function HomePage({ currentIssue, pageContent }: HomePageProps) {
+	useEditableDotCMSPage(pageContent);
 	const banner = Array.isArray(currentIssue.banner)
 		? currentIssue.banner[0]
 		: currentIssue.banner;
