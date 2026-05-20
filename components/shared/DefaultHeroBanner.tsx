@@ -11,7 +11,7 @@ interface HeroBannerProps {
 
 export function TriangleBackground() {
 	return (
-		<div className="absolute inset-0 overflow-hidden bg-[#C8102E] w-screen">
+		<div className="absolute inset-0 overflow-hidden bg-[#ae222f] w-screen">
 			<svg
 				className="absolute inset-0 h-full w-full"
 				viewBox="0 0 1440 375"

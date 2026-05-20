@@ -124,7 +124,7 @@ export default function Header({
 	);
 
 	return (
-		<header className="bg-[#C8102E] text-white">
+		<header className="bg-[#ae222f] text-white">
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-20 lg:h-28">
 					{/* Logo */}
@@ -195,7 +195,7 @@ export default function Header({
 									onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
 									className="bg-white text-gray-900 placeholder-gray-500 rounded px-4 py-2.5 pr-10 w-72 text-sm focus:outline-none focus:ring-2 focus:ring-white/60"
 								/>
-								<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]">
+								<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#ae222f]">
 									{loading ? (
 										<svg
 											className="w-4 h-4 animate-spin"
@@ -332,7 +332,7 @@ export default function Header({
 										onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
 										className="bg-white text-gray-900 placeholder-gray-500 rounded px-4 py-2.5 pr-10 w-full text-sm focus:outline-none"
 									/>
-									<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C8102E]">
+									<span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#ae222f]">
 										{loading ? (
 											<svg
 												className="w-4 h-4 animate-spin"
