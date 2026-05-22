@@ -37,11 +37,11 @@ function AccordionTrigger({ className, children, ...props }: AccordionPrimitive.
 				{children}
 				<ChevronDownIcon
 					data-slot="accordion-trigger-icon"
-					className="pointer-events-none shrink-0 size-5 text-[#ae222f] stroke-3 group-aria-expanded/accordion-trigger:hidden"
+					className="pointer-events-none shrink-0 size-5 text-[#b8292f] stroke-3 group-aria-expanded/accordion-trigger:hidden"
 				/>
 				<ChevronUpIcon
 					data-slot="accordion-trigger-icon"
-					className="pointer-events-none shrink-0 size-5 text-[#ae222f] stroke-3 hidden group-aria-expanded/accordion-trigger:inline"
+					className="pointer-events-none shrink-0 size-5 text-[#b8292f] stroke-3 hidden group-aria-expanded/accordion-trigger:inline"
 				/>
 			</AccordionPrimitive.Trigger>
 		</AccordionPrimitive.Header>
