@@ -41,7 +41,12 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
 	);
 }
 
-export function SearchResults({ initialQuery, siteId, hostname, currentIssueSlug }: SearchResultsProps) {
+export function SearchResults({
+	initialQuery,
+	siteId,
+	hostname,
+	currentIssueSlug,
+}: SearchResultsProps) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
@@ -214,7 +219,7 @@ export function SearchResults({ initialQuery, siteId, hostname, currentIssueSlug
 			{/* No results */}
 			{!loading && data && data.results.length === 0 && activeQuery.trim() && (
 				<div className="py-8 text-center text-gray-500">
-					No results found for &quot;{activeQuery}&quot;.
+					Sorry, nothing was found. Try searching again.
 				</div>
 			)}
 
