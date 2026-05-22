@@ -3,9 +3,10 @@
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import type { ArticleContentlet, IssueContentlet } from "@/types/content-types";
-import { handleSearch, searchArticles } from "@/utils/searchArticles";
+import { searchArticles } from "@/utils/searchArticles";
 
 interface NavItem {
 	label: string;
@@ -26,6 +27,7 @@ export default function Header({
 	currentIssue,
 	siteId,
 }: HeaderProps) {
+	const router = useRouter();
 	const navItems: NavItem[] = useMemo(() => {
 		const issueChildren = (currentIssue?.articles ?? []).map((article) => ({
 			label: article.title,
@@ -51,6 +53,14 @@ export default function Header({
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		if (searchQuery.trim()) {
+			setSearchOpen(false);
+			router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+		}
+	};
 
 	const handleSearchInput = (value: string) => {
 		setSearchQuery(value);
@@ -184,7 +194,7 @@ export default function Header({
 
 						{/* Search */}
 						<div className="relative">
-							<form onSubmit={handleSearch}>
+							<form onSubmit={handleSearchSubmit}>
 								<input
 									type="search"
 									name="q"
@@ -319,7 +329,7 @@ export default function Header({
 								</Link>
 							))}
 							<div className="relative mt-2">
-								<form onSubmit={handleSearch}>
+								<form onSubmit={handleSearchSubmit}>
 									<input
 										type="search"
 										name="q"
