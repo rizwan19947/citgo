@@ -3,7 +3,7 @@ import { createClient } from "@/utils/dotCMSClient";
 import type { ArticleFields } from "@/types/content-types";
 import type { Contentlet } from "@dotcms/types";
 
-const PAGE_SIZE = 2; //TODO change back to 10 later
+const PAGE_SIZE = 10;
 
 function escapeLucene(str: string): string {
 	return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
