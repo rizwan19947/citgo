@@ -44,7 +44,7 @@ export default function Footer({ contentlet }: FooterProps) {
 						</div>
 
 						<div className="max-w-lg">
-							<h2 className="text-[#b8292f] font-bold text-base mb-3">{title}</h2>
+							<h2 className="text-citgo-red font-bold text-base mb-3">{title}</h2>
 							{content && (
 								<div
 									className="prose prose-sm mt-6 max-w-none"
@@ -62,7 +62,7 @@ export default function Footer({ contentlet }: FooterProps) {
 						</div>
 						{showNewsletterLinks && (
 							<div className="max-w-2xl">
-								<h2 className="text-[#b8292f] font-bold text-base mb-3">
+								<h2 className="text-citgo-red font-bold text-base mb-3">
 									CITGO Newsletters
 								</h2>
 								<div className={"my-4"}>

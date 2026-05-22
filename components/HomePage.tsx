@@ -15,11 +15,11 @@ interface HomePageProps {
 function SectionHeading({ children }: { children: React.ReactNode }) {
 	return (
 		<div className="flex items-center gap-4 my-12">
-			<div className="flex-1 h-[2px] bg-[#b8292f]" />
+			<div className="flex-1 h-[2px] bg-citgo-red" />
 			<h2 className="text-2xl md:text-3xl font-bold text-center uppercase whitespace-nowrap">
 				{children}
 			</h2>
-			<div className="flex-1 h-[2px] bg-[#b8292f]" />
+			<div className="flex-1 h-[2px] bg-citgo-red" />
 		</div>
 	);
 }
@@ -40,7 +40,7 @@ function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTit
 					className="absolute inset-0 object-cover"
 				/>
 			) : (
-				<div className="absolute inset-0 bg-[#b8292f]" />
+				<div className="absolute inset-0 bg-citgo-red" />
 			)}
 			<div className="absolute inset-0" />
 			<div className="relative z-10 max-w-7xl mx-8 md:mx-32 lg:mx-72 px-6 md:px-12 py-12 md:py-16">
@@ -57,7 +57,7 @@ function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTit
 				)}
 				<Link
 					href={`/${article.issueSlug}/${article.slug}`}
-					className="inline-block shadow-lg border-2 border-white text-white font-bold text-shadow-lg text-sm uppercase tracking-widest px-6 py-3 hover:bg-white hover:text-[#b8292f] transition-colors"
+					className="inline-block shadow-lg border-2 border-white text-white font-bold text-shadow-lg text-sm uppercase tracking-widest px-6 py-3 hover:bg-white hover:text-citgo-red transition-colors"
 				>
 					Read Article
 				</Link>
@@ -90,7 +90,7 @@ function FeaturedArticleCard({
 				<div className="w-full h-52 bg-gray-200" />
 			)}
 			<div className="p-5 flex flex-col flex-1">
-				<p className="text-xs font-bold text-[#b8292f] uppercase tracking-wide mb-1">
+				<p className="text-xs font-bold text-citgo-red uppercase tracking-wide mb-1">
 					{issueTitle}
 				</p>
 				<h3 className="font-bold text-lg leading-snug mb-2">
@@ -103,7 +103,7 @@ function FeaturedArticleCard({
 				)}
 				<Link
 					href={`/${article.issueSlug}/${article.slug}`}
-					className="text-sm font-bold text-[#b8292f] uppercase hover:underline"
+					className="text-sm font-bold text-citgo-red uppercase hover:underline"
 				>
 					Read More &rsaquo;
 				</Link>
@@ -136,7 +136,7 @@ function AlsoInThisIssueCard({
 				<div className="w-40 md:w-48 shrink-0 bg-gray-200" />
 			)}
 			<div className="p-4 flex flex-col justify-center">
-				<p className="text-xs font-bold text-[#b8292f] uppercase tracking-wide mb-1">
+				<p className="text-xs font-bold text-citgo-red uppercase tracking-wide mb-1">
 					{issueTitle}
 				</p>
 				<h3 className="font-bold text-base leading-snug mb-2">
@@ -144,7 +144,7 @@ function AlsoInThisIssueCard({
 				</h3>
 				<Link
 					href={`/${article.issueSlug}/${article.slug}`}
-					className="text-sm font-bold text-[#b8292f] uppercase hover:underline"
+					className="text-sm font-bold text-citgo-red uppercase hover:underline"
 				>
 					Read More &rsaquo;
 				</Link>

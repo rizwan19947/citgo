@@ -127,7 +127,7 @@ export function SearchResults({
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
 						placeholder="Search articles..."
-						className="w-full border border-gray-300 rounded px-4 py-3 pr-12 text-base focus:outline-none focus:ring-2 focus:ring-[#b8292f]/40 focus:border-[#b8292f]"
+						className="w-full border border-gray-300 rounded px-4 py-3 pr-12 text-base focus:outline-none focus:ring-2 focus:ring-citgo-red/40 focus:border-citgo-red"
 					/>
 					<button
 						type="submit"
@@ -161,7 +161,7 @@ export function SearchResults({
 							name="filter"
 							checked={filter === "current"}
 							onChange={() => handleFilterChange("current")}
-							className="accent-[#b8292f]"
+							className="accent-citgo-red"
 						/>
 						Current Issue
 					</label>
@@ -171,7 +171,7 @@ export function SearchResults({
 							name="filter"
 							checked={filter === "archived"}
 							onChange={() => handleFilterChange("archived")}
-							className="accent-[#b8292f]"
+							className="accent-citgo-red"
 						/>
 						Archived Issues
 					</label>
