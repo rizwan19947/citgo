@@ -162,7 +162,11 @@ export default function Header({
 					{/* Desktop Nav */}
 					<nav className="hidden lg:flex items-center gap-10">
 						{navItems.map((item) => (
-							<div key={item.label} className="relative" ref={item.children ? issueDropdownRef : undefined}>
+							<div
+								key={item.label}
+								className="relative"
+								ref={item.children ? issueDropdownRef : undefined}
+							>
 								{item.children ? (
 									<button
 										onClick={() => setIssueOpen((v) => !v)}
@@ -190,11 +194,14 @@ export default function Header({
 									</Link>
 								)}
 								{item.children && (
-									<div className={`absolute px-2 py-3 top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded z-50 w-max overflow-hidden transition-all duration-200 ease-in-out origin-top ${
-										issueOpen
-											? "opacity-100 scale-y-100 max-h-[500px]"
-											: "opacity-0 scale-y-95 max-h-0 pointer-events-none"
-									}`}>
+									<div
+										className={`absolute px-2 py-3 top-full left-0 mt-5 bg-white text-gray-900 shadow-lg rounded z-50 w-max overflow-visible transition-all duration-200 ease-in-out origin-top ${
+											issueOpen
+												? "opacity-100 scale-y-100 max-h-[500px]"
+												: "opacity-0 scale-y-95 max-h-0 pointer-events-none"
+										}`}
+									>
+										<div className="absolute -top-2 left-6 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-white" />
 										{item.children.map((child) => (
 											<Link
 												key={child.label}
