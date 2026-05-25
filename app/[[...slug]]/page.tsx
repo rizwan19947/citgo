@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
-import { getIssueBySlug, getLatestIssue } from "@/utils/getDotCMSContent";
+import { getAllIssues, getIssueBySlug, getLatestIssue } from "@/utils/getDotCMSContent";
 import { getSiteConfig, getSiteIdToHostnameMap } from "@/utils/site-config";
 import { Page } from "@/views/Page";
 import { DetailPage } from "@/views/DetailPage";
@@ -48,9 +48,12 @@ export default async function CatchAllPage({ params, searchParams }: PageProps) 
 	) {
 		const contentMap = pageContent.pageAsset.urlContentMap as unknown as Record<string, unknown>;
 		const issueSlug = contentMap.issueSlug as string | undefined;
-		const issue = issueSlug ? await getIssueBySlug(siteId, issueSlug) : undefined;
+		const [issue, archivedIssues] = await Promise.all([
+			issueSlug ? getIssueBySlug(siteId, issueSlug) : undefined,
+			getAllIssues(siteId, currentIssue?.identifier),
+		]);
 
-		return <DetailPage pageContent={pageContent} issue={issue} />;
+		return <DetailPage pageContent={pageContent} issue={issue} archivedIssues={archivedIssues} />;
 	}
 
 	return (

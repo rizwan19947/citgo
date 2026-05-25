@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { resolveImage } from "@/utils/resolveImage";
 import { DotCMSBlockEditorRenderer, DotCMSEditableText } from "@dotcms/react";
+import { ArchivedIssueSelect } from "@/components/ArchivedIssueSelect";
 import type { ArticleContentlet, IssueContentlet } from "@/types/content-types";
 import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
 
@@ -12,7 +13,7 @@ import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
  * When a contentlet reference is available, text fields use DotCMSEditableText for UVE inline editing.
  */
 
-type ArticleProps = { contentlet: ArticleContentlet; issue?: IssueContentlet } | ArticleContentlet;
+type ArticleProps = { contentlet: ArticleContentlet; issue?: IssueContentlet; archivedIssues?: IssueContentlet[] } | ArticleContentlet;
 
 function getContentlet(props: ArticleProps): ArticleContentlet {
 	return "contentlet" in props ? props.contentlet : props;
@@ -26,6 +27,7 @@ export default function Article(props: ArticleProps) {
 	const resolvedMobileImage = resolveImage(mobileImage);
 	const isEditable = "contentlet" in props;
 	const issue = "contentlet" in props ? props.issue : undefined;
+	const archivedIssues = "contentlet" in props ? props.archivedIssues : undefined;
 
 	const siblingArticles = issue?.articles?.filter((a) => a.identifier !== contentlet.identifier);
 
@@ -112,6 +114,9 @@ export default function Article(props: ArticleProps) {
 								);
 							})}
 						</ul>
+					)}
+					{archivedIssues && archivedIssues.length > 0 && (
+						<ArchivedIssueSelect issues={archivedIssues} />
 					)}
 				</aside>
 			</div>

@@ -21,9 +21,10 @@ const detailComponents: Record<string, React.ComponentType<any>> = {
 interface DetailPageProps {
 	pageContent: DotCMSComposedPageResponse<DotCMSPageResponse>;
 	issue?: IssueContentlet;
+	archivedIssues?: IssueContentlet[];
 }
 
-export function DetailPage({ pageContent, issue }: DetailPageProps) {
+export function DetailPage({ pageContent, issue, archivedIssues }: DetailPageProps) {
 	const { pageAsset } = useEditableDotCMSPage(pageContent);
 	const contentMap = pageAsset.urlContentMap;
 
@@ -34,5 +35,5 @@ export function DetailPage({ pageContent, issue }: DetailPageProps) {
 		return null;
 	}
 
-	return <Component contentlet={contentMap} issue={issue} />;
+	return <Component contentlet={contentMap} issue={issue} archivedIssues={archivedIssues} />;
 }
