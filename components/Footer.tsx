@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FooterContentContentlet } from "@/types/content-types";
 import { DotCMSBlockEditorRenderer } from "@dotcms/react";
 import Link from "next/link";
+import Image from "next/image";
 
 const CITGO_SITES = [
 	{ label: "CITGO", href: "https://www.citgo.com/" },
@@ -30,71 +31,74 @@ export default function Footer({ contentlet }: FooterProps) {
 
 	return (
 		<footer className="bg-white text-gray-700">
-			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-6 py-10 lg:py-12 border-t border-gray-200">
-				{/* Top row */}
-				<div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
-					<div className="flex flex-col lg:flex-row gap-6 lg:gap-6 lg:flex-1">
-						{/* Logo placeholder */}
-						<div className="shrink-0">
-							<img
-								src={`/assets/global/logo.svg`}
-								alt="CITGO"
-								className="w-20 h-20"
-							/>
-						</div>
+			<div className="mx-auto max-w-[82rem] px-4 sm:px-6 lg:px-6 py-10 lg:py-12 border-t border-gray-200">
+				{/* Top row — 4-column grid: logo | content | newsletters | sites dropdown */}
+				<div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto_auto] gap-y-6 md:gap-x-12 md:gap-y-8 items-start">
+					{/* Logo */}
+					<div>
+						<Image
+							src="/assets/global/logo.svg"
+							alt="CITGO"
+							width={84}
+							height={84}
+							className="mr-16"
+						/>
+					</div>
 
-						<div className="max-w-lg">
-							<h2 className="text-citgo-red font-bold text-base mb-3">{title}</h2>
-							{content && (
-								<div
-									className="prose prose-sm mt-6 max-w-none"
-									{...{
-										"data-block-editor-content": JSON.stringify(content),
-										"data-inode": contentlet?.inode,
-										"data-language": String(contentlet?.languageId ?? 1),
-										"data-content-type": contentlet?.contentType,
-										"data-field-name": "content",
-									}}
-								>
-									<DotCMSBlockEditorRenderer blocks={content} />
-								</div>
-							)}
-						</div>
-						{showNewsletterLinks && (
-							<div className="max-w-2xl">
-								<h2 className="text-citgo-red font-bold text-base mb-3">
-									CITGO Newsletters
-								</h2>
-								<div className={"my-4"}>
-									<Link
-										className={"text-sm hover:underline"}
-										href={"https://www.citgonow.com"}
-									>
-										CITGO Now
-									</Link>
-								</div>
-								<div className={"my-4"}>
-									<Link
-										className={"text-sm hover:underline"}
-										href={"https://www.citgonowlubes.com/"}
-									>
-										CITGO Now Lubes
-									</Link>
-								</div>
-								<div className={"my-4"}>
-									<Link
-										className={"text-sm hover:underline"}
-										href={"https://www.citgoretailconnections.com/"}
-									>
-										CITGO Retail Connections
-									</Link>
-								</div>
+					{/* Content */}
+					<div className="md:max-w-lg">
+						<h2 className="text-citgo-red font-bold text-base mb-3">{title}</h2>
+						{content && (
+							<div
+								className="prose prose-sm max-w-none"
+								{...{
+									"data-block-editor-content": JSON.stringify(content),
+									"data-inode": contentlet?.inode,
+									"data-language": String(contentlet?.languageId ?? 1),
+									"data-content-type": contentlet?.contentType,
+									"data-field-name": "content",
+								}}
+							>
+								<DotCMSBlockEditorRenderer blocks={content} />
 							</div>
 						)}
 					</div>
 
+					{/* Newsletter links */}
+					{showNewsletterLinks && (
+						<div>
+							<h2 className="text-citgo-red font-bold text-base mb-3">
+								CITGO Newsletters
+							</h2>
+							<div className="my-2">
+								<Link
+									className="text-sm hover:underline"
+									href="https://www.citgonow.com"
+								>
+									CITGO Now
+								</Link>
+							</div>
+							<div className="my-2">
+								<Link
+									className="text-sm hover:underline"
+									href="https://www.citgonowlubes.com/"
+								>
+									CITGO Now Lubes
+								</Link>
+							</div>
+							<div className="my-2">
+								<Link
+									className="text-sm hover:underline"
+									href="https://www.citgoretailconnections.com/"
+								>
+									CITGO Retail Connections
+								</Link>
+							</div>
+						</div>
+					)}
+
 					{/* Sites Dropdown */}
-					<div className="lg:w-72 lg:shrink-0">
+					<div className="md:w-56">
 						<div className="relative">
 							<button
 								onClick={() => setSitesOpen((v) => !v)}
