@@ -47,7 +47,7 @@ export const getIssueBySlug = cache(async (siteId: string, issueSlug: string) =>
 			.getCollection<Contentlet<IssueFields>>("Issue")
 			.limit(1)
 			.query(`+Issue.slug:"${escapeLucene(issueSlug)}" +live:true`)
-			.depth(1)
+			.depth(3)
 			.language(1);
 
 		const issue = response.contentlets[0];

@@ -36,7 +36,7 @@ export function ArchivedIssueSelect({ issues }: ArchivedIssueSelectProps) {
 				>
 					<span className="text-gray-500">Select Past Issue</span>
 					<ChevronDownIcon
-						className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+						className={`w-4 h-4 text-citgo-red transition-transform duration-200 ${open ? "rotate-180" : ""}`}
 					/>
 				</button>
 				<div
