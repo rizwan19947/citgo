@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -53,6 +53,19 @@ export default function Header({
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const issueDropdownRef = useRef<HTMLDivElement>(null);
+
+	// Close "In This Issue" dropdown on outside click
+	useEffect(() => {
+		if (!issueOpen) return;
+		const handler = (e: MouseEvent) => {
+			if (issueDropdownRef.current && !issueDropdownRef.current.contains(e.target as Node)) {
+				setIssueOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, [issueOpen]);
 
 	const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -149,7 +162,7 @@ export default function Header({
 					{/* Desktop Nav */}
 					<nav className="hidden lg:flex items-center gap-10">
 						{navItems.map((item) => (
-							<div key={item.label} className="relative">
+							<div key={item.label} className="relative" ref={item.children ? issueDropdownRef : undefined}>
 								{item.children ? (
 									<button
 										onClick={() => setIssueOpen((v) => !v)}
@@ -157,7 +170,7 @@ export default function Header({
 									>
 										{item.label}
 										<svg
-											className={`w-3 h-3 transition-transform ${issueOpen ? "rotate-180" : ""}`}
+											className={`w-3 h-3 transition-transform duration-200 ${issueOpen ? "rotate-180" : ""}`}
 											fill="currentColor"
 											viewBox="0 0 20 20"
 										>
@@ -176,12 +189,17 @@ export default function Header({
 										{item.label}
 									</Link>
 								)}
-								{item.children && issueOpen && (
-									<div className="absolute px-2 py-3 top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded z-50 py-1 w-max">
+								{item.children && (
+									<div className={`absolute px-2 py-3 top-full left-0 mt-3 bg-white text-gray-900 shadow-lg rounded z-50 w-max overflow-hidden transition-all duration-200 ease-in-out origin-top ${
+										issueOpen
+											? "opacity-100 scale-y-100 max-h-[500px]"
+											: "opacity-0 scale-y-95 max-h-0 pointer-events-none"
+									}`}>
 										{item.children.map((child) => (
 											<Link
 												key={child.label}
 												href={child.href}
+												onClick={() => setIssueOpen(false)}
 												className="block px-4 py-2 text-sm hover:bg-gray-100 w-full"
 											>
 												{child.label}
