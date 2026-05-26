@@ -344,15 +344,54 @@ export default function Header({
 				{mobileOpen && (
 					<div className="lg:hidden pb-6 pt-4 border-t border-white/20">
 						<nav className="flex flex-col gap-4">
-							{navItems.map((item) => (
-								<Link
-									key={item.label}
-									href={item.href}
-									className="text-sm font-bold tracking-widest"
-								>
-									{item.label}
-								</Link>
-							))}
+							{navItems.map((item) =>
+								item.children ? (
+									<div key={item.label}>
+										<button
+											onClick={() => setIssueOpen((v) => !v)}
+											className="flex items-center gap-1.5 text-sm font-bold tracking-widest w-full"
+										>
+											{item.label}
+											<svg
+												className={`w-3 h-3 transition-transform duration-200 ${issueOpen ? "rotate-180" : ""}`}
+												fill="currentColor"
+												viewBox="0 0 20 20"
+											>
+												<path
+													fillRule="evenodd"
+													d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+													clipRule="evenodd"
+												/>
+											</svg>
+										</button>
+										<div
+											className={`overflow-hidden transition-all duration-200 ease-in-out ${
+												issueOpen ? "max-h-96 mt-3" : "max-h-0"
+											}`}
+										>
+											{item.children.map((child) => (
+												<Link
+													key={child.label}
+													href={child.href}
+													onClick={() => setMobileOpen(false)}
+													className="block py-2 pl-4 text-sm text-white/80 hover:text-white"
+												>
+													{child.label}
+												</Link>
+											))}
+										</div>
+									</div>
+								) : (
+									<Link
+										key={item.label}
+										href={item.href}
+										onClick={() => setMobileOpen(false)}
+										className="text-sm font-bold tracking-widest"
+									>
+										{item.label}
+									</Link>
+								),
+							)}
 							<div className="relative mt-2">
 								<form onSubmit={handleSearchSubmit}>
 									<input

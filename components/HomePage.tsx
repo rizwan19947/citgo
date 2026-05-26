@@ -167,7 +167,7 @@ export function HomePage({ currentIssue, pageContent }: HomePageProps) {
 		<>
 			{banner && <HeroBanner banner={banner} issueTitle={issueTitle} />}
 
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
 				{featured.length > 0 && (
 					<>
 						<SectionHeading>Featured Articles</SectionHeading>

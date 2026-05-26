@@ -202,7 +202,7 @@ export function SearchResults({
 							<Link
 								key={article.identifier}
 								href={articleUrl}
-								className="block py-6 hover:bg-gray-50 -mx-4 px-4 rounded"
+								className="block py-6 hover:bg-gray-50 -mx-4 rounded"
 							>
 								<h3 className="text-lg font-bold text-gray-900">
 									<HighlightedText text={article.title} query={activeQuery} />
