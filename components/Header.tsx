@@ -48,6 +48,7 @@ export default function Header({
 	}, [currentIssue]);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [issueOpen, setIssueOpen] = useState(false);
+	const [mobileIssueOpen, setMobileIssueOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<ArticleContentlet[]>([]);
 	const [searchOpen, setSearchOpen] = useState(false);
@@ -348,12 +349,12 @@ export default function Header({
 								item.children ? (
 									<div key={item.label}>
 										<button
-											onClick={() => setIssueOpen((v) => !v)}
+											onClick={() => setMobileIssueOpen((v) => !v)}
 											className="flex items-center gap-1.5 text-sm font-bold tracking-widest w-full"
 										>
 											{item.label}
 											<svg
-												className={`w-3 h-3 transition-transform duration-200 ${issueOpen ? "rotate-180" : ""}`}
+												className={`w-3 h-3 transition-transform duration-200 ${mobileIssueOpen ? "rotate-180" : ""}`}
 												fill="currentColor"
 												viewBox="0 0 20 20"
 											>
@@ -366,7 +367,7 @@ export default function Header({
 										</button>
 										<div
 											className={`overflow-hidden transition-all duration-200 ease-in-out ${
-												issueOpen ? "max-h-96 mt-3" : "max-h-0"
+												mobileIssueOpen ? "max-h-96 mt-3" : "max-h-0"
 											}`}
 										>
 											{item.children.map((child) => (
