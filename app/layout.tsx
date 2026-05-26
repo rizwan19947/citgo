@@ -4,6 +4,7 @@ import { getFooterContent, getLatestIssue } from "@/utils/getDotCMSContent";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { UVEBodyClass } from "@/components/UVEBodyClass";
+import { CookieBanner } from "@/components/CookieBanner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,7 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const inter = Inter({ subsets: ["latin"] });
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-	const { assetSlug, siteId } = await getSiteConfig();
+	const { assetSlug, siteId, hostname } = await getSiteConfig();
 	const [currentIssue, footerContentlet] = await Promise.all([
 		await getLatestIssue(siteId),
 		await getFooterContent(siteId),
@@ -30,6 +31,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 				<Header siteId={siteId} assetSlug={assetSlug} currentIssue={currentIssue} />
 				<main>{children}</main>
 				<Footer contentlet={footerContentlet} />
+				<CookieBanner hostname={hostname} />
 			</body>
 		</html>
 	);
