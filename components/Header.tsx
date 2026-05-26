@@ -170,7 +170,7 @@ export default function Header({
 								{item.children ? (
 									<button
 										onClick={() => setIssueOpen((v) => !v)}
-										className="flex items-center gap-1.5 text-sm font-bold tracking-widest hover:opacity-80 cursor-pointer h-8"
+										className="nav-underline flex items-center gap-1.5 text-sm font-bold tracking-widest hover:opacity-80 cursor-pointer h-8"
 									>
 										{item.label}
 										<svg
@@ -188,7 +188,7 @@ export default function Header({
 								) : (
 									<Link
 										href={item.href}
-										className="text-sm font-bold tracking-widest hover:opacity-80"
+										className="nav-underline text-sm font-bold tracking-widest hover:opacity-80 pb-2"
 									>
 										{item.label}
 									</Link>
