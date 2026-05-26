@@ -12,6 +12,8 @@ export function CookieBanner({ hostname }: CookieBannerProps) {
 	const [visible, setVisible] = useState(false);
 
 	useEffect(() => {
+		const isInUVE = window.parent !== window;
+		if (isInUVE) return;
 		if (!localStorage.getItem(COOKIE_KEY)) {
 			const timer = setTimeout(() => setVisible(true), 500);
 			return () => clearTimeout(timer);
