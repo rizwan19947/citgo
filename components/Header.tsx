@@ -160,17 +160,17 @@ export default function Header({
 					</Link>
 
 					{/* Desktop Nav */}
-					<nav className="hidden lg:flex items-center gap-10">
+					<nav className="hidden lg:flex items-center gap-10 cursor-pointer">
 						{navItems.map((item) => (
 							<div
 								key={item.label}
-								className="relative"
+								className="relative cursor-pointer"
 								ref={item.children ? issueDropdownRef : undefined}
 							>
 								{item.children ? (
 									<button
 										onClick={() => setIssueOpen((v) => !v)}
-										className="flex items-center gap-1.5 text-sm font-bold tracking-widest hover:opacity-80"
+										className="flex items-center gap-1.5 text-sm font-bold tracking-widest hover:opacity-80 cursor-pointer h-8"
 									>
 										{item.label}
 										<svg
