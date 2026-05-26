@@ -30,7 +30,7 @@ function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTit
 	if (!article) return null;
 
 	return (
-		<div className="relative w-full min-h-[400px] md:min-h-[500px] flex items-center">
+		<div data-full-bleed className="relative w-screen min-h-[400px] md:min-h-[500px] flex items-center">
 			{bgImage ? (
 				<Image
 					src={`/dA/${bgImage}`}

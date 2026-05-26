@@ -29,7 +29,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 			<body className={inter.className}>
 				<UVEBodyClass />
 				<Header siteId={siteId} assetSlug={assetSlug} currentIssue={currentIssue} />
-				<main>{children}</main>
+				<main className="px-6 md:px-0 [&_[data-full-bleed]]:-mx-6 [&_[data-full-bleed]]:md:mx-0">
+					{children}
+				</main>
 				<Footer contentlet={footerContentlet} />
 				<CookieBanner hostname={hostname} />
 			</body>

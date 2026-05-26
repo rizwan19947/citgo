@@ -36,7 +36,7 @@ export function DefaultHeroBanner({
 	titleSlot,
 }: HeroBannerProps) {
 	return (
-		<div className="relative w-screen py-16 md:py-20 px-8">
+		<div data-full-bleed className="relative w-screen py-16 md:py-20 px-8">
 			<TriangleBackground />
 			<div className="relative z-10 flex items-center justify-center">
 				<h1 className="text-base font-bold text-center text-white uppercase">
