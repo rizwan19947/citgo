@@ -219,3 +219,26 @@ input[type="search"]::-ms-clear {
     background-color: #f9fafb;
 }
 
+/* Mobile — wide block-editor tables scroll horizontally instead of forcing the page wider.
+ * A horizontal fade at the left/right edges hints that the table is scrollable. */
+@media (max-width: 767px) {
+    .prose table {
+        display: block;
+        overflow-x: auto;
+        -webkit-mask-image: linear-gradient(
+                to right,
+                transparent 0,
+                black 0.5rem,
+                black calc(100% - 0.5rem),
+                transparent 100%
+        );
+        mask-image: linear-gradient(
+                to right,
+                transparent 0,
+                black 0.5rem,
+                black calc(100% - 0.5rem),
+                transparent 100%
+        );
+    }
+}
+
