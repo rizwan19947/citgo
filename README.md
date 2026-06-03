@@ -18,9 +18,14 @@ A multi-site headless CMS frontend serving three CITGO newsletter properties fro
 8. [Content Types & Component Registry](#content-types--component-registry)
 9. [Image Handling](#image-handling)
 10. [Search](#search)
-11. [Live Editing (UVE)](#live-editing-uve)
-12. [Adding a New Content Type](#adding-a-new-content-type)
-13. [Adding a New Site](#adding-a-new-site)
+11. [Archived Issues](#archived-issues)
+12. [Live Editing (UVE)](#live-editing-uve)
+13. [Theming](#theming)
+14. [Cookie Banner](#cookie-banner)
+15. [Adding a New Content Type](#adding-a-new-content-type)
+16. [Adding a New Site](#adding-a-new-site)
+
+> **AI agents:** start with `AGENTS.md` (auto-loaded) for a condensed architecture + conventions overview, then use this README and the `docs/` deep-dives.
 
 ---
 
@@ -102,15 +107,19 @@ npm start
 
 ```
 ├── app/
-│   ├── layout.tsx                 # Root layout — Header, Footer, UVEBodyClass
+│   ├── layout.tsx                 # Root layout — Header, Footer, UVEBodyClass, CookieBanner
 │   ├── not-found.tsx              # 404 page
-│   ├── globals.css                # Tailwind config, UVE styles, prose overrides
+│   ├── globals.css                # Tailwind config, theme tokens, UVE styles, prose/table overrides
 │   ├── [[...slug]]/
-│   │   └── page.tsx               # Catch-all route — all DotCMS pages
+│   │   └── page.tsx               # Catch-all — home, URL-mapped detail pages, generic pages
+│   ├── issues/[slug]/
+│   │   └── page.tsx               # Archived issue home page (past issue via HomePage layout)
 │   ├── archives/
 │   │   └── page.tsx               # Archives page — lists past issues
+│   ├── search/
+│   │   └── page.tsx               # Full search results page
 │   ├── api/
-│   │   └── search/route.ts        # Article search API (Lucene query)
+│   │   └── search/route.ts        # Article search API (title + block content, paginated)
 │   └── dA/[...path]/
 │       └── route.ts               # Asset proxy — forwards /dA/* to DotCMS
 │
@@ -119,10 +128,13 @@ npm start
 │   └── DetailPage.tsx             # URL-mapped content detail page (Article)
 │
 ├── components/
-│   ├── Header.tsx                 # Site header — nav, search, mobile menu
-│   ├── Footer.tsx                 # Site footer — block editor content, legal links
+│   ├── Header.tsx                 # Site header — nav (animated underline), search, mobile menu
+│   ├── Footer.tsx                 # Site footer — 4-col grid, block editor content, legal links
 │   ├── HomePage.tsx               # Custom home page — hero banner, article cards
+│   ├── SearchResults.tsx          # Search results page UI (highlight, filter, pagination)
+│   ├── ArchivedIssueSelect.tsx    # Custom dropdown on detail pages → /issues/{slug}
 │   ├── IssueAccordion.tsx         # Expandable issue list (archives page)
+│   ├── CookieBanner.tsx           # First-visit consent banner (per-site, hidden in UVE)
 │   ├── UVEBodyClass.tsx           # Adds .dotcms-uve-active class inside UVE iframe
 │   ├── UVESiteDetector.tsx        # Detects UVE site switches and reloads
 │   ├── content-types/
@@ -132,7 +144,7 @@ npm start
 │   │   ├── FooterContent.tsx      # Footer block editor content
 │   │   └── Issue.tsx              # Issue content type
 │   ├── shared/
-│   │   └── DefaultHeroBanner.tsx  # Reusable red triangle hero banner
+│   │   └── DefaultHeroBanner.tsx  # Reusable red triangle hero banner (data-full-bleed)
 │   └── ui/
 │       ├── accordion.tsx          # shadcn accordion
 │       └── button.tsx             # shadcn button
@@ -140,26 +152,26 @@ npm start
 ├── utils/
 │   ├── dotCMSClient.ts            # Creates a DotCMS API client for a given siteId
 │   ├── getDotCMSPage.ts           # Fetches a page by URL path (React cache'd)
-│   ├── getDotCMSContent.ts        # Content API queries (issues, articles, footer)
+│   ├── getDotCMSContent.ts        # Content API queries (issues, articles, footer, search)
 │   ├── queries.ts                 # GraphQL fragments (navigation tree)
-│   ├── site-config.ts             # Multi-site resolution (host, cookie, override)
+│   ├── site-config.ts             # Multi-site resolution → { siteId, hostname, assetSlug }
 │   ├── imageLoader.ts             # Custom Next.js image loader for DotCMS assets
 │   ├── resolveImage.ts            # Normalizes image field → identifier string
+│   ├── extractText.ts             # Plain-text + snippet extraction from block editor JSON
 │   └── searchArticles.ts          # Client-side search helper (calls /api/search)
 │
 ├── types/
 │   ├── content-types.ts           # TypeScript interfaces for all DotCMS content types
 │   └── page.ts                    # Page-level types (PageProps, navigation)
 │
-├── public/assets/
-│   ├── citgonow/                  # Site-specific static assets (header-logo.svg)
-│   ├── citgolubes/
-│   ├── citgoretail/
-│   └── global/                    # Shared assets (footer logo)
-│
-├── next.config.ts                 # Asset prefix, allowed origins, custom image loader
+├── public/assets/                 # Per-site static assets keyed by assetSlug + global/
+├── next.config.ts                 # Dev asset prefix, allowed origins, custom image loader
+├── AGENTS.md                      # AI-agent onboarding hub (auto-loaded via CLAUDE.md)
 └── docs/
-    └── content-types.md           # DotCMS field type → React rendering reference
+    ├── content-types.md           # DotCMS field type → React rendering reference
+    ├── uve-site-detection.md      # Multi-site UVE site-switching
+    ├── seo-strategy-plan.md       # Phased SEO implementation plan
+    └── seo-strategy-overview.md   # SEO rationale
 ```
 
 ---
@@ -174,7 +186,7 @@ A single deployment serves all three newsletter sites. Site resolution happens p
 4. **`dotcms-uve-site` cookie** (persists UVE site choice across navigations)
 5. **`DEFAULT_SITE_HOST`** fallback
 
-The resolved `siteId` is passed to every DotCMS API call. Each site has its own content, issues, and articles in DotCMS — the frontend code is shared.
+`getSiteConfig()` returns `{ siteId, hostname, assetSlug }`. The resolved `siteId` is passed to every DotCMS API call; `hostname` is used for absolute URLs (canonicals, OG, sitemaps). Each site has its own content, issues, and articles in DotCMS — the frontend code is shared.
 
 The `assetSlug` determines which folder under `public/assets/` is used for static assets like the header logo (`/assets/{assetSlug}/header-logo.svg`).
 
@@ -210,8 +222,10 @@ Fetch DotCMS page + latest issue in parallel
 
 | Route | Description |
 |---|---|
+| `/issues/[slug]` | An **archived issue's** home page — same `HomePage` layout as `/`, but rendered from a past issue instead of the latest. Reached via the "View Archived Issues" dropdown on article detail pages. |
 | `/archives` | Lists all past issues with expandable article lists (accordion). |
-| `/api/search` | Server-side article search. Accepts `?q=term&siteId=id`, returns matching articles via Lucene query. |
+| `/search` | Full search results page (`SearchResults`). Reads `?q=`, `?page=`, `?filter=` and queries `/api/search`. |
+| `/api/search` | Server-side article search. Accepts `?q=&siteId=&page=&filter=current\|archived&currentIssueSlug=`, searches **title + block-editor content**, returns paginated results. |
 | `/dA/[...path]` | Asset proxy. Forwards `/dA/*` requests to the DotCMS instance with auth, enabling image loading without exposing the DotCMS host to the client. |
 
 ---
@@ -241,10 +255,11 @@ Issue (1)
 
 Article
   ├── title, slug, teaser, issueSlug
-  ├── image, mobileImage (binary/file)
+  ├── image, mobileImage, heroImage (binary/file)
   ├── content (Block Editor)
-  ├── tags
-  └── featuredArticle (boolean)
+  ├── tags                          (surfaced in the editor as "Keywords")
+  ├── featuredArticle (boolean)
+  └── metaTitle, metaDescription    (optional SEO overrides — see docs/seo-strategy-plan.md)
 
 FooterContent
   ├── title
@@ -252,7 +267,7 @@ FooterContent
   └── showNewsletterLinks (boolean)
 ```
 
-TypeScript interfaces for all content types live in `types/content-types.ts`.
+Every contentlet also carries `live` and `archived` booleans. (Note: draft/published filtering is **not** implemented yet — `.depth()` can surface draft related content; a staging strategy is being designed.) TypeScript interfaces for all content types live in `types/content-types.ts`.
 
 For a full reference on how different DotCMS field types map to React rendering, see `docs/content-types.md`.
 
@@ -288,13 +303,33 @@ The `resolveImage()` utility (`utils/resolveImage.ts`) normalizes DotCMS image f
 
 ## Search
 
-The header includes a debounced search input that queries articles by title.
+Search matches on the article **title (primary) and block-editor content (secondary) simultaneously** — the Lucene query is `+(title:*q* Article.content:*q*) +live:true`. The block-editor `content` field is marked searchable/indexed in DotCMS.
 
-**Client side:** `utils/searchArticles.ts` calls `/api/search?q=term&siteId=id`.
+**API — `app/api/search/route.ts`** accepts:
 
-**Server side:** `app/api/search/route.ts` runs a Lucene wildcard query against the Article content type via the DotCMS Content API, returning up to 10 results.
+| Param | Purpose |
+|---|---|
+| `q` | Search term |
+| `siteId` | Which site to search |
+| `page` | 1-based page (10 results/page) |
+| `filter` | `current` or `archived` — restrict to / exclude the current issue |
+| `currentIssueSlug` | The latest issue's slug, used by the filter |
 
-Results appear in a dropdown with thumbnails and link to the article detail page.
+Returns `{ results, total, page, pageSize }`.
+
+**Two entry points:**
+1. **Header search box** (`components/Header.tsx`) — debounced, shows a reactive dropdown of matches; pressing **Enter** navigates to `/search?q=…`.
+2. **Search results page** (`app/search/page.tsx` → `components/SearchResults.tsx`) — full results with the query highlighted in both titles and a content snippet (extracted via `utils/extractText.ts`), "Current Issue / Archived Issues" filter radios, and pagination. The highlight + result count update on submit (not on keystroke). The page should be `noindex, follow` once SEO metadata lands.
+
+---
+
+## Archived Issues
+
+The home page (`/`) always shows the **latest** issue. To view a past issue, article detail pages render a **"View Archived Issues"** dropdown (`components/ArchivedIssueSelect.tsx`) listing every issue except the current one. Selecting one navigates to `/issues/{slug}`, which renders the same `HomePage` layout from that archived issue's content.
+
+- The dropdown is a **custom** component (not a native `<select>` or shadcn `select`) — fade-in animation, outside-click to close, red chevron.
+- `getAllIssues(siteId, currentIssueId)` supplies the list; it's passed `DetailPage` → `Article` → `ArchivedIssueSelect`.
+- The header logo returns the user to `/` (the current issue) — there's intentionally no "back to current" control on the archived view.
 
 ---
 
@@ -325,6 +360,31 @@ The DotCMS Universal Visual Editor enables in-context editing. This app supports
 ```
 
 No extra DotCMS configuration is needed. Ensure `DOTCMS_HOST` points to the correct instance and the UVE app is installed.
+
+> **Gotcha:** every renderable page must call `useEditableDotCMSPage(pageContent)`, or the UVE loader hangs. `HomePage` originally omitted it and the editor never finished loading on the home page — keep the hook on any new view.
+
+---
+
+## Theming
+
+The brand red is defined once as a CSS variable in `globals.css` and exposed to Tailwind:
+
+```css
+:root { --citgo-red: #b8292f; }
+@theme inline { --color-citgo-red: var(--citgo-red); }
+```
+
+Use the Tailwind utilities `bg-citgo-red`, `text-citgo-red`, `accent-citgo-red`, etc. — **never hardcode the hex.** Changing the brand color is a one-line edit. (The darker triangle shades in `DefaultHeroBanner` are intentionally separate.)
+
+---
+
+## Cookie Banner
+
+`components/CookieBanner.tsx` slides up from the bottom on first visit (dark bar, "OK" to dismiss, Privacy Policy link). Notes:
+
+- Consent is stored in `localStorage` under a **per-site** key: `citgo-cookie-consent-{hostname}` (so each site is acknowledged independently).
+- It is **suppressed inside the UVE** (`window.parent !== window`) so it doesn't obstruct editing.
+- Rendered once in the root layout.
 
 ---
 
