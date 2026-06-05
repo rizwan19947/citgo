@@ -1,6 +1,8 @@
 # CITGO Newsletters — Headless DotCMS Frontend
 
-A multi-site headless CMS frontend serving three CITGO newsletter properties from a single Next.js deployment. DotCMS provides content management and the Universal Visual Editor (UVE); this app fetches pages and content via the DotCMS SDK and renders them with React.
+A multi-site headless CMS frontend serving three CITGO newsletter properties from a single Next.js deployment. DotCMS
+provides content management and the Universal Visual Editor (UVE); this app fetches pages and content via the DotCMS SDK
+and renders them with React.
 
 **Sites served:** citgonow.com, citgonowlubes.com, citgoretailconnections.com
 
@@ -25,23 +27,24 @@ A multi-site headless CMS frontend serving three CITGO newsletter properties fro
 15. [Adding a New Content Type](#adding-a-new-content-type)
 16. [Adding a New Site](#adding-a-new-site)
 
-> **AI agents:** start with `AGENTS.md` (auto-loaded) for a condensed architecture + conventions overview, then use this README and the `docs/` deep-dives.
+> **AI agents:** start with `AGENTS.md` (auto-loaded) for a condensed architecture + conventions overview, then use this
+> README and the `docs/` deep-dives.
 
 ---
 
 ## Tech Stack
 
-| Package | Version | Purpose |
-|---|---|---|
-| Next.js | 16 | App Router, SSR, API routes |
-| React | 19 | UI library |
-| @dotcms/client | 1.4.0 | DotCMS Content/Page API client |
-| @dotcms/react | 1.4.0 | `DotCMSLayoutBody`, `DotCMSEditableText`, `useEditableDotCMSPage` |
-| @dotcms/uve | 1.4.0 | UVE subscription helpers (site switching) |
-| @dotcms/types | 1.4.0 | Shared TypeScript types |
-| Tailwind CSS | 4 | Utility-first styling |
-| shadcn/ui | 4 | Accordion (archives page) |
-| TypeScript | 5 | Static typing |
+| Package        | Version | Purpose                                                           |
+|----------------|---------|-------------------------------------------------------------------|
+| Next.js        | 16      | App Router, SSR, API routes                                       |
+| React          | 19      | UI library                                                        |
+| @dotcms/client | 1.4.0   | DotCMS Content/Page API client                                    |
+| @dotcms/react  | 1.4.0   | `DotCMSLayoutBody`, `DotCMSEditableText`, `useEditableDotCMSPage` |
+| @dotcms/uve    | 1.4.0   | UVE subscription helpers (site switching)                         |
+| @dotcms/types  | 1.4.0   | Shared TypeScript types                                           |
+| Tailwind CSS   | 4       | Utility-first styling                                             |
+| shadcn/ui      | 4       | Accordion (archives page)                                         |
+| TypeScript     | 5       | Static typing                                                     |
 
 ---
 
@@ -76,12 +79,12 @@ FRONTEND_HOST_OVERRIDE=citgonow.com
 
 ### Variable breakdown
 
-| Variable | Purpose |
-|---|---|
-| `DOTCMS_HOST` | Base URL of the DotCMS instance. Server-side only. |
-| `DOTCMS_AUTH_TOKEN` | API token (generate in DotCMS under User Tools > API Tokens). Server-side only. |
-| `SITE_N` | Site definition: `hostname|siteIdentifier|assetSlug`. The `siteIdentifier` is the DotCMS site identifier (not the inode). The `assetSlug` maps to the folder under `public/assets/` for static site-specific assets (logos, etc). |
-| `DEFAULT_SITE_HOST` | Hostname to fall back to when the incoming request doesn't match any configured site. |
+| Variable                 | Purpose                                                                                              |
+|--------------------------|------------------------------------------------------------------------------------------------------|
+| `DOTCMS_HOST`            | Base URL of the DotCMS instance. Server-side only.                                                   |
+| `DOTCMS_AUTH_TOKEN`      | API token (generate in DotCMS under User Tools > API Tokens). Server-side only.                      |
+| `SITE_N`                 | Site definition: `hostname                                                                           |siteIdentifier|assetSlug`. The `siteIdentifier` is the DotCMS site identifier (not the inode). The `assetSlug` maps to the folder under `public/assets/` for static site-specific assets (logos, etc). |
+| `DEFAULT_SITE_HOST`      | Hostname to fall back to when the incoming request doesn't match any configured site.                |
 | `FRONTEND_HOST_OVERRIDE` | When set, all requests resolve to this site regardless of Host header. Useful for local development. |
 
 ---
@@ -178,7 +181,8 @@ npm start
 
 ## Multi-Site Architecture
 
-A single deployment serves all three newsletter sites. Site resolution happens per-request in `utils/site-config.ts`, checked in this order:
+A single deployment serves all three newsletter sites. Site resolution happens per-request in `utils/site-config.ts`,
+checked in this order:
 
 1. **`FRONTEND_HOST_OVERRIDE`** env var (dev/deploy override)
 2. **Host header** match against configured `SITE_N` hostnames (production DNS routing)
@@ -186,9 +190,12 @@ A single deployment serves all three newsletter sites. Site resolution happens p
 4. **`dotcms-uve-site` cookie** (persists UVE site choice across navigations)
 5. **`DEFAULT_SITE_HOST`** fallback
 
-`getSiteConfig()` returns `{ siteId, hostname, assetSlug }`. The resolved `siteId` is passed to every DotCMS API call; `hostname` is used for absolute URLs (canonicals, OG, sitemaps). Each site has its own content, issues, and articles in DotCMS — the frontend code is shared.
+`getSiteConfig()` returns `{ siteId, hostname, assetSlug }`. The resolved `siteId` is passed to every DotCMS API call;
+`hostname` is used for absolute URLs (canonicals, OG, sitemaps). Each site has its own content, issues, and articles in
+DotCMS — the frontend code is shared.
 
-The `assetSlug` determines which folder under `public/assets/` is used for static assets like the header logo (`/assets/{assetSlug}/header-logo.svg`).
+The `assetSlug` determines which folder under `public/assets/` is used for static assets like the header logo (
+`/assets/{assetSlug}/header-logo.svg`).
 
 ---
 
@@ -212,21 +219,21 @@ Fetch DotCMS page + latest issue in parallel
 
 ### Three rendering paths
 
-| Path | View | Description |
-|---|---|---|
-| `/` | `HomePage` | Custom layout with hero banner, featured articles, and article cards. Data comes from the latest Issue contentlet and its relationships. |
+| Path                         | View         | Description                                                                                                                                             |
+|------------------------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `/`                          | `HomePage`   | Custom layout with hero banner, featured articles, and article cards. Data comes from the latest Issue contentlet and its relationships.                |
 | `/{issueSlug}/{articleSlug}` | `DetailPage` | URL-mapped content. DotCMS resolves the URL map and returns the matched contentlet in `pageAsset.urlContentMap`. Rendered with the `Article` component. |
-| Everything else | `Page` | Generic DotCMS page. `DotCMSLayoutBody` reads the page layout and renders each container's contentlets using the component registry. |
+| Everything else              | `Page`       | Generic DotCMS page. `DotCMSLayoutBody` reads the page layout and renders each container's contentlets using the component registry.                    |
 
 ### Dedicated routes
 
-| Route | Description |
-|---|---|
+| Route            | Description                                                                                                                                                                                       |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `/issues/[slug]` | An **archived issue's** home page — same `HomePage` layout as `/`, but rendered from a past issue instead of the latest. Reached via the "View Archived Issues" dropdown on article detail pages. |
-| `/archives` | Lists all past issues with expandable article lists (accordion). |
-| `/search` | Full search results page (`SearchResults`). Reads `?q=`, `?page=`, `?filter=` and queries `/api/search`. |
-| `/api/search` | Server-side article search. Accepts `?q=&siteId=&page=&filter=current\|archived&currentIssueSlug=`, searches **title + block-editor content**, returns paginated results. |
-| `/dA/[...path]` | Asset proxy. Forwards `/dA/*` requests to the DotCMS instance with auth, enabling image loading without exposing the DotCMS host to the client. |
+| `/archives`      | Lists all past issues with expandable article lists (accordion).                                                                                                                                  |
+| `/search`        | Full search results page (`SearchResults`). Reads `?q=`, `?page=`, `?filter=` and queries `/api/search`.                                                                                          |
+| `/api/search`    | Server-side article search. Accepts `?q=&siteId=&page=&filter=current\|archived&currentIssueSlug=`, searches **title + block-editor content**, returns paginated results.                         |
+| `/dA/[...path]`  | Asset proxy. Forwards `/dA/*` requests to the DotCMS instance with auth, enabling image loading without exposing the DotCMS host to the client.                                                   |
 
 ---
 
@@ -236,14 +243,15 @@ Content types are registered in `components/content-types/index.ts`:
 
 ```ts
 export const pageComponents = {
-  Banner: Banner,
-  FooterContent: FooterContent,
-  Issue: Issue,
-  Article: Article,
+    Banner: Banner,
+    FooterContent: FooterContent,
+    Issue: Issue,
+    Article: Article,
 };
 ```
 
-The key must exactly match the Content Type Variable name in DotCMS (case-sensitive). `DotCMSLayoutBody` looks up each contentlet's `contentType` in this map and renders the matching component, passing the full contentlet as props.
+The key must exactly match the Content Type Variable name in DotCMS (case-sensitive). `DotCMSLayoutBody` looks up each
+contentlet's `contentType` in this map and renders the matching component, passing the full contentlet as props.
 
 ### Content model
 
@@ -267,7 +275,8 @@ FooterContent
   └── showNewsletterLinks (boolean)
 ```
 
-Every contentlet also carries `live` and `archived` booleans. (Note: draft/published filtering is **not** implemented yet — `.depth()` can surface draft related content; a staging strategy is being designed.) TypeScript interfaces for all content types live in `types/content-types.ts`.
+Every contentlet also carries `live` and `archived` booleans. TypeScript interfaces for all content types live in
+`types/content-types.ts`.
 
 For a full reference on how different DotCMS field types map to React rendering, see `docs/content-types.md`.
 
@@ -279,8 +288,10 @@ Images are handled globally via a custom Next.js image loader configured in `nex
 
 ```ts
 images: {
-  loader: "custom",
-  loaderFile: "./utils/imageLoader.ts",
+    loader: "custom",
+        loaderFile
+:
+    "./utils/imageLoader.ts",
 }
 ```
 
@@ -294,42 +305,55 @@ This means all `<Image>` components automatically use the loader — no need to 
 Usage:
 
 ```tsx
-<Image src={`/dA/${identifier}`} width={800} height={600} alt="..." />
+<Image src={`/dA/${identifier}`} width={800} height={600} alt="..."/>
 ```
 
-The `resolveImage()` utility (`utils/resolveImage.ts`) normalizes DotCMS image fields — whether they come back as a string, or an object with `idPath` or `identifier` — into a consistent identifier string.
+The `resolveImage()` utility (`utils/resolveImage.ts`) normalizes DotCMS image fields — whether they come back as a
+string, or an object with `idPath` or `identifier` — into a consistent identifier string.
 
 ---
 
 ## Search
 
-Search matches on the article **title (primary) and block-editor content (secondary) simultaneously** — the Lucene query is `+(title:*q* Article.content:*q*) +live:true`. The block-editor `content` field is marked searchable/indexed in DotCMS.
+Search matches on the article **title (primary) and block-editor content (secondary) simultaneously** — the Lucene query
+is `+(title:*q* Article.content:*q*) +live:true`. The block-editor `content` field is marked searchable/indexed in
+DotCMS.
 
 **API — `app/api/search/route.ts`** accepts:
 
-| Param | Purpose |
-|---|---|
-| `q` | Search term |
-| `siteId` | Which site to search |
-| `page` | 1-based page (10 results/page) |
-| `filter` | `current` or `archived` — restrict to / exclude the current issue |
-| `currentIssueSlug` | The latest issue's slug, used by the filter |
+| Param              | Purpose                                                           |
+|--------------------|-------------------------------------------------------------------|
+| `q`                | Search term                                                       |
+| `siteId`           | Which site to search                                              |
+| `page`             | 1-based page (10 results/page)                                    |
+| `filter`           | `current` or `archived` — restrict to / exclude the current issue |
+| `currentIssueSlug` | The latest issue's slug, used by the filter                       |
 
 Returns `{ results, total, page, pageSize }`.
 
 **Two entry points:**
-1. **Header search box** (`components/Header.tsx`) — debounced, shows a reactive dropdown of matches; pressing **Enter** navigates to `/search?q=…`.
-2. **Search results page** (`app/search/page.tsx` → `components/SearchResults.tsx`) — full results with the query highlighted in both titles and a content snippet (extracted via `utils/extractText.ts`), "Current Issue / Archived Issues" filter radios, and pagination. The highlight + result count update on submit (not on keystroke). The page should be `noindex, follow` once SEO metadata lands.
+
+1. **Header search box** (`components/Header.tsx`) — debounced, shows a reactive dropdown of matches; pressing **Enter**
+   navigates to `/search?q=…`.
+2. **Search results page** (`app/search/page.tsx` → `components/SearchResults.tsx`) — full results with the query
+   highlighted in both titles and a content snippet (extracted via `utils/extractText.ts`), "Current Issue / Archived
+   Issues" filter radios, and pagination. The highlight + result count update on submit (not on keystroke). The page
+   should be `noindex, follow` once SEO metadata lands.
 
 ---
 
 ## Archived Issues
 
-The home page (`/`) always shows the **latest** issue. To view a past issue, article detail pages render a **"View Archived Issues"** dropdown (`components/ArchivedIssueSelect.tsx`) listing every issue except the current one. Selecting one navigates to `/issues/{slug}`, which renders the same `HomePage` layout from that archived issue's content.
+The home page (`/`) always shows the **latest** issue. To view a past issue, article detail pages render a **"View
+Archived Issues"** dropdown (`components/ArchivedIssueSelect.tsx`) listing every issue except the current one. Selecting
+one navigates to `/issues/{slug}`, which renders the same `HomePage` layout from that archived issue's content.
 
-- The dropdown is a **custom** component (not a native `<select>` or shadcn `select`) — fade-in animation, outside-click to close, red chevron.
-- `getAllIssues(siteId, currentIssueId)` supplies the list; it's passed `DetailPage` → `Article` → `ArchivedIssueSelect`.
-- The header logo returns the user to `/` (the current issue) — there's intentionally no "back to current" control on the archived view.
+- The dropdown is a **custom** component (not a native `<select>` or shadcn `select`) — fade-in animation, outside-click
+  to close, red chevron.
+- `getAllIssues(siteId, currentIssueId)` supplies the list; it's passed `DetailPage` → `Article` →
+  `ArchivedIssueSelect`.
+- The header logo returns the user to `/` (the current issue) — there's intentionally no "back to current" control on
+  the archived view.
 
 ---
 
@@ -339,29 +363,42 @@ The DotCMS Universal Visual Editor enables in-context editing. This app supports
 
 ### How it works
 
-1. **`useEditableDotCMSPage(pageContent)`** is called in `Page.tsx`, `DetailPage.tsx`, and `HomePage.tsx`. This hook completes the postMessage handshake with the UVE iframe, enabling live content updates.
+1. **`useEditableDotCMSPage(pageContent)`** is called in `Page.tsx`, `DetailPage.tsx`, and `HomePage.tsx`. This hook
+   completes the postMessage handshake with the UVE iframe, enabling live content updates.
 
-2. **`DotCMSEditableText`** wraps text fields to make them inline-editable in the UVE. Used on the home page (article titles, teasers) and article detail page (title).
+2. **`DotCMSEditableText`** wraps text fields to make them inline-editable in the UVE. Used on the home page (article
+   titles, teasers) and article detail page (title).
 
-3. **Block Editor editability** is enabled by adding `data-block-editor-content`, `data-inode`, `data-language`, `data-content-type`, and `data-field-name` attributes to the container element. Used in `Article.tsx` and `Footer.tsx`.
+3. **Block Editor editability** is enabled by adding `data-block-editor-content`, `data-inode`, `data-language`,
+   `data-content-type`, and `data-field-name` attributes to the container element. Used in `Article.tsx` and
+   `Footer.tsx`.
 
-4. **`UVEBodyClass`** (root layout) adds the `dotcms-uve-active` CSS class to `<body>` when inside the UVE iframe. This enables UVE-specific styles globally (block editor borders/hover indicators).
+4. **`UVEBodyClass`** (root layout) adds the `dotcms-uve-active` CSS class to `<body>` when inside the UVE iframe. This
+   enables UVE-specific styles globally (block editor borders/hover indicators).
 
-5. **`UVESiteDetector`** listens for `CONTENT_CHANGES` events from the UVE. When an editor switches to a different site in the DotCMS backend, this component detects the hostname mismatch and reloads the page with the correct site context (via cookie + query parameter).
+5. **`UVESiteDetector`** listens for `CONTENT_CHANGES` events from the UVE. When an editor switches to a different site
+   in the DotCMS backend, this component detects the hostname mismatch and reloads the page with the correct site
+   context (via cookie + query parameter).
 
 ### UVE-specific CSS (`globals.css`)
 
 ```css
 /* Blue border on block editor fields inside UVE */
-.dotcms-uve-active [data-block-editor-content] { ... }
+.dotcms-uve-active [data-block-editor-content] {
+    ...
+}
 
 /* Hover highlight on block editor fields */
-.dotcms-uve-active [data-block-editor-content]:hover { ... }
+.dotcms-uve-active [data-block-editor-content]:hover {
+    ...
+}
 ```
 
-No extra DotCMS configuration is needed. Ensure `DOTCMS_HOST` points to the correct instance and the UVE app is installed.
+No extra DotCMS configuration is needed. Ensure `DOTCMS_HOST` points to the correct instance and the UVE app is
+installed.
 
-> **Gotcha:** every renderable page must call `useEditableDotCMSPage(pageContent)`, or the UVE loader hangs. `HomePage` originally omitted it and the editor never finished loading on the home page — keep the hook on any new view.
+> **Gotcha:** every renderable page must call `useEditableDotCMSPage(pageContent)`, or the UVE loader hangs. `HomePage`
+> originally omitted it and the editor never finished loading on the home page — keep the hook on any new view.
 
 ---
 
@@ -370,19 +407,28 @@ No extra DotCMS configuration is needed. Ensure `DOTCMS_HOST` points to the corr
 The brand red is defined once as a CSS variable in `globals.css` and exposed to Tailwind:
 
 ```css
-:root { --citgo-red: #b8292f; }
-@theme inline { --color-citgo-red: var(--citgo-red); }
+:root {
+    --citgo-red: #b8292f;
+}
+
+@theme inline {
+    --color-citgo-red: var(--citgo-red);
+}
 ```
 
-Use the Tailwind utilities `bg-citgo-red`, `text-citgo-red`, `accent-citgo-red`, etc. — **never hardcode the hex.** Changing the brand color is a one-line edit. (The darker triangle shades in `DefaultHeroBanner` are intentionally separate.)
+Use the Tailwind utilities `bg-citgo-red`, `text-citgo-red`, `accent-citgo-red`, etc. — **never hardcode the hex.**
+Changing the brand color is a one-line edit. (The darker triangle shades in `DefaultHeroBanner` are intentionally
+separate.)
 
 ---
 
 ## Cookie Banner
 
-`components/CookieBanner.tsx` slides up from the bottom on first visit (dark bar, "OK" to dismiss, Privacy Policy link). Notes:
+`components/CookieBanner.tsx` slides up from the bottom on first visit (dark bar, "OK" to dismiss, Privacy Policy link).
+Notes:
 
-- Consent is stored in `localStorage` under a **per-site** key: `citgo-cookie-consent-{hostname}` (so each site is acknowledged independently).
+- Consent is stored in `localStorage` under a **per-site** key: `citgo-cookie-consent-{hostname}` (so each site is
+  acknowledged independently).
 - It is **suppressed inside the UVE** (`window.parent !== window`) so it doesn't obstruct editing.
 - Rendered once in the root layout.
 
@@ -394,19 +440,20 @@ Use the Tailwind utilities `bg-citgo-red`, `text-citgo-red`, `accent-citgo-red`,
 
 ```ts
 export interface MyTypeFields {
-  title: string;
-  body?: BlockEditorNode;
+    title: string;
+    body?: BlockEditorNode;
 }
+
 export type MyTypeContentlet = Contentlet<MyTypeFields>;
 ```
 
 2. Create `components/content-types/MyType.tsx`. Props are the full contentlet — destructure the fields you need:
 
 ```tsx
-import type { MyTypeContentlet } from "@/types/content-types";
+import type {MyTypeContentlet} from "@/types/content-types";
 
-export default function MyType({ title, body }: MyTypeContentlet) {
-  return <div>{title}</div>;
+export default function MyType({title, body}: MyTypeContentlet) {
+    return <div>{title}</div>;
 }
 ```
 
@@ -416,8 +463,8 @@ export default function MyType({ title, body }: MyTypeContentlet) {
 import MyType from "./MyType";
 
 export const pageComponents = {
-  // ...existing
-  MyType: MyType,  // key must match the Content Type Variable name in DotCMS
+    // ...existing
+    MyType: MyType,  // key must match the Content Type Variable name in DotCMS
 };
 ```
 
