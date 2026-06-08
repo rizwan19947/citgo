@@ -40,10 +40,10 @@ export function ArchivedIssueSelect({ issues }: ArchivedIssueSelectProps) {
 					/>
 				</button>
 				<div
-					className={`absolute top-full left-0 right-0 mt-0 bg-white border border-t-0 border-gray-300 rounded-b shadow-md z-50 overflow-hidden transition-all duration-200 ease-in-out origin-top ${
+					className={`absolute top-full left-0 right-0 bg-white border border-t-0 border-gray-300 rounded-b shadow-md z-50 max-h-[250px] overflow-y-auto transition-all duration-[250ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
 						open
-							? "opacity-100 scale-y-100 max-h-96"
-							: "opacity-0 scale-y-95 max-h-0 pointer-events-none"
+							? "opacity-100 visible translate-y-0 pointer-events-auto"
+							: "opacity-0 invisible -translate-y-3 pointer-events-none"
 					}`}
 				>
 					{issues.map((issue) => (
