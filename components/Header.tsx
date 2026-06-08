@@ -28,13 +28,17 @@ export default function Header({
 	siteId,
 }: HeaderProps) {
 	const router = useRouter();
-	const navItems: NavItem[] = useMemo(() => {
-		const issueChildren = (currentIssue?.articles ?? []).map((article) => ({
-			label: article.title,
-			href: `/${article.issueSlug}/${article.slug}`,
-		}));
+	const issueChildren = useMemo(
+		() =>
+			(currentIssue?.articles ?? []).map((article) => ({
+				label: article.title,
+				href: `/${article.issueSlug}/${article.slug}`,
+			})),
+		[currentIssue],
+	);
 
-		return [
+	const navItems: NavItem[] = useMemo(
+		() => [
 			{
 				label: "IN THIS ISSUE",
 				href: "#",
@@ -44,8 +48,9 @@ export default function Header({
 				label: "ARCHIVES",
 				href: "/archives",
 			},
-		];
-	}, [currentIssue]);
+		],
+		[issueChildren],
+	);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [issueOpen, setIssueOpen] = useState(false);
 	const [mobileIssueOpen, setMobileIssueOpen] = useState(false);
@@ -99,6 +104,11 @@ export default function Header({
 				setSearchOpen(false);
 			}
 		}, 300);
+	};
+
+	const closeMobile = () => {
+		setMobileOpen(false);
+		setMobileIssueOpen(false);
 	};
 
 	const searchDropdown = searchOpen && searchResults.length > 0 && (
@@ -297,27 +307,8 @@ export default function Header({
 						</div>
 					</nav>
 
-					{/* Mobile Icons */}
-					<div className="flex lg:hidden items-center gap-4">
-						<button
-							aria-label="Toggle search"
-							onClick={() => setMobileOpen((v) => !v)}
-							className="p-1"
-						>
-							<svg
-								className="w-5 h-5"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								strokeWidth={2}
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
-								/>
-							</svg>
-						</button>
+					{/* Mobile menu toggle */}
+					<div className="flex lg:hidden items-center">
 						<button
 							aria-label="Toggle menu"
 							aria-expanded={mobileOpen}
@@ -341,120 +332,146 @@ export default function Header({
 					</div>
 				</div>
 
-				{/* Mobile Menu */}
+				{/* full-screen overlay (mobile only) */}
 				{mobileOpen && (
-					<div className="lg:hidden pb-6 pt-4 border-t border-white/20">
-						<nav className="flex flex-col gap-4">
-							{navItems.map((item) =>
-								item.children ? (
-									<div key={item.label}>
-										<button
-											onClick={() => setMobileIssueOpen((v) => !v)}
-											className="flex items-center gap-1.5 text-sm font-bold tracking-widest w-full"
-										>
-											{item.label}
-											<svg
-												className={`w-3 h-3 transition-transform duration-200 ${mobileIssueOpen ? "rotate-180" : ""}`}
-												fill="currentColor"
-												viewBox="0 0 20 20"
-											>
-												<path
-													fillRule="evenodd"
-													d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-													clipRule="evenodd"
+					<div className="lg:hidden fixed inset-0 z-[60] flex flex-col bg-white">
+						<div className="flex h-20 shrink-0 items-center justify-between bg-citgo-red px-4">
+							<Link
+								href="/"
+								onClick={closeMobile}
+								className="shrink-0"
+								aria-label={logoAlt}
+							>
+								<img
+									src={`/assets/${assetSlug}/header-logo.svg`}
+									alt={logoAlt}
+									className="h-10 max-h-11"
+								/>
+							</Link>
+							<button
+								aria-label="Close menu"
+								onClick={closeMobile}
+								className="p-1 text-white"
+							>
+								<svg
+									className="w-6 h-6"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									strokeWidth={2}
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M6 18L18 6M6 6l12 12"
+									/>
+								</svg>
+							</button>
+						</div>
+
+						{/* Sliding panels */}
+						<div className="flex-1 overflow-hidden text-gray-900">
+							<div
+								className={`flex h-full w-[200%] transition-transform duration-300 ease-in-out ${
+									mobileIssueOpen ? "-translate-x-1/2" : "translate-x-0"
+								}`}
+							>
+								<div className="w-1/2 shrink-0 overflow-y-auto">
+									{/* Search */}
+									<div className="border-b border-gray-200 bg-gray-50 px-4 py-4">
+										<div className="relative">
+											<form onSubmit={handleSearchSubmit}>
+												<input
+													type="search"
+													name="q"
+													placeholder="Search"
+													value={searchQuery}
+													onChange={(e) =>
+														handleSearchInput(e.target.value)
+													}
+													onFocus={() =>
+														searchResults.length > 0 &&
+														setSearchOpen(true)
+													}
+													onBlur={() =>
+														setTimeout(() => setSearchOpen(false), 200)
+													}
+													className="w-full rounded border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-citgo-red/40"
 												/>
-											</svg>
-										</button>
-										<div
-											className={`overflow-hidden transition-all duration-200 ease-in-out ${
-												mobileIssueOpen ? "max-h-96 mt-3" : "max-h-0"
-											}`}
-										>
-											{item.children.map((child) => (
-												<Link
-													key={child.label}
-													href={child.href}
-													onClick={() => setMobileOpen(false)}
-													className="block py-2 pl-4 text-sm text-white/80 hover:text-white"
-												>
-													{child.label}
-												</Link>
-											))}
+												<span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600">
+													{loading ? (
+														<svg
+															className="w-4 h-4 animate-spin"
+															viewBox="0 0 24 24"
+															fill="none"
+														>
+															<circle
+																className="opacity-25"
+																cx="12"
+																cy="12"
+																r="10"
+																stroke="currentColor"
+																strokeWidth="3"
+															/>
+															<path
+																className="opacity-75"
+																fill="currentColor"
+																d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+															/>
+														</svg>
+													) : searchQuery ? (
+														<button
+															type="button"
+															aria-label="Clear search"
+															onClick={() => {
+																setSearchQuery("");
+																setSearchResults([]);
+																setSearchOpen(false);
+															}}
+														>
+															<svg
+																className="w-4 h-4"
+																fill="none"
+																stroke="currentColor"
+																viewBox="0 0 24 24"
+																strokeWidth={2.5}
+															>
+																<path
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																	d="M6 18L18 6M6 6l12 12"
+																/>
+															</svg>
+														</button>
+													) : (
+														<svg
+															className="w-4 h-4"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+															strokeWidth={2.5}
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
+															/>
+														</svg>
+													)}
+												</span>
+											</form>
+											{searchDropdown}
 										</div>
 									</div>
-								) : (
-									<Link
-										key={item.label}
-										href={item.href}
-										onClick={() => setMobileOpen(false)}
-										className="text-sm font-bold tracking-widest"
+
+									<button
+										onClick={() => setMobileIssueOpen(true)}
+										className="flex w-full items-center justify-between border-b border-gray-200 px-4 py-4 text-sm font-bold tracking-widest"
 									>
-										{item.label}
-									</Link>
-								),
-							)}
-							<div className="relative mt-2">
-								<form onSubmit={handleSearchSubmit}>
-									<input
-										type="search"
-										name="q"
-										placeholder="Search"
-										value={searchQuery}
-										onChange={(e) => handleSearchInput(e.target.value)}
-										onFocus={() =>
-											searchResults.length > 0 && setSearchOpen(true)
-										}
-										onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
-										className="bg-white text-gray-900 placeholder-gray-500 rounded px-4 py-2.5 pr-10 w-full text-sm focus:outline-none"
-									/>
-									<span className="absolute right-3 top-1/2 -translate-y-1/2 text-citgo-red">
-										{loading ? (
+										IN THIS ISSUE
+										<span className="text-citgo-red">
 											<svg
-												className="w-4 h-4 animate-spin"
-												viewBox="0 0 24 24"
-												fill="none"
-											>
-												<circle
-													className="opacity-25"
-													cx="12"
-													cy="12"
-													r="10"
-													stroke="currentColor"
-													strokeWidth="3"
-												/>
-												<path
-													className="opacity-75"
-													fill="currentColor"
-													d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-												/>
-											</svg>
-										) : searchQuery ? (
-											<button
-												type="button"
-												aria-label="Clear search"
-												onClick={() => {
-													setSearchQuery("");
-													setSearchResults([]);
-													setSearchOpen(false);
-												}}
-											>
-												<svg
-													className="w-4 h-4"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-													strokeWidth={2.5}
-												>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														d="M6 18L18 6M6 6l12 12"
-													/>
-												</svg>
-											</button>
-										) : (
-											<svg
-												className="w-4 h-4"
+												className="w-5 h-5"
 												fill="none"
 												stroke="currentColor"
 												viewBox="0 0 24 24"
@@ -463,15 +480,57 @@ export default function Header({
 												<path
 													strokeLinecap="round"
 													strokeLinejoin="round"
-													d="M21 21l-4.35-4.35M11 19a8 8 0 110-16 8 8 0 010 16z"
+													d="M9 5l7 7-7 7"
 												/>
 											</svg>
-										)}
-									</span>
-								</form>
-								{searchDropdown}
+										</span>
+									</button>
+
+									{/* ARCHIVES */}
+									<Link
+										href="/archives"
+										onClick={closeMobile}
+										className="block border-b border-gray-200 px-4 py-4 text-sm font-bold tracking-widest"
+									>
+										ARCHIVES
+									</Link>
+								</div>
+
+								<div className="w-1/2 shrink-0 overflow-y-auto">
+									<button
+										onClick={() => setMobileIssueOpen(false)}
+										className="flex w-full items-center gap-2 border-b border-gray-200 px-4 py-4 text-sm font-bold tracking-widest"
+									>
+										<span className="text-citgo-red">
+											<svg
+												className="w-5 h-5"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+												strokeWidth={2.5}
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													d="M15 19l-7-7 7-7"
+												/>
+											</svg>
+										</span>
+										IN THIS ISSUE
+									</button>
+									{issueChildren.map((child) => (
+										<Link
+											key={child.label}
+											href={child.href}
+											onClick={closeMobile}
+											className="block border-b border-gray-200 px-6 py-4 text-sm text-gray-800"
+										>
+											{child.label}
+										</Link>
+									))}
+								</div>
 							</div>
-						</nav>
+						</div>
 					</div>
 				)}
 			</div>
