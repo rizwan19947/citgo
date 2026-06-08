@@ -17,7 +17,7 @@ export function IssueAccordion({ issues }: IssueAccordionProps) {
 					value={issue.title ?? issue.identifier}
 					className="font-bold capitalize"
 				>
-					<AccordionTrigger className="text-gray-600 font-bold text-2xl uppercase no-underline py-5 px-5">
+					<AccordionTrigger className="text-[#333] font-bold text-2xl uppercase py-5 px-5 cursor-pointer hover:no-underline">
 						{issue.title}
 					</AccordionTrigger>
 					<AccordionContent>
@@ -27,7 +27,7 @@ export function IssueAccordion({ issues }: IssueAccordionProps) {
 									<li key={article.identifier} className="ml-8">
 										<Link
 											href={`/${issue.slug}/${article.slug}`}
-											className="text-lg font-medium text-blue-500 no-underline"
+											className="text-lg font-normal text-[#006fc5] not-hover:no-underline"
 											target={"_blank"}
 										>
 											{article.title}
