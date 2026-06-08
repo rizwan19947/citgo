@@ -13,7 +13,7 @@ export default async function ArchivesPage({ searchParams }: PageProps) {
 
 	return (
 		<>
-			<DefaultHeroBanner title="ARCHIVES" />
+			<DefaultHeroBanner title="Archives" />
 			{issues ? (
 				<div className="mx-auto max-w-3xl py-10">
 					<IssueAccordion issues={issues} />
