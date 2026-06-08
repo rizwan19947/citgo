@@ -73,10 +73,16 @@ export default function Header({
 		return () => document.removeEventListener("mousedown", handler);
 	}, [issueOpen]);
 
+	const closeMobile = () => {
+		setMobileOpen(false);
+		setMobileIssueOpen(false);
+	};
+
 	const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		if (searchQuery.trim()) {
 			setSearchOpen(false);
+			closeMobile();
 			router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
 		}
 	};
@@ -106,11 +112,6 @@ export default function Header({
 		}, 300);
 	};
 
-	const closeMobile = () => {
-		setMobileOpen(false);
-		setMobileIssueOpen(false);
-	};
-
 	const searchDropdown = searchOpen && searchResults.length > 0 && (
 		<div className="absolute top-full right-0 mt-2 bg-white text-gray-900 shadow-lg rounded w-max z-50 max-h-96 overflow-y-auto">
 			{searchResults.map((result) => {
@@ -127,6 +128,7 @@ export default function Header({
 							setSearchOpen(false);
 							setSearchQuery("");
 							setSearchResults([]);
+							closeMobile();
 						}}
 					>
 						{thumb ? (
