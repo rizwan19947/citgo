@@ -183,7 +183,7 @@ export default function Header({
 								{item.children ? (
 									<button
 										onClick={() => setIssueOpen((v) => !v)}
-										className="nav-underline flex items-center gap-1.5 text-sm font-bold tracking-widest hover:opacity-80 cursor-pointer h-8"
+										className="nav-underline flex items-center gap-1.5 text-sm font-extrabold tracking-widest hover:opacity-80 cursor-pointer h-8"
 									>
 										{item.label}
 										<svg
@@ -201,7 +201,7 @@ export default function Header({
 								) : (
 									<Link
 										href={item.href}
-										className="nav-underline text-sm font-bold tracking-widest hover:opacity-80 pb-2"
+										className="nav-underline text-sm font-extrabold tracking-widest hover:opacity-80 pb-2"
 									>
 										{item.label}
 									</Link>
@@ -501,7 +501,7 @@ export default function Header({
 								<div className="w-1/2 shrink-0 overflow-y-auto">
 									<button
 										onClick={() => setMobileIssueOpen(false)}
-										className="flex w-full items-center gap-2 border-b border-gray-200 px-4 py-4 text-sm font-bold tracking-widest"
+										className="flex w-full items-center gap-2 border-b border-gray-200 px-4 py-4 text-sm font-extrabold tracking-widest"
 									>
 										<span className="text-citgo-red">
 											<svg
