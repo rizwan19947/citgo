@@ -134,6 +134,12 @@
     }
 }
 
+*,
+*::before,
+*::after {
+    border-radius: 0 !important;
+}
+
 /* Header nav underline animation — slides in from left on hover */
 .nav-underline {
     position: relative;
@@ -173,14 +179,14 @@ input[type="search"]::-ms-clear {
 /* UVE block editor hover indicator — only active inside UVE iframe */
 .dotcms-uve-active [data-block-editor-content]:hover {
     background-color: oklch(0.97 0.014 254.6); /* ~blue-50 */
-    border-radius: 0.5rem;
+    border-radius: 0.5rem !important;
     cursor: pointer;
     transition: background-color 0.15s ease;
     /*border: 2px solid dodgerblue;*/
 }
 
 .dotcms-uve-active [data-block-editor-content] {
-    border-radius: 0.5rem;
+    border-radius: 0.5rem !important;
     border: 2px solid dodgerblue;
 }
 
