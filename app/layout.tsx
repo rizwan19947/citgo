@@ -1,4 +1,4 @@
-import { Geist, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { getSiteConfig } from "@/utils/site-config";
 import { getFooterContent, getLatestIssue } from "@/utils/getDotCMSContent";
 import Header from "@/components/Header";
@@ -8,14 +8,26 @@ import { CookieBanner } from "@/components/CookieBanner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+// Univers LT Std — self-hosted
+const univers = localFont({
+	src: [
+		{ path: "./fonts/univers/UniversLTStd-Light.woff2", weight: "300", style: "normal" },
+		{ path: "./fonts/univers/UniversLTStd.woff2", weight: "400", style: "normal" },
+		{ path: "./fonts/univers/UniversLTStd-Obl.woff2", weight: "400", style: "italic" },
+		{ path: "./fonts/univers/UniversLTStd-Bold.woff2", weight: "700", style: "normal" },
+		{ path: "./fonts/univers/UniversLTStd-BoldObl.woff2", weight: "700", style: "italic" },
+		{ path: "./fonts/univers/UniversLTStd-Black.woff2", weight: "900", style: "normal" },
+		{ path: "./fonts/univers/UniversLTStd-BlackObl.woff2", weight: "900", style: "italic" },
+	],
+	variable: "--font-sans",
+	display: "swap",
+});
 
 /*
  * Root layout — wraps every page in the app.
  * Renders the shared Header and Footer so individual pages don't need to.
  * Site config is resolved from the Host header / cookie (no searchParams needed).
  */
-const inter = Inter({ subsets: ["latin"] });
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	const { assetSlug, siteId, hostname } = await getSiteConfig();
@@ -25,8 +37,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 	]);
 
 	return (
-		<html lang="en" className={cn("font-sans", geist.variable)}>
-			<body className={inter.className}>
+		<html lang="en" className={cn("font-sans", univers.variable)}>
+			<body className="font-sans">
 				<UVEBodyClass />
 				<Header siteId={siteId} assetSlug={assetSlug} currentIssue={currentIssue} />
 				<main className="px-6 md:px-0 [&_[data-full-bleed]]:-mx-6 [&_[data-full-bleed]]:md:mx-0">

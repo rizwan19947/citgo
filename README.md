@@ -45,6 +45,7 @@ and renders them with React.
 | Tailwind CSS   | 4       | Utility-first styling                                             |
 | shadcn/ui      | 4       | Accordion (archives page)                                         |
 | TypeScript     | 5       | Static typing                                                     |
+| Univers LT Std | —       | Self-hosted UI font (`next/font/local`, weights 300/400/700/900 + italics) |
 
 ---
 
