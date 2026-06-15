@@ -27,7 +27,7 @@ export function IssueAccordion({ issues }: IssueAccordionProps) {
 									<li key={article.identifier} className="ml-8">
 										<Link
 											href={`/${issue.slug}/${article.slug}`}
-											className="text-lg font-normal text-[#006fc5] not-hover:no-underline"
+											className="text-lg font-normal text-citgo-link underline hover:text-black"
 											target={"_blank"}
 										>
 											{article.title}

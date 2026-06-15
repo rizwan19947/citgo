@@ -23,6 +23,7 @@ Deployed on **Vercel**. Local dev: `npm run dev`. Production build: `npm run bui
 - **Indentation is tabs**, not spaces (match existing files). Match surrounding comment density and naming.
 - **Don't pass `loader={...}` to `<Image>`.** The custom DotCMS loader is configured globally in `next.config.ts` (`images.loaderFile`). Just use `<Image src={`/dA/${identifier}`} … />`.
 - **Theme red is a CSS variable.** `--citgo-red: #b8292f` in `globals.css`, exposed to Tailwind as `citgo-red`. Use `bg-citgo-red` / `text-citgo-red` / `accent-citgo-red` — never hardcode the hex.
+- **Content links use `--citgo-link: #005DAA`** (Tailwind `citgo-link`). Base color blue; the underline/hover interaction varies by surface (underline always vs. on-hover; the header "In This Issue" dropdown uses the animated `.issue-link` slide that mirrors the orange `.nav-underline`). Article body links: `[data-component="Article"] .prose a` in `globals.css`. Footer links and the red "Read More"/"Read Article" CTAs are deliberately excluded. See README → Theming → Content links.
 - **Never remove TODO comments** or their associated code unless explicitly asked.
 - **Plans are saved as docs, not implemented** until the user gives an explicit go-ahead. For multi-step work (e.g. SEO), proceed one step at a time and stop for confirmation.
 - **Keep blast radius small.** The user strongly prefers scoped, surgical changes over broad/global ones (e.g. block-editor fixes are scoped to `.prose`/mobile media queries, not global resets).

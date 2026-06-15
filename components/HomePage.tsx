@@ -57,7 +57,7 @@ function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTit
 				)}
 				<Link
 					href={`/${article.issueSlug}/${article.slug}`}
-					className="inline-block shadow-lg border-2 border-white text-white font-bold text-shadow-lg text-sm uppercase tracking-widest px-6 py-3 hover:bg-white hover:text-citgo-red transition-colors"
+					className="inline-block shadow-lg border-2 border-white text-white font-bold text-shadow-lg text-sm uppercase tracking-widest px-6 py-3 hover:bg-citgo-link hover:border-citgo-link transition-colors"
 				>
 					Read Article
 				</Link>

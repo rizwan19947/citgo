@@ -13,7 +13,9 @@ import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
  * When a contentlet reference is available, text fields use DotCMSEditableText for UVE inline editing.
  */
 
-type ArticleProps = { contentlet: ArticleContentlet; issue?: IssueContentlet; archivedIssues?: IssueContentlet[] } | ArticleContentlet;
+type ArticleProps =
+	| { contentlet: ArticleContentlet; issue?: IssueContentlet; archivedIssues?: IssueContentlet[] }
+	| ArticleContentlet;
 
 function getContentlet(props: ArticleProps): ArticleContentlet {
 	return "contentlet" in props ? props.contentlet : props;
@@ -67,18 +69,6 @@ export default function Article(props: ArticleProps) {
 							<DotCMSBlockEditorRenderer blocks={content} />
 						</div>
 					)}
-					{tagList.length > 0 && (
-						<div className="mt-8 flex flex-wrap gap-2">
-							{tagList.map((tag) => (
-								<span
-									key={tag}
-									className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
-								>
-									{tag}
-								</span>
-							))}
-						</div>
-					)}
 				</article>
 
 				<aside className="md:mt-6 md:sticky md:top-6 md:self-start">
@@ -91,12 +81,11 @@ export default function Article(props: ArticleProps) {
 									<li key={article.identifier}>
 										<Link
 											href={`/${article.issueSlug}/${article.slug}`}
-											className="flex items-start gap-3 no-underline"
+											className="group flex items-start gap-3 no-underline"
 										>
 											{thumb ? (
 												<Image
 													src={`/dA/${thumb}`}
-													
 													alt={article.title || ""}
 													width={100}
 													height={65}
@@ -106,7 +95,7 @@ export default function Article(props: ArticleProps) {
 											) : (
 												<div className="shrink-0 w-[100px] h-[65px] bg-gray-200" />
 											)}
-											<span className="text-blue-600 font-medium leading-snug">
+											<span className="text-citgo-link font-medium leading-snug group-hover:text-black group-hover:underline">
 												{article.title}
 											</span>
 										</Link>

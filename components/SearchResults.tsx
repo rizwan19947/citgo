@@ -202,9 +202,9 @@ export function SearchResults({
 							<Link
 								key={article.identifier}
 								href={articleUrl}
-								className="block py-6 hover:bg-gray-50 -mx-4 rounded"
+								className="group block py-6 hover:bg-gray-50 -mx-4 rounded"
 							>
-								<h3 className="text-lg font-bold text-gray-900">
+								<h3 className="text-lg font-bold text-citgo-link underline group-hover:text-black">
 									<HighlightedText text={article.title} query={activeQuery} />
 								</h3>
 								<p className="mt-2 text-sm text-gray-700 leading-relaxed">
@@ -229,7 +229,7 @@ export function SearchResults({
 					<button
 						onClick={() => setPage((p) => Math.max(1, p - 1))}
 						disabled={page <= 1}
-						className="px-2 py-1 text-blue-700 disabled:text-gray-300 hover:cursor-pointer hover:underline"
+						className="px-2 py-1 text-citgo-link disabled:text-gray-300 hover:cursor-pointer hover:underline"
 						aria-label="Previous page"
 					>
 						&#9664;
@@ -254,7 +254,7 @@ export function SearchResults({
 								className={`px-3 py-1 rounded ${
 									pageNum === page
 										? "font-bold text-gray-900"
-										: "text-blue-700 hover:cursor-pointer hover:underline"
+										: "text-citgo-link hover:cursor-pointer hover:underline"
 								}`}
 							>
 								{pageNum}
@@ -267,7 +267,7 @@ export function SearchResults({
 							<span className="px-1">...</span>
 							<button
 								onClick={() => setPage(totalPages)}
-								className="px-3 py-1 text-blue-700 hover:cursor-pointer hover:underline"
+								className="px-3 py-1 text-citgo-link hover:cursor-pointer hover:underline"
 							>
 								{totalPages}
 							</button>
@@ -277,7 +277,7 @@ export function SearchResults({
 					<button
 						onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
 						disabled={page >= totalPages}
-						className="px-2 py-1 text-blue-700 disabled:text-gray-300 hover:cursor-pointer hover:underline"
+						className="px-2 py-1 text-citgo-link disabled:text-gray-300 hover:cursor-pointer hover:underline"
 						aria-label="Next page"
 					>
 						&#9654;

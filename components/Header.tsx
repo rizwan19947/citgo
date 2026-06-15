@@ -144,7 +144,7 @@ export default function Header({
 							<div className="shrink-0 w-[100px] h-[65px] bg-gray-200 rounded" />
 						)}
 						<div className="flex flex-col min-w-0 w-full max-w-[calc(100vw-11rem)] md:max-w-md">
-							<span className="text-blue-600 font-medium text-sm">
+							<span className="text-citgo-link font-medium text-sm">
 								{result.title}
 							</span>
 							{result.teaser && (
@@ -220,9 +220,9 @@ export default function Header({
 												key={child.label}
 												href={child.href}
 												onClick={() => setIssueOpen(false)}
-												className="block px-4 py-2 text-sm hover:bg-gray-100 w-full"
+												className="group block px-4 py-2 text-base w-full"
 											>
-												{child.label}
+												<span className="issue-link">{child.label}</span>
 											</Link>
 										))}
 									</div>

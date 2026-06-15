@@ -421,6 +421,24 @@ Use the Tailwind utilities `bg-citgo-red`, `text-citgo-red`, `accent-citgo-red`,
 Changing the brand color is a one-line edit. (The darker triangle shades in `DefaultHeroBanner` are intentionally
 separate.)
 
+### Content links
+
+Content/article links use a second variable, `--citgo-link: #005DAA`, exposed to Tailwind as `citgo-link`. The base
+color is **blue (`#005DAA`)**; the underline/hover interaction varies slightly by surface:
+
+- **Search results, archives accordion, article body** (block-editor links via `[data-component="Article"] .prose a` in
+  `globals.css`) — blue + underline, turning black (`#000`) on hover.
+- **"Also In This Issue" sidebar** — blue with **underline on hover only** (`group-hover:underline`), turning black on
+  hover.
+- **Header "In This Issue" dropdown** — default text color at rest; on hover the text turns blue and a blue underline
+  slides in left→right (the `.issue-link` rule, mirroring the orange `.nav-underline` on the nav buttons). Mobile uses
+  the plain default color (no hover).
+
+Component links use `text-citgo-link` (+ `underline` / `group-hover:*` as above); article **body** links are styled in
+`globals.css`, scoped to the article so the footer's block content keeps its muted links. The footer's structured links
+(newsletters, legal, "Visit Other CITGO Sites") and the red "Read More ›" / "Read Article" CTAs are intentionally
+**not** part of this treatment.
+
 ---
 
 ## Cookie Banner
