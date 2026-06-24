@@ -32,7 +32,8 @@ export interface ArticleFields {
 	issueSlug: string;
 	image?: string;
 	mobileImage?: string;
-	content?: BlockEditorNode;
+	// Markdown string for Kentico-migrated content; becomes a BlockEditorNode on first UVE save.
+	content?: BlockEditorNode | string;
 	tags?: string | string[];
 	featuredArticle?: boolean;
 }

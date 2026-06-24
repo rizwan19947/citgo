@@ -3,6 +3,8 @@
  * Recursively walks the document tree and concatenates all text content.
  */
 export function extractText(node: unknown): string {
+	// Migrated articles store their body as a markdown string (until first UVE save).
+	if (typeof node === "string") return stripMarkdown(node);
 	if (!node || typeof node !== "object") return "";
 
 	const n = node as Record<string, unknown>;
@@ -19,6 +21,25 @@ export function extractText(node: unknown): string {
 	}
 
 	return "";
+}
+
+/**
+ * Lightweight markdown -> plain text for search snippets only (NOT a full parser).
+ * Migrated article bodies are stored as a markdown string; this removes the common
+ * syntax so extractSnippet has readable text to window around. The actual search
+ * match runs server-side against the raw string, so this is display-only.
+ */
+function stripMarkdown(md: string): string {
+	return md
+		.replace(/!\[[^\]]*\]\([^)]*\)/g, "") // images ![alt](url) -> removed
+		.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // links [text](url) -> text
+		.replace(/`+/g, "") // inline code / code-fence backticks
+		.replace(/[*_]{1,3}/g, "") // bold/italic markers
+		.replace(/^#{1,6}\s+/gm, "") // ATX headings
+		.replace(/^\s{0,3}>\s?/gm, "") // blockquote markers
+		.replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, "") // list bullets / ordered markers
+		.replace(/\s+/g, " ") // collapse whitespace + newlines
+		.trim();
 }
 
 /**
