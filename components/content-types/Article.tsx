@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { resolveImage } from "@/utils/resolveImage";
 import { DotCMSBlockEditorRenderer, DotCMSEditableText } from "@dotcms/react";
@@ -33,6 +35,19 @@ export default function Article(props: ArticleProps) {
 
 	const siblingArticles = issue?.articles?.filter((a) => a.identifier !== contentlet.identifier);
 
+	// Inline-edit data-attrs are JSON-only: JSON.stringify on a markdown string would feed the
+	// UVE block-editor overlay a quoted string and break it. Markdown self-heals to JSON on first save.
+	const blockEditorAttrs =
+		isEditable && typeof content !== "string"
+			? {
+					"data-block-editor-content": JSON.stringify(content),
+					"data-inode": contentlet.inode,
+					"data-language": String(contentlet.languageId ?? 1),
+					"data-content-type": contentlet.contentType,
+					"data-field-name": "content",
+				}
+			: {};
+
 	return (
 		<>
 			<DefaultHeroBanner
@@ -53,21 +68,19 @@ export default function Article(props: ArticleProps) {
 				className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 mx-auto max-w-6xl py-10"
 			>
 				<article>
-					{content && (
-						<div
-							className="prose mt-6 max-w-none"
-							{...(isEditable
-								? {
-										"data-block-editor-content": JSON.stringify(content),
-										"data-inode": contentlet.inode,
-										"data-language": String(contentlet.languageId ?? 1),
-										"data-content-type": contentlet.contentType,
-										"data-field-name": "content",
-									}
-								: {})}
-						>
-							<DotCMSBlockEditorRenderer blocks={content} />
-						</div>
+					{/* Kentico-migrated content is a markdown string until first UVE save (render via react-markdown); Block Editor JSON renders as before. */}
+					{typeof content === "string" ? (
+						content.trim().length > 0 && (
+							<div className="prose mt-6 max-w-none">
+								<ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+							</div>
+						)
+					) : (
+						content && (
+							<div className="prose mt-6 max-w-none" {...blockEditorAttrs}>
+								<DotCMSBlockEditorRenderer blocks={content} />
+							</div>
+						)
 					)}
 				</article>
 
