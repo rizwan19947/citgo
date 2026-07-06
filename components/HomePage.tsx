@@ -24,28 +24,38 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 	);
 }
 
-function HeroBanner({ banner, issueTitle }: { banner: BannerContentlet; issueTitle: string }) {
-	const bgImage = resolveImage(banner.image);
+function HeroBanner({ banner, issue }: { banner: BannerContentlet; issue: IssueContentlet }) {
+	// Background images come from the parent Issue, not the Banner's own image field.
+	const bgImage = resolveImage(issue.image);
+	const mobileBgImage = resolveImage(issue.mobileImage);
 	const article = Array.isArray(banner.article) ? banner.article[0] : banner.article;
 	if (!article) return null;
 
 	return (
 		<div data-full-bleed className="relative w-screen min-h-[400px] md:min-h-[500px] flex items-center">
-			{bgImage ? (
+			<div className="absolute inset-0 bg-citgo-red" />
+			{bgImage && (
 				<Image
 					src={`/dA/${bgImage}`}
 					alt=""
 					fill
 					quality={75}
-					className="absolute inset-0 object-cover"
+					className={`absolute inset-0 object-cover ${mobileBgImage ? "hidden md:block" : ""}`}
 				/>
-			) : (
-				<div className="absolute inset-0 bg-citgo-red" />
+			)}
+			{mobileBgImage && (
+				<Image
+					src={`/dA/${mobileBgImage}`}
+					alt=""
+					fill
+					quality={75}
+					className="absolute inset-0 object-cover md:hidden"
+				/>
 			)}
 			<div className="absolute inset-0" />
 			<div className="relative z-10 max-w-7xl mx-8 md:mx-32 lg:mx-72 px-6 md:px-12 py-12 md:py-16">
 				<p className="text-lg font-bold tracking-widest text-white text-shadow-lg uppercase mb-3">
-					{issueTitle}
+					{issue.title}
 				</p>
 				<h1 className="text-3xl md:text-5xl font-bold text-white max-w-xl text-shadow-lg leading-tight mb-4">
 					<DotCMSEditableText contentlet={article} fieldName="title" mode="plain" />
@@ -165,7 +175,7 @@ export function HomePage({ currentIssue, pageContent }: HomePageProps) {
 
 	return (
 		<>
-			{banner && <HeroBanner banner={banner} issueTitle={issueTitle} />}
+			{banner && <HeroBanner banner={banner} issue={currentIssue} />}
 
 			<div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
 				{featured.length > 0 && (

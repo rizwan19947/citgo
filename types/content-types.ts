@@ -21,6 +21,7 @@ export interface IssueFields {
 	publishDate?: string;
 	expireDate?: string;
 	image?: string;
+	mobileImage?: string;
 	articles?: ArticleContentlet[];
 	banner?: BannerContentlet;
 }
