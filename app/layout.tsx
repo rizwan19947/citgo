@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { getSiteConfig } from "@/utils/site-config";
 import { getFooterContent, getLatestIssue } from "@/utils/getDotCMSContent";
@@ -28,6 +29,23 @@ const univers = localFont({
  * Renders the shared Header and Footer so individual pages don't need to.
  * Site config is resolved from the Host header / cookie (no searchParams needed).
  */
+
+// Layouts don't receive searchParams; getSiteConfig() resolves via override/host/cookie.
+export async function generateMetadata(): Promise<Metadata> {
+	const { hostname } = await getSiteConfig();
+
+	// Sites are not indexed by default - the env file should have a flag to set it to true
+	const indexable = process.env.SITE_INDEXING === "true";
+
+	return {
+		metadataBase: new URL(`https://${hostname}`),
+		title: {
+			template: "%s | CITGO",
+			default: "CITGO",
+		},
+		...(indexable ? {} : { robots: { index: false, follow: false } }),
+	};
+}
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	const { assetSlug, siteId, hostname } = await getSiteConfig();
