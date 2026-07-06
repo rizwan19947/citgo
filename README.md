@@ -1,8 +1,10 @@
 # CITGO Newsletters — Headless DotCMS Frontend
 
-A multi-site headless CMS frontend serving three CITGO newsletter properties from a single Next.js deployment. DotCMS
+A multi-site headless CMS frontend serving three CITGO newsletter properties from a single Next.js codebase. DotCMS
 provides content management and the Universal Visual Editor (UVE); this app fetches pages and content via the DotCMS SDK
-and renders them with React.
+and renders them with React. In production each site runs as **its own deployment**, pinned via
+`FRONTEND_HOST_OVERRIDE`; a single shared deployment serving all sites is also supported (see
+[Multi-Site Architecture](#multi-site-architecture)).
 
 **Sites served:** citgonow.com, citgonowlubes.com, citgoretailconnections.com
 
@@ -74,7 +76,8 @@ SITE_3=citgoretailconnections.com|ghi789|citgoretail
 # Fallback hostname when no match is found
 DEFAULT_SITE_HOST=citgonow.com
 
-# (Optional) Force a specific site during local dev
+# Pin this deployment to one site (required on per-site production deployments;
+# optional convenience in local dev)
 FRONTEND_HOST_OVERRIDE=citgonow.com
 ```
 
@@ -86,7 +89,11 @@ FRONTEND_HOST_OVERRIDE=citgonow.com
 | `DOTCMS_AUTH_TOKEN`      | API token (generate in DotCMS under User Tools > API Tokens). Server-side only.                      |
 | `SITE_N`                 | Site definition: `hostname                                                                           |siteIdentifier|assetSlug`. The `siteIdentifier` is the DotCMS site identifier (not the inode). The `assetSlug` maps to the folder under `public/assets/` for static site-specific assets (logos, etc). |
 | `DEFAULT_SITE_HOST`      | Hostname to fall back to when the incoming request doesn't match any configured site.                |
-| `FRONTEND_HOST_OVERRIDE` | When set, all requests resolve to this site regardless of Host header. Useful for local development. |
+| `FRONTEND_HOST_OVERRIDE` | Pins the deployment to one site, regardless of Host header. The standard mechanism for per-site production deployments; also useful in local dev. |
+
+> **Convention:** keep the `SITE_N` list (and `DEFAULT_SITE_HOST`) identical on every deployment — only
+> `FRONTEND_HOST_OVERRIDE` varies per deployment. An override host with no matching `SITE_N` entry resolves with an
+> undefined `siteId`, and every DotCMS call fails silently.
 
 ---
 
@@ -182,7 +189,7 @@ npm start
 
 ## Multi-Site Architecture
 
-A single deployment serves all three newsletter sites. Site resolution happens per-request in `utils/site-config.ts`,
+All three newsletter sites share one codebase. Site resolution happens per-request in `utils/site-config.ts`,
 checked in this order:
 
 1. **`FRONTEND_HOST_OVERRIDE`** env var (dev/deploy override)
@@ -197,6 +204,16 @@ DotCMS — the frontend code is shared.
 
 The `assetSlug` determines which folder under `public/assets/` is used for static assets like the header logo (
 `/assets/{assetSlug}/header-logo.svg`).
+
+### Deployment models
+
+| Model | How | When |
+|---|---|---|
+| **Per-site deployments** (production standard) | One deployment per site, each pinned with `FRONTEND_HOST_OVERRIDE` in its environment. Same repo everywhere; different branches can be bound to different site deployments. | Production — one site going down never takes the others with it. |
+| **Shared deployment** | One deployment serves every site, resolved per-request from the Host header (or UVE cookie/query param). | Local dev (one local frontend + DotCMS docker serves all sites) and demo environments. |
+
+Both models run the same code with the same env vars — only `FRONTEND_HOST_OVERRIDE` differs per deployment. Keep the
+`SITE_N` list identical everywhere.
 
 ---
 
@@ -505,6 +522,8 @@ SITE_4=newsite.com|siteIdentifier|newsite
 
 4. Add the hostname to `allowedDevOrigins` in `next.config.ts`.
 
-5. Configure DNS to point the new hostname to the deployment.
+5. Create the site's own deployment with `FRONTEND_HOST_OVERRIDE=newsite.com` in its environment and point DNS at it
+   (per-site model) — or point DNS at the shared deployment. Either way, add the `SITE_4` entry to **every**
+   deployment's environment so the lists stay identical.
 
 No code changes required — the multi-site config is entirely driven by environment variables.

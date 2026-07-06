@@ -1,10 +1,18 @@
 # UVE Site Detection
 
+> **Scope:** this mechanism matters in **shared deployments** — one deployment serving many sites (e.g. local dev
+> against a DotCMS docker). In the per-site production model, each deployment is pinned with `FRONTEND_HOST_OVERRIDE`
+> and each DotCMS site's UVE app points at its own frontend URL, so the detector never fires.
+>
+> **Misconfiguration warning:** if a site's UVE app points at the *wrong* pinned deployment, the detector fires on
+> every load but the override always wins the resolution → **infinite reload loop** inside the editor. The fix is
+> correcting that site's UVE app URL, not the frontend.
+
 ## The problem
 
-This project is a single Next.js deployment that serves multiple DotCMS sites (multisite). In production, the correct site is resolved from the request's `Host` header (e.g. `citgonow.com` vs `citgonowlubes.com`).
+When a single Next.js deployment serves multiple DotCMS sites (shared mode), the correct site is resolved from the request's `Host` header (e.g. `citgonow.com` vs `citgonowlubes.com`).
 
-DotCMS's Universal Visual Editor (UVE) loads the frontend inside an iframe. The iframe URL is always the single deployed frontend URL, so the `Host` header never matches a site domain. The server has no way to know which site the content editor is working on.
+DotCMS's Universal Visual Editor (UVE) loads the frontend inside an iframe. The iframe URL is always the deployed frontend URL, so the `Host` header never matches a site domain. The server has no way to know which site the content editor is working on.
 
 ## How it works
 
