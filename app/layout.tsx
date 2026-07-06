@@ -59,7 +59,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 			<body className="font-sans">
 				<UVEBodyClass />
 				<Header siteId={siteId} assetSlug={assetSlug} currentIssue={currentIssue} />
-				<main className="px-6 md:px-0 [&_[data-full-bleed]]:-mx-6 [&_[data-full-bleed]]:md:mx-0">
+				<main className="px-6 md:px-0 **:data-full-bleed:-mx-6 **:data-full-bleed:md:mx-0">
 					{children}
 				</main>
 				<Footer contentlet={footerContentlet} />
