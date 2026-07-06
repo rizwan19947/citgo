@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { errorMetadata } from "@/utils/getMetadata";
+
+export const metadata = errorMetadata;
 
 /*
  * Shown automatically by Next.js whenever notFound() is called or a route doesn't exist.
