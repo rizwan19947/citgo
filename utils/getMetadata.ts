@@ -95,6 +95,38 @@ export function getMetadataFromPage(page: PageFields, hostname: string, path: st
 	};
 }
 
+// Archived issue pages (/issues/{slug}). The issue image doubles as the OG image.
+export function getMetadataFromIssue(
+	issue: { title?: string; image?: unknown },
+	hostname: string,
+	path: string,
+): Metadata {
+	const title = issue.title || DEFAULT_TITLE;
+	const description = issue.title ? `Articles from the ${issue.title} issue.` : DEFAULT_DESCRIPTION;
+	const imageId = resolveImage(issue.image);
+	const ogImage = imageId ? `https://${hostname}/dA/${imageId}/800maxw/75q` : undefined;
+
+	return {
+		title,
+		description,
+		alternates: { canonical: `https://${hostname}${path}` },
+		openGraph: {
+			title,
+			description,
+			url: `https://${hostname}${path}`,
+			siteName: "CITGO",
+			images: ogImage ? [{ url: ogImage, alt: title, width: 800, height: 600 }] : undefined,
+			type: "website",
+		},
+		twitter: {
+			card: "summary_large_image",
+			title,
+			description,
+			images: ogImage ? [ogImage] : undefined,
+		},
+	};
+}
+
 export const errorMetadata: Metadata = {
 	title: "Page Not Found",
 	robots: { index: false, follow: false },
