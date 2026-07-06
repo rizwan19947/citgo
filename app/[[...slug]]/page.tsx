@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 import { getAllIssues, getIssueBySlug, getLatestIssue } from "@/utils/getDotCMSContent";
 import { getSiteConfig, getSiteIdToHostnameMap } from "@/utils/site-config";
+import {
+	errorMetadata,
+	getMetadataFromPage,
+	getMetadataFromUrlContentMap,
+} from "@/utils/getMetadata";
 import { Page } from "@/views/Page";
 import { DetailPage } from "@/views/DetailPage";
 import { HomePage } from "@/components/HomePage";
@@ -22,6 +28,23 @@ function resolvePath(slug?: string[]): string {
 
 function hasUrlContentMap(urlContentMap?: Record<string, unknown>): boolean {
 	return !!urlContentMap && Object.keys(urlContentMap).length > 0;
+}
+
+// Shares the page component's fetch via React cache() — no extra API call.
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
+	const { slug } = await params;
+	const path = resolvePath(slug);
+	const { siteId, hostname } = await getSiteConfig(await searchParams);
+	const pageContent = await getDotCMSPage(path, siteId);
+
+	if (!pageContent) return errorMetadata;
+
+	const { pageAsset } = pageContent;
+	const urlContentMap = pageAsset.urlContentMap;
+
+	return urlContentMap && hasUrlContentMap(urlContentMap as unknown as Record<string, unknown>)
+		? getMetadataFromUrlContentMap(urlContentMap, hostname, path)
+		: getMetadataFromPage(pageAsset.page, hostname, path);
 }
 
 export default async function CatchAllPage({ params, searchParams }: PageProps) {

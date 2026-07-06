@@ -15,8 +15,15 @@ interface UrlContentMapFields {
 	title?: string;
 	teaser?: string;
 	image?: unknown;
-	publishDate?: string;
-	modDate?: string;
+	publishDate?: string | number;
+	modDate?: string | number;
+}
+
+// Contentlet dates arrive as epoch millis; OpenGraph needs ISO 8601.
+function toISODate(value?: string | number): string | undefined {
+	if (value == null || value === "") return undefined;
+	const date = new Date(typeof value === "string" && /^\d+$/.test(value) ? Number(value) : value);
+	return isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
 interface PageFields {
@@ -37,6 +44,8 @@ export function getMetadataFromUrlContentMap(
 	const description = urlContent.metaDescription || urlContent.teaser || DEFAULT_DESCRIPTION;
 	const imageId = resolveImage(urlContent.image);
 	const ogImage = imageId ? `https://${hostname}/dA/${imageId}/800maxw/75q` : undefined;
+	const publishedTime = toISODate(urlContent.publishDate);
+	const modifiedTime = toISODate(urlContent.modDate);
 
 	return {
 		title,
@@ -49,8 +58,8 @@ export function getMetadataFromUrlContentMap(
 			siteName: "CITGO",
 			images: ogImage ? [{ url: ogImage, alt: title, width: 800, height: 600 }] : undefined,
 			type: "article",
-			...(urlContent.publishDate ? { publishedTime: urlContent.publishDate } : {}),
-			...(urlContent.modDate ? { modifiedTime: urlContent.modDate } : {}),
+			...(publishedTime ? { publishedTime } : {}),
+			...(modifiedTime ? { modifiedTime } : {}),
 		},
 		twitter: {
 			card: "summary_large_image",
