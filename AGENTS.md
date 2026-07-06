@@ -60,6 +60,8 @@ takes `siteId`. **Do not casually expand what this file returns** — keep its b
 Convention: the `SITE_N` list is **identical on every deployment**; only `FRONTEND_HOST_OVERRIDE` varies (it pins each
 per-site production deployment). An override host missing from `SITE_N` silently resolves `siteId: undefined`.
 
+Convention: the `SITE_N` list is **identical on every deployment**; only `FRONTEND_HOST_OVERRIDE` varies (it pins each per-site production deployment). An override host missing from `SITE_N` silently resolves `siteId: undefined`.
+
 ### Routing — `app/[[...slug]]/page.tsx` (catch-all) + dedicated routes
 
 - `/` → `HomePage` (custom layout from the latest live Issue)
