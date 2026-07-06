@@ -4,9 +4,11 @@
 
 ## What this project is
 
-A **multi-site headless CMS frontend**: one Next.js 16 (App Router) deployment serves three CITGO newsletter sites — **citgonow.com**, **citgonowlubes.com**, **citgoretailconnections.com**. DotCMS is the content backend and provides the **Universal Visual Editor (UVE)** for in-context editing. Content is fetched via the DotCMS SDK (`@dotcms/client`, `@dotcms/react`, `@dotcms/uve`, `@dotcms/types`) and rendered with React.
+A **multi-site headless CMS frontend**: one Next.js 16 (App Router) codebase serves three CITGO newsletter sites — **citgonow.com**, **citgonowlubes.com**, **citgoretailconnections.com**. DotCMS is the content backend and provides the **Universal Visual Editor (UVE)** for in-context editing. Content is fetched via the DotCMS SDK (`@dotcms/client`, `@dotcms/react`, `@dotcms/uve`, `@dotcms/types`) and rendered with React.
 
-Deployed on **Vercel**. Local dev: `npm run dev`. Production build: `npm run build`.
+**Deployment model:** production is **one deployment per site**, each pinned via `FRONTEND_HOST_OVERRIDE` in its environment (no single point of failure across sites). The shared-deployment mode (Host-header resolution, one deployment for all sites) remains fully supported and is what local dev/demos use. Same repo for all sites; branches can be bound to different site deployments. Keep code **cloud-agnostic** — Vercel hosts only the dev/demo environments and CITGO may deploy anywhere, so never rely on `VERCEL_*` env vars.
+
+Local dev: `npm run dev`. Production build: `npm run build`.
 
 ## Where to find things
 
@@ -39,6 +41,8 @@ Deployed on **Vercel**. Local dev: `npm run dev`. Production build: `npm run bui
 5. `DEFAULT_SITE_HOST` fallback
 
 `SITE_N` format: `hostname|siteIdentifier|assetSlug` (use the site **identifier**, not the inode). Every DotCMS call takes `siteId`. **Do not casually expand what this file returns** — the user is protective of its blast radius.
+
+Convention: the `SITE_N` list is **identical on every deployment**; only `FRONTEND_HOST_OVERRIDE` varies (it pins each per-site production deployment). An override host missing from `SITE_N` silently resolves `siteId: undefined`.
 
 ### Routing — `app/[[...slug]]/page.tsx` (catch-all) + dedicated routes
 - `/` → `HomePage` (custom layout from the latest live Issue)
