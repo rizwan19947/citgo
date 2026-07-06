@@ -181,8 +181,7 @@ npm start
 └── docs/
     ├── content-types.md           # DotCMS field type → React rendering reference
     ├── uve-site-detection.md      # Multi-site UVE site-switching
-    ├── seo-strategy-plan.md       # Phased SEO implementation plan
-    └── seo-strategy-overview.md   # SEO rationale
+    └── seo-handover.md            # SEO implementation + indexing reference
 ```
 
 ---
@@ -199,7 +198,7 @@ checked in this order:
 5. **`DEFAULT_SITE_HOST`** fallback
 
 `getSiteConfig()` returns `{ siteId, hostname, assetSlug }`. The resolved `siteId` is passed to every DotCMS API call;
-`hostname` is used for absolute URLs (canonicals, OG, sitemaps). Each site has its own content, issues, and articles in
+`hostname` is used for absolute URLs (canonicals, OG). Each site has its own content, issues, and articles in
 DotCMS — the frontend code is shared.
 
 The `assetSlug` determines which folder under `public/assets/` is used for static assets like the header logo (
@@ -285,7 +284,7 @@ Article
   ├── content (Block Editor)
   ├── tags                          (surfaced in the editor as "Keywords")
   ├── featuredArticle (boolean)
-  └── metaTitle, metaDescription    (optional SEO overrides — see docs/seo-strategy-plan.md)
+  └── metaTitle, metaDescription    (optional SEO overrides — see docs/seo-handover.md)
 
 FooterContent
   ├── title
@@ -356,7 +355,7 @@ Returns `{ results, total, page, pageSize }`.
 2. **Search results page** (`app/search/page.tsx` → `components/SearchResults.tsx`) — full results with the query
    highlighted in both titles and a content snippet (extracted via `utils/extractText.ts`), "Current Issue / Archived
    Issues" filter radios, and pagination. The highlight + result count update on submit (not on keystroke). The page
-   should be `noindex, follow` once SEO metadata lands.
+   is `noindex, follow`.
 
 ---
 
