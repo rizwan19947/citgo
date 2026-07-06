@@ -34,7 +34,7 @@ function MyContentType({ title, body, image, identifier }: any) {
   return (
     <div>
       <h2>{title}</h2>
-      {body && <DotBlockEditor blocks={body} />}
+      {body && <DotCMSBlockEditorRenderer blocks={body} />}
       {image && <Image src={`/dA/${identifier}/image`} ... />}
     </div>
   );
@@ -47,7 +47,7 @@ function MyContentType({ title, body, image, identifier }: any) {
 |------------------------|-------------------------------------|---------------------------------------------------|
 | **Text**               | `string`                            | Direct JSX `{title}`                               |
 | **Rich Text / WYSIWYG**| `string` (HTML)                     | `dangerouslySetInnerHTML` or parser                |
-| **Block Editor**       | `object` (ProseMirror JSON)         | `<DotBlockEditor blocks={field} />`                |
+| **Block Editor**       | `object` (ProseMirror JSON)         | `<DotCMSBlockEditorRenderer blocks={field} />`     |
 | **Binary / Image**     | `string` (identifier)               | `<Image src={/dA/${identifier}/image} />`          |
 | **File**               | `{ idPath, identifier, ... }`       | `<Image src={file.idPath} />`                      |
 | **Relationship**       | `object[]` (array of contentlets)   | Map and render each item                           |
@@ -76,16 +76,16 @@ The `layout` field is typically a select/radio field on the content type in DotC
 
 ### 5. Image Handling
 
-This project uses a custom `ImageLoader` (`utils/imageLoader.ts`) that routes through DotCMS's `/dA/` asset API for on-the-fly resizing:
+This project uses a custom image loader (`utils/imageLoader.ts`) that routes through DotCMS's `/dA/` asset API for on-the-fly resizing. It is configured globally in `next.config.ts` (`images.loaderFile`) — never pass a `loader` prop:
 
 ```tsx
 import Image from "next/image";
 
 // By identifier (binary field)
-<Image src={`/dA/${identifier}/image`} loader={ImageLoader} ... />
+<Image src={`/dA/${identifier}/image`} ... />
 
 // By file asset path
-<Image src={fileAsset.idPath} loader={ImageLoader} ... />
+<Image src={fileAsset.idPath} ... />
 ```
 
 ### 6. Block Editor Rendering
@@ -93,7 +93,7 @@ import Image from "next/image";
 Rich content from DotCMS's Block Editor arrives as ProseMirror JSON. Render it with custom node renderers:
 
 ```tsx
-<DotBlockEditor
+<DotCMSBlockEditorRenderer
   blocks={bodyField}
   customRenderers={{
     paragraph: MyParagraph,

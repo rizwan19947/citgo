@@ -22,6 +22,10 @@ set or maintained to keep the sites out of Google.
 article URL is pasted into an email, Slack, Teams, or LinkedIn, the preview card (title, description, image) is
 generated from the OpenGraph tags below, which work regardless of `noindex`.
 
+> **Expected audit result:** Lighthouse / PageSpeed Insights reports one failing SEO audit — *"Page is blocked from
+> indexing"* — capping the SEO score around 69. That is the intended `noindex`, not a defect; every other SEO audit
+> passes, and the score can only increase by making the sites indexable.
+
 ## What every page emits
 
 All pages get: a `<title>` ending in `| CITGO`, a meta description, a canonical URL on the site's own domain, and
