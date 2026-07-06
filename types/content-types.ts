@@ -37,6 +37,9 @@ export interface ArticleFields {
 	content?: BlockEditorNode | string;
 	tags?: string | string[];
 	featuredArticle?: boolean;
+	// SEO overrides; fall back to title/teaser.
+	metaTitle?: string;
+	metaDescription?: string;
 }
 
 export type BannerContentlet = Contentlet<BannerFields>;
