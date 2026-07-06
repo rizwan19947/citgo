@@ -1,8 +1,18 @@
+import type { Metadata } from "next";
 import { PageProps } from "@/types/page";
 import { getSiteConfig } from "@/utils/site-config";
 import { getAllIssues, getLatestIssue } from "@/utils/getDotCMSContent";
 import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
 import { IssueAccordion } from "@/components/IssueAccordion";
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+	const { hostname } = await getSiteConfig(await searchParams);
+	return {
+		title: "Archives",
+		description: "Browse all past issues and articles.",
+		alternates: { canonical: `https://${hostname}/archives` },
+	};
+}
 
 export default async function ArchivesPage({ searchParams }: PageProps) {
 	const sp = await searchParams;
