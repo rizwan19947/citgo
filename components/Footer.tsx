@@ -125,6 +125,7 @@ export default function Footer({ contentlet }: FooterProps) {
 											key={site.label}
 											href={site.href}
 											target="_blank"
+											rel="noopener noreferrer"
 											className="block px-4 py-2 text-sm hover:bg-gray-100"
 										>
 											{site.label}
@@ -143,6 +144,7 @@ export default function Footer({ contentlet }: FooterProps) {
 							<li key={link.label}>
 								<Link
 									target={"_blank"}
+									rel="noopener noreferrer"
 									href={link.href}
 									className="hover:text-gray-900"
 								>
