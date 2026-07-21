@@ -227,6 +227,13 @@ input[type="search"]::-ms-clear {
     color: #000;
 }
 
+/* Prose defaults bullets to light gray; match them to the body text. */
+[data-component="Article"] .prose {
+    --tw-prose-bullets: #000;
+    /* tw-prose-body belongs to tailwind typography
+    * and it's reference will be generated at runtime */
+}
+
 /* Block editor table styles */
 .prose table {
     width: 100%;
