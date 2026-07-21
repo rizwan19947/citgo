@@ -28,7 +28,6 @@ export function IssueAccordion({ issues }: IssueAccordionProps) {
 										<Link
 											href={`/${issue.slug}/${article.slug}`}
 											className="text-lg font-normal text-citgo-link underline hover:text-black"
-											target={"_blank"}
 										>
 											{article.title}
 										</Link>
