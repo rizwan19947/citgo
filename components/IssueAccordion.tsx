@@ -17,7 +17,7 @@ export function IssueAccordion({ issues }: IssueAccordionProps) {
 					value={issue.title ?? issue.identifier}
 					className="font-bold capitalize"
 				>
-					<AccordionTrigger className="text-[#333] font-bold text-2xl uppercase py-5 px-5 cursor-pointer hover:no-underline">
+					<AccordionTrigger className="text-[#333] font-medium text-2xl uppercase py-5 px-5 cursor-pointer hover:no-underline">
 						{issue.title}
 					</AccordionTrigger>
 					<AccordionContent>
