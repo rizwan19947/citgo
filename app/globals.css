@@ -227,6 +227,11 @@ input[type="search"]::-ms-clear {
     color: #000;
 }
 
+/* Bold text inside a link follows the link color (prose forces strong to near-black). */
+[data-component="Article"] .prose a strong {
+    color: inherit;
+}
+
 /* Prose defaults bullets to light gray; match them to the body text. */
 [data-component="Article"] .prose {
     --tw-prose-bullets: #000;
