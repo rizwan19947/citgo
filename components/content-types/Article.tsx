@@ -23,6 +23,22 @@ function getContentlet(props: ArticleProps): ArticleContentlet {
 	return "contentlet" in props ? props.contentlet : props;
 }
 
+// Lives inside .prose (not the aside) so the body text wraps around the float; stacks on mobile.
+function FloatingArticleImage({ src, alt }: { src: string; alt: string }) {
+	return (
+		<figure className="not-prose w-full mb-5 md:float-right md:ml-6 md:mb-3 md:w-[45%] md:max-w-[380px]">
+			<Image
+				src={`/dA/${src}`}
+				alt={alt}
+				width={680}
+				height={510}
+				sizes="(max-width: 768px) 100vw, 380px"
+				className="h-auto w-full"
+			/>
+		</figure>
+	);
+}
+
 export default function Article(props: ArticleProps) {
 	const contentlet = getContentlet(props);
 	const { title, image, mobileImage, content, tags } = contentlet;
@@ -71,13 +87,19 @@ export default function Article(props: ArticleProps) {
 					{/* Kentico-migrated content is a markdown string until first UVE save (render via react-markdown); Block Editor JSON renders as before. */}
 					{typeof content === "string" ? (
 						content.trim().length > 0 && (
-							<div className="prose mt-6 max-w-none">
+							<div className="prose mt-6 max-w-none flow-root [&>figure+*]:mt-0">
+								{displayImage && (
+									<FloatingArticleImage src={displayImage} alt={title || ""} />
+								)}
 								<ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
 							</div>
 						)
 					) : (
 						content && (
-							<div className="prose mt-6 max-w-none" {...blockEditorAttrs}>
+							<div className="prose mt-6 max-w-none flow-root [&>figure+*]:mt-0" {...blockEditorAttrs}>
+								{displayImage && (
+									<FloatingArticleImage src={displayImage} alt={title || ""} />
+								)}
 								<DotCMSBlockEditorRenderer blocks={content} />
 							</div>
 						)
