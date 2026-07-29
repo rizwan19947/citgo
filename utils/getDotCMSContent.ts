@@ -87,8 +87,10 @@ export const getAllIssues = cache(async (siteId: string, excludeIdentifier?: str
 		const excludeClause = excludeIdentifier ? ` -identifier:${excludeIdentifier}` : "";
 		const response = await client.content
 			.getCollection<Contentlet<IssueFields>>("Issue")
+			.sortBy([{ field: "Issue.publishDate", order: "desc" }])
 			.query(`+live:true${excludeClause}`)
 			.depth(1)
+			.limit(100)
 			.language(1);
 
 		return response.total > 0 ? response.contentlets : undefined;
