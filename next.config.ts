@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
 		loader: "custom",
 		loaderFile: "./utils/imageLoader.ts",
 	},
+	// Absorb/override chrome devtools probe
+	async rewrites() {
+		return [
+			{
+				source: "/.well-known/appspecific/:path*",
+				destination: "/api/devtools-stub",
+			},
+		];
+	},
 };
 
 export default nextConfig;
