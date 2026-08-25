@@ -3,6 +3,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { BlockEditorNode } from "@dotcms/types"
 import { resolveImage } from "@/utils/resolveImage";
 import { DotCMSBlockEditorRenderer, DotCMSEditableText } from "@dotcms/react";
 import { ArchivedIssueSelect } from "@/components/ArchivedIssueSelect";
@@ -18,6 +19,18 @@ import { DefaultHeroBanner } from "@/components/shared/DefaultHeroBanner";
 type ArticleProps =
 	| { contentlet: ArticleContentlet; issue?: IssueContentlet; archivedIssues?: IssueContentlet[] }
 	| ArticleContentlet;
+
+function stripEmptyBlocks(node: BlockEditorNode): BlockEditorNode {
+	if (!node?.content) return node;
+
+	if (node.content.length === 0) {
+		const clean: BlockEditorNode = { ...node };
+		delete clean.content;          // emit {"type":"paragraph"} — the shape the editor produces
+		return clean;
+	}
+
+	return { ...node, content: node.content.map(stripEmptyBlocks) };
+}
 
 function getContentlet(props: ArticleProps): ArticleContentlet {
 	return "contentlet" in props ? props.contentlet : props;
@@ -100,7 +113,7 @@ export default function Article(props: ArticleProps) {
 								{displayImage && (
 									<FloatingArticleImage src={displayImage} alt={title || ""} />
 								)}
-								<DotCMSBlockEditorRenderer blocks={content} />
+								<DotCMSBlockEditorRenderer blocks={stripEmptyBlocks(content as BlockEditorNode)} />
 							</div>
 						)
 					)}
