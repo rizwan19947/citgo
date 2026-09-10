@@ -26,6 +26,27 @@ Local dev: `npm run dev`. Production build: `npm run build`.
 | `docs/content-types.md`      | DotCMS field type → React rendering reference                                                                |
 | `docs/uve-site-detection.md` | How multi-site UVE site-switching works                                                                      |
 | `docs/seo-handover.md`       | SEO implementation + indexing reference (the sites are deliberately `noindex`)                               |
+| `docs/vip-offerings/`        | **Active initiative** — see below                                                                            |
+
+## Active initiative: VIP Offerings (planning complete, not yet built)
+
+A five-pillar add-on suite prototyped on this project — observability, config preflight, asset
+watchdog, image pipeline, SEO/perf baseline. **As of 2026-09-11 nothing is implemented**; the work is
+four planning docs plus an index.
+
+**Read `docs/vip-offerings/00-index.md` first.** It carries the settled decisions, the hard
+constraints, and every measurement already taken against the client's instance — so you do not
+re-probe it or re-litigate closed questions.
+
+Three things that catch people out:
+
+- **The dotCMS instance is read-only.** It is the client's live dev environment, already handed off.
+  No content types, no fields, no plugins, no server config. Every check is a GET, and a live rate
+  limiter applies.
+- **Browser RUM was deliberately cut; OpenTelemetry was not.** P1 is server-side spans only. The
+  browser half is delegated to whatever RUM the client already runs.
+- **Everything must stay host- and CI-agnostic.** The deliverables are a CLI and a library;
+  schedulers and workflow files are reference examples only.
 
 ## Critical conventions (read before editing)
 
