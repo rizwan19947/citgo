@@ -3,10 +3,12 @@
 **Question:** should we build an MVP of the VIP add-on suite, on top of the CITGO headless frontend,
 in ~2 weeks?
 
-> **Revised 2026-09-09:** the calendar was compressed to **5 days**. **Scope is unchanged** — the
-> same 9.5–11.5 days of work, absorbed by longer days rather than by cutting pillars. The analysis
-> below stands in full; see [the implementation plan](./03-implementation-plan.md) for the
-> compressed pacing and the day-4 contingency.
+> **Revised 2026-09-09/11.** Two changes since first draft. (1) The calendar compressed to **5 days**
+> — a schedule change, not a scope cut. (2) **Browser RUM was cut** after the
+> [client observability research](./04-client-observability-research.md) found that target
+> enterprises already own it and their agents already propagate W3C `traceparent`. Net work is now
+> **~8–10 days** across five, and the pre-GA dependency is off the critical path. Everything else in
+> this study stands.
 
 **Answer: yes — with two pillars rescoped and one merged.** The suite addresses a real, unserved gap;
 four of five pillars need no infrastructure beyond the existing deployment; and the strongest proof
@@ -138,16 +140,16 @@ Solo, 10 working days, crunch available. Estimates assume the merges and drops a
 | P4 Image Pipeline | 2–2.5 d | none | **High** — measured behaviour, AVIF dropped |
 | P5 SEO/Perf | 1–1.5 d | none | **High** — mostly extraction |
 | P3 Watchdog | ~1 d *(post-merge)* | scheduler only | Medium — reuses P2 assertions |
-| P1 Observability | 3–4 d | OTLP backend | **Low–Medium** — browser OTel is the risk |
-| | **8.5–11 d** | | |
+| P1 Observability *(RUM cut)* | ~1.5 d | OTLP backend | **High** — server spans only |
+| | **~8–10 d** | | |
 
-Against 10 days this is achievable but has no slack, and the variance sits almost entirely in P1.
-Compressed into 5 calendar days, the same total is absorbed by roughly 14–16 hour days. That is a
-schedule decision, not an estimating one — the work does not get smaller. Two consequences worth
-naming: **P1 remains the risk and cannot be brute-forced with hours** (a pre-GA browser SDK does not
-behave better at midnight), and the plan therefore fixes a cutoff time on day 4 after which P1 falls
-back to a `web-vitals` beacon emitting spans server-side — about two hours, no browser OTel
-dependency, at the cost of browser↔server correlation. That is a contingency, not a planned cut.
+Compressed into 5 calendar days that is roughly **12–14 hour days** — a schedule decision, not an
+estimating one. The original figure was 8.5–11 days with P1 at 3–4 and rated Low–Medium certainty;
+cutting browser RUM removed both the largest single estimate and the only pre-GA dependency, so what
+remains is high-certainty work that responds to hours in the way the browser SDK never would have.
+
+A `web-vitals` beacon remains available as documented sample code for a client with no RUM of their
+own — roughly two hours — but it is not built as part of the MVP.
 
 **Sequencing matters more than the totals.** P4 modifies the `/dA` proxy; P1 instruments it. Doing
 P1 first means redoing spans. Correct order is P2 → P4 → P5 → P1 → P3, which also front-loads the
@@ -155,8 +157,10 @@ three high-certainty pillars so that a bad week in P1 still leaves a demonstrabl
 
 ### The P1 risk, specifically
 Server-side OTel in Next.js is a solved problem — `instrumentation.ts` is auto-detected in Next 15+,
-and either `@vercel/otel` or a manual `NodeSDK` instruments App Router server components and route
-handlers. Budget ~1 day.
+and a manual `NodeSDK` instruments App Router server components and route handlers. Register `http`
+and `undici` only — `auto-instrumentations-node` pulls dozens of irrelevant integrations. Client
+bundle cost is zero (server-side only); the one real cost is process start, which amortises to
+nothing on a container or VM and is paid per cold start on serverless targets. Budget ~1 day.
 
 Browser RUM is not solved. The OpenTelemetry Browser SDK is still in progress; there is **no official
 web-vitals instrumentation package**; Elastic's distribution is tech preview and Honeycomb's wrapper
@@ -179,10 +183,11 @@ alternative rather than betting on upstream GA timing.
 | Frontend deploy | Existing deployment, separate URL | $0 incremental |
 | Trace/RUM backend | Grafana Cloud Free — 50 GB traces, 14-day retention, 3 users | **$0** |
 | OTel collector | None. Export OTLP direct from the app | $0 |
-| Watchdog scheduler | GitHub Actions cron | $0 *(see below)* |
+| Watchdog scheduler | GitHub Actions cron *(one reference scheduler; a plain cron or any CI works)* | $0 *(see below)* |
 | LQIP generation | Existing `/dA` (`/24w/30q` = 494 B) | $0 |
 
-**Total MVP opex: $0/month.** The one trap: GitHub Actions on a private repo gives 2,000 min/month.
+**Total MVP opex: $0/month.** The one trap is GitHub-specific, not universal: GitHub Actions on a
+private repo gives 2,000 min/month.
 A 2-minute check every 30 minutes is 2,880 min/month and **exceeds it**. Run every 2 hours (720
 min/month) or use Checkly's Hobby tier (10 uptime + 1,000 browser checks, free).
 

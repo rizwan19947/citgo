@@ -42,9 +42,13 @@ Five rules that matter more than they would on a ten-day schedule.
 2. **Respect the rate limiter.** Cap concurrency; record `x-dotrequest-cost`.
 3. **Repo conventions hold:** tabs not spaces, no `loader` prop on `<Image>`, `citgo-red` /
    `citgo-link` tokens never hardcoded, no `VERCEL_*` dependencies.
-4. **Keep blast radius small.** New code under `vip/` and `app/api/_vip/`; edits to existing files are
+4. **Host-agnostic by construction.** Nothing may assume a hosting provider or a CI vendor. The
+   deliverables are a **CLI** and a **library**; schedulers and workflow files are reference examples,
+   not the product. Where behaviour genuinely differs by host — cold start, CDN caching — say so
+   rather than assuming one.
+5. **Keep blast radius small.** New code under `vip/` and `app/api/_vip/`; edits to existing files are
    surgical and listed per day.
-5. **Every pillar ships behind an env flag**, default off.
+6. **Every pillar ships behind an env flag**, default off.
 
 ### Surface area
 
@@ -153,6 +157,11 @@ inherit, and emit `Vary: Accept` since the next step makes the response depend o
 **Measure and screenshot before moving on.** This is the demo's headline number and the single
 biggest measured win in the suite.
 
+**Caveat the number when you quote it.** The header is correct on any host, but whether it yields a
+*hit* depends on what sits in front: some CDNs also want `s-maxage` or `CDN-Cache-Control`, and an
+origin with no CDN gets browser caching only. The fix is portable; the measured delta is specific to
+the demo's edge. Do not let it be quoted as a universal figure.
+
 ### Accept forwarding + negotiation — `vip/image/negotiate.ts`
 - Forward the browser's `Accept` upstream in the proxy.
 - Because dotCMS ignores it entirely (measured: it returned WebP even to `Accept: image/jpeg`),
@@ -215,12 +224,31 @@ fetched.
 
 ### P1 server spans — `instrumentation.ts` + `vip/otel/server.ts` *(judgment work — do first, ~half day)*
 This is now the whole of P1's hard part, since browser RUM is cut.
-Auto-detected in Next.js 15+, no config flag. Prefer a manual `@opentelemetry/sdk-node` `NodeSDK` over
-`@vercel/otel` — the repo is deliberately cloud-agnostic and OTel was chosen for neutrality. OTLP
-exporter, endpoint from env, head sampling from `VIP_SAMPLE_RATE` with a conservative default.
+
+- Auto-detected in Next.js 15+, no config flag.
+- Prefer a manual `@opentelemetry/sdk-node` `NodeSDK` over `@vercel/otel` — the repo is deliberately
+  cloud-agnostic and OTel was chosen for neutrality. (`@vercel/otel` remains the known escape hatch
+  if OTel's require-hooks fight Next's bundling; reach for `serverExternalPackages` first.)
+- OTLP exporter, endpoint from env, head sampling from `VIP_SAMPLE_RATE` with a conservative default.
+- **Register `http` and `undici` only.** Do *not* use `@opentelemetry/auto-instrumentations-node` — it
+  registers dozens of instrumentations this app has no use for (gRPC, Redis, Postgres, Mongo, AWS
+  SDK), each hooking module loading. `undici` covers `fetch`, which is how the SDK and the `/dA`
+  proxy talk out. That is the entire surface needed.
 
 Stand up the Grafana Cloud free-tier backend now, not on Day 4 — you want the pipe proven before the
 hard part.
+
+**Overhead, and where it lands.** Client bundle: zero — server-side only. Per request: ~6 spans at
+low-microsecond cost each, invisible against an app that spends over a second in dotCMS round-trips.
+The real cost is **process start**, and it depends on the deployment target, not the vendor: on a
+container or VM (`next start`, Docker, ECS, Cloud Run with warm instances) it is paid once at boot and
+amortises to nothing; on any **serverless/FaaS** target it is paid per cold start, and
+`BatchSpanProcessor` may need a force-flush before the function freezes — which does add latency to
+the response. Decide that deliberately for the target at hand. Head sampling cuts creation cost too,
+not just egress: unsampled spans are non-recording.
+
+Measure rather than trust the estimate — p50/p95 with `VIP_OTEL_ENABLED` off, then on. Ten minutes,
+and it gives you a real number for the demo.
 
 ### P1 dotCMS call spans — `vip/otel/dotcms-span.ts` *(~half day)*
 Wrap `utils/dotCMSClient.ts` and the `/dA` route with spans carrying operation, `siteId`, path,
@@ -306,14 +334,23 @@ against the crunch.
   and respect the rate limiter.
 - `/api/search?q={knownTerm}` returns `total > 0`.
 
-### Scheduler — `.github/workflows/watchdog.yml`
+### Scheduler — reference example, not the product
+The deliverable is `npm run doctor` plus the assertion library — both host- and CI-agnostic because
+`CheckContext` is injected rather than read from the environment. A scheduler is a thin wrapper, and
+GitHub Actions is one example among several. Ship a plain cron invocation alongside it
+(`*/0 */2 * * * cd /app && npm run doctor -- --json`) so a client on GitLab CI, Jenkins, Azure DevOps
+or a bare VM has a path that does not involve rewriting anything.
+
+#### `.github/workflows/watchdog.yml`
 - Fail the run and open or update an issue on regression.
 - Emit results as OTel spans, tagged with `siteId`, so watchdog failures land on the same dashboard
   as the call spans.
 - **Honour the same `VIP_TRACE_SITES` include/exclude list** as tracing, so a site the client does not
   want monitored is never probed. Checks run per site and report per site.
 - **Every 2 hours, not every 30 minutes** — a 2-minute check at 30-minute intervals is 2,880 min/month
-  against a 2,000-minute private-repo allowance.
+  against GitHub's 2,000-minute private-repo allowance. *That budget is GitHub-specific*; a
+  self-hosted runner or cron has no such ceiling, so state the constraint as an example rather than a
+  rule of the suite.
 
 ### Demo assembly
 Dashboard polish, the screenshots collected through the week, one full rehearsal.
