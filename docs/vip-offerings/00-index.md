@@ -38,6 +38,11 @@ CITGO project. Five pillars:
 - **Scope is frontend only.** Backend and admin-panel observability belong to the product team.
 - **Host- and CI-agnostic.** The deliverables are a CLI and a library; schedulers and workflow files
   are reference examples. No `VERCEL_*`, no assumed CDN, no assumed CI vendor.
+- **No runtime endpoint.** A `/api/_vip/preflight` route was built on Day 1 and removed the same
+  day. Preflight is a **pre-deploy CI gate only** (`npm run doctor`, non-zero exit on error). One
+  inbound request fanned out to nine upstream dotCMS calls, and the realistic failure was an ops
+  engineer pointing an uptime monitor at something that looks like a health probe — which a bearer
+  token does not prevent. Accepted limitation: nothing verifies the *deployed* env, only CI's.
 - **Packaging:** internal reference architecture → PS accelerator → productised SKU only if adoption
   proves it.
 

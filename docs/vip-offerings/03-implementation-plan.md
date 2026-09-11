@@ -72,8 +72,6 @@ vip/
   image/
     negotiate.ts       Accept -> format decision
     lqip.ts            /24w/30q -> data URI
-app/api/_vip/
-  preflight/route.ts
 .github/workflows/
   watchdog.yml
   lighthouse.yml
@@ -102,7 +100,7 @@ export interface Check {
 `process.env` inside a check**, so the same check runs locally and against a remote deployment. That
 one decision is what makes Day 5 cheap. Put the disk-caching fetch wrapper (working rule 2) here.
 
-Add `VIP_ENABLED`, `VIP_OTEL_ENABLED`, `VIP_SAMPLE_RATE` to `.env.example` (defaults off) and
+Add `VIP_OTEL_ENABLED`, `VIP_SAMPLE_RATE`, `VIP_BASE_URL`, `VIP_CACHE` to `.env.example` (defaults off) and
 `"doctor": "tsx vip/runners/cli.ts"` to `package.json`.
 
 ### Environment checks — `vip/assertions/env.ts`
@@ -135,10 +133,70 @@ pins one site, because multisite is foundational here.
 ### Runners *(mechanical — do this last)*
 - `vip/runners/report.ts` — shared formatter, text and JSON.
 - `vip/runners/cli.ts` — table output, `--json`, non-zero exit on any `error`.
-- `app/api/_vip/preflight/route.ts` — same registry, JSON body, 200/503 by worst severity. **Gate on
-  `VIP_ENABLED`, 404 when off.**
+- **No runtime endpoint.** See "Decision: no preflight endpoint" below.
 
 **Done when:** doctor is green, and breaking `FRONTEND_HOST_OVERRIDE` names the cause precisely.
+
+### Day 1 — built 2026-09-11 ✅
+
+Delivered: `vip/assertions/{types,env,connectivity,sites,proxy,index}.mts`,
+`vip/lib/{siteConfig,cachedFetch}.mts`, `vip/runners/{report,cli}.mts`, the `.env.example` block,
+and the `doctor` script.
+
+Result against the live instance: **14 passed, 1 warning, 1 error.** The warning is the real
+SDK/core drift (`1.4.0` semver vs `26.08.19-04` CalVer). The error is `proxy.cacheable` catching the
+`no-cache` defect through the running proxy — a Day 1 check finding what Day 2 fixes, which is the
+strongest possible validation of the pillar.
+
+Three deviations from the plan as written, all reducing scope rather than adding it:
+
+| Planned | Built | Why |
+|---|---|---|
+| `"doctor": "tsx vip/runners/cli.ts"` | `"doctor": "node vip/runners/cli.mts"` | Node 24 strips types natively and `process.loadEnvFile()` reads `.env`. **Zero new dependencies** — no `tsx`, no `dotenv`. |
+| `.ts` throughout | `.mts` throughout | `package.json` has no `"type": "module"`, so `.ts` resolves as CJS under plain Node while the code is ESM. `.mts` is unambiguous, and `tsconfig.json` already included `**/*.mts`. |
+| — | `allowImportingTsExtensions: true` in `tsconfig.json` | Node *requires* explicit `.mts` specifiers at runtime; TypeScript needs this flag to allow them. Safe because `noEmit` is already set. |
+
+Two design notes worth carrying forward:
+
+- **Probes are memoised per `CheckContext` via `WeakMap`.** `connectivity` makes one authenticated
+  request and derives reachability, auth, version alignment and rate-limit budget from its headers;
+  `sites` probes each site once at concurrency 2. That keeps the rate-limit cost of a full run at
+  roughly one request per site plus two.
+- **Proxy checks skip cleanly without `--base-url`** rather than failing, so `npm run doctor` is
+  green against `.env` alone and only exercises the proxy when pointed at a running deployment.
+
+### Decision: no preflight endpoint — pre-deploy CI only
+
+A `/api/_vip/preflight` route was built on Day 1 and then **removed the same day**. Recording the
+reasoning so it is not rebuilt.
+
+It was justified by a real gap: env and connectivity checks read the environment of whatever process
+runs them, so a green CI run proves the *runner's* config is right, not the deployment's. Only
+in-process code can assert the deployed container has the correct `FRONTEND_HOST_OVERRIDE`.
+
+It was dropped anyway, for reasons that outweigh that:
+
+- **It ships a critical, abusable surface into every client repository.** One inbound request fans
+  out to nine upstream dotCMS calls (`1 + 2N + 2` for N sites). The realistic failure is not an
+  attacker — it is an ops engineer pointing an uptime monitor at something that returns 200/503 and
+  looks exactly like a health probe. At a one-minute interval that is ~13,000 dotCMS requests a day,
+  forever, for no information. **A bearer token does not prevent that**, because the person making
+  the mistake is on the team.
+- **The implementation is inherently client-specific** — auth model, exposure policy, and caching
+  would be renegotiated per engagement. That is a flaky, high-churn surface to own under a
+  lift-and-shift model where the client owns the code after handover.
+- Measured for honesty: the rate limiter on the CITGO instance is *not* the pressure point — five
+  `_search` calls drew ~1–2 tokens from a refilling 100,000 bucket, and `x-dotrequest-cost` reads
+  `0.00`. The objection is the fan-out ratio and the surface, not exhaustion.
+
+**What replaces it:** the CI gate. `npm run doctor` exits non-zero on any error-severity failure and
+names the cause, so the pipeline tells the engineer their `FRONTEND_HOST_OVERRIDE` is wrong before
+anything deploys.
+
+**The accepted limitation:** nothing verifies the *deployed* environment. The check is only as good
+as CI's env matching production. If a client ever wants that closed, the answer is to run the same
+CLI as a release step inside the deployment environment — still no listening surface — not to add an
+endpoint.
 
 ---
 

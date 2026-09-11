@@ -49,8 +49,9 @@ client already runs.
 Validates that a headless deployment is wired correctly before it serves traffic: env completeness
 and shape, DotCMS reachability and token validity, **SDK↔core version alignment** (via the
 already-emitted `x-dotcms-min-sdk`), `/dA` proxy round-trip, and the full single/multi-site
-resolution matrix. Ships as a CLI (`npm run doctor`), a `/api/_health/preflight` endpoint, and a CI
-gate.
+resolution matrix. Ships as a CLI (`npm run doctor`) used as a CI gate.
+**No runtime endpoint** — one was built on 2026-09-11 and removed the same day; see the
+implementation plan for the reasoning.
 
 ### P3 — Synthetic + Asset Watchdog
 The same assertions as P2, run on a schedule against a deployed URL, plus content-aware checks: key
@@ -331,7 +332,7 @@ settled; one is deliberately reserved for the Staff Platform Engineer.
 
 | Question | Decision |
 |---|---|
-| **Support model** for code we leave in the client's repo | **Lift-and-shift.** The client owns the frontend post-handover — defects are theirs to fix, raised as a support ticket, or covered by a separate annual PS subscription. Applies identically to `instrumentation.ts`, the Node SDK, the `/dA` proxy changes and the preflight endpoint. |
+| **Support model** for code we leave in the client's repo | **Lift-and-shift.** The client owns the frontend post-handover — defects are theirs to fix, raised as a support ticket, or covered by a separate annual PS subscription. Applies identically to `instrumentation.ts`, the Node SDK, the `/dA` proxy changes and the `vip/` check library. Note there is **no runtime endpoint** — the suite ships no listening surface into a client repo. |
 | **Attribution** — evidencing core latency | **Not material.** Most perceived core slowness traces to under-provisioned hosting of the client's own dotCMS container, which *is* actionable by them. A genuine core issue warrants a ticket. With browser RUM cut, attribution data is thin anyway. |
 | **Head sampling** default | **Ship a sensible default; do not gate on it.** The concern was sized for RUM volume. Server spans run 3–8 per request, so 100k requests/month stays comfortably inside Grafana's free 50 GB tier. No longer a surprise-bill risk. |
 | **PII** in telemetry | **URLs carry public data only** (`/{issueSlug}/{articleSlug}`). One exception: `/search?q=` carries user-typed text, so the `q` parameter is stripped before it reaches span attributes. No legal review required. |
