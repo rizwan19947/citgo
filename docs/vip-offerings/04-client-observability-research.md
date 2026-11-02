@@ -5,7 +5,7 @@ uncertainty, or are we about to over-engineer something no enterprise will use?*
 
 **Answer: drop browser RUM from the MVP.** Not because it is hard — because the clients already own
 it, the market does not ship it, and two independent constraints make our version worse than theirs.
-Everything else in P1 stays, and Day 4 stops being the risk day.
+Everything else in P1 stays, and the riskiest part of the suite disappears with it.
 
 ---
 
@@ -33,13 +33,13 @@ their RUM SDK (browser)  ──traceparent──▶  our OTel server spans  ─�
 which OTel's Node SDK does by default, since `W3CTraceContextPropagator` is the default global
 propagator. Inbound `traceparent` on a request is extracted automatically.
 
-The work that delivers this is *already in the plan* (Day 3, server spans + dotCMS call spans). The
-browser half we scoped for Day 4 duplicates a product the client has already bought, worse.
+The work that delivers this is *already in the plan* (Stage 3, server spans + dotCMS call spans). The
+browser half we scoped for Stage 4 duplicates a product the client has already bought, worse.
 
 ## 2. What the market actually ships
 
 I claimed in the feasibility study that "the category is empty." **That was wrong, and it is the kind
-of error the Staff Engineer review would have caught.** Correcting it:
+of error a review exists to catch.** Correcting it:
 
 | Vendor | What they ship | Shape |
 |---|---|---|
@@ -138,8 +138,8 @@ of the product.
 
 | | Before | After |
 |---|---|---|
-| Day 4 | Browser RUM + `traceparent` correlation — the risk day | Verify inbound trace context, build the dashboard, CWV scorecard — ~half a day |
-| Freed | — | ~1.5 days for preview-error SLOs, or slack against the crunch |
+| P1 browser half | Browser RUM + `traceparent` correlation — the riskiest work in the suite | Verify inbound trace context, build the dashboard, CWV scorecard — ~half a day |
+| Freed | — | ~1.5 days, naturally spent on preview-error SLOs |
 | Risk profile | One pre-GA dependency on the critical path | None |
 
 ### What we lose
@@ -147,7 +147,7 @@ of the product.
 Nothing a client with existing RUM is not already getting — better — from their own vendor. For a
 client with no RUM, we lose turnkey vitals, mitigated by the documented beacon.
 
-### What to put to the Staff Engineer
+### How to frame this
 
 The framing shifts from *"should we build RUM?"* to *"our differentiator is the dotCMS-aware signals
 nobody else can produce — call latency, rate-limit consumption, asset resolution, content-layer

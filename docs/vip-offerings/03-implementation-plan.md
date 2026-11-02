@@ -4,36 +4,31 @@ Build order for the full VIP suite on top of this project. Scope is unchanged fr
 [feasibility study](./02-feasibility.md) — AVIF dropped, Watchdog merged into Preflight, P1's server
 half scoped to dotCMS *call* tracing. Nothing else is cut.
 
-**Calendar: 5 days. Work: ~8–10 days** (down from 9.5–11.5 after browser RUM was cut — see the
-[client observability research](./04-client-observability-research.md)). Still a compression, roughly
-12–14 hour days, but **the pre-GA dependency is off the critical path entirely** and Day 4 has slack
-in it now.
+**Estimated effort: ~8–10 days of work** (down from 9.5–11.5 after browser RUM was cut — see the
+[client observability research](./04-client-observability-research.md)). No fixed delivery date; the
+stages below are ordered by dependency, not by calendar.
 
 **Sequence:** P2 → P4 → P5 → P1 → P3.
 
 ---
 
-## Working under compression
+## Why this order
 
-Five rules that matter more than they would on a ten-day schedule.
+The sequence is **P2 → P4 → P5 → P1 → P3**, driven by dependencies rather than preference:
 
-1. **Front-load judgment, back-load typing.** Fatigue destroys debugging long before it slows typing.
-   Each day below puts the work that needs thinking first and the mechanical work (JSON-LD, sitemap
-   enumeration, the extraction refactor, workflow YAML) last. Follow that order even when the
-   mechanical work feels like the easier start.
-2. **Do not crunch against the dotCMS instance.** It is the client's live dev environment and the
-   rate limiter is real (`x-dotratelimit-toks-max`). A tired engineer hammering a shared, rate-limited
-   instance at 2am is the one way this work causes damage outside your own repo. **Cache probe
-   responses to disk on first fetch** and develop against the cache.
-3. **CI waits are free time.** Lighthouse runs and watchdog workflow runs take minutes. Queue them and
-   keep moving; never sit watching a run.
-4. **Capture demo evidence at the moment of the change**, not at the end. Day 5 has demo assembly but
-   no room to go re-measure anything.
-5. **Land each day's "must-land" before starting the next day's work**, even if the optional items
-   slip. Each day names one. A half-finished pillar carried across a day boundary is how compressed
-   schedules actually fail.
+- **P4 modifies the `/dA` proxy that P1 instruments.** Doing P1 first means redoing spans.
+- **P3 reuses P2's assertion library.** Building it before P2 means writing the checks twice.
+- **P5's Lighthouse budget wants P4's image work already landed**, or the first run measures a
+  baseline that is about to change.
+- **P2 first** also means the wiring is verified before anything is built on top of it.
 
----
+Two practices worth keeping regardless of pace:
+
+1. **Do not develop against the dotCMS instance un-cached.** It is the client's live dev environment
+   and a token-bucket rate limiter is active. `VIP_CACHE=1` serves repeat reads from disk; never set
+   it in CI or the watchdog, where a stale hit would mask a real regression.
+2. **Capture demo evidence at the moment of the change**, not at the end — the before/after numbers
+   for the caching fix in particular are hard to reconstruct later.
 
 ## Ground rules
 
@@ -79,9 +74,9 @@ vip/
 
 ---
 
-## Day 1 — Foundation + P2 complete
+## Stage 1 — Foundation + P2 complete
 
-*≈2 days of work. Must-land: `npm run doctor` green against the real instance.*
+*~2 days. **Complete when:** `npm run doctor` is green against the real instance.*
 
 ### Foundation (~2h)
 `vip/assertions/types.ts`:
@@ -98,7 +93,7 @@ export interface Check {
 ```
 `CheckContext` carries `{ siteConfigs, baseUrl, dotcmsHost, fetch }` — **injected, never read from
 `process.env` inside a check**, so the same check runs locally and against a remote deployment. That
-one decision is what makes Day 5 cheap. Put the disk-caching fetch wrapper (working rule 2) here.
+one decision is what makes Stage 5 cheap. Put the disk-caching fetch wrapper (working rule 2) here.
 
 Add `VIP_OTEL_ENABLED`, `VIP_SAMPLE_RATE`, `VIP_BASE_URL`, `VIP_CACHE` to `.env.example` (defaults off) and
 `"doctor": "tsx vip/runners/cli.ts"` to `package.json`.
@@ -137,7 +132,7 @@ pins one site, because multisite is foundational here.
 
 **Done when:** doctor is green, and breaking `FRONTEND_HOST_OVERRIDE` names the cause precisely.
 
-### Day 1 — built 2026-09-11 ✅
+### Stage 1 — built 2026-09-11 ✅
 
 Delivered: `vip/assertions/{types,env,connectivity,sites,proxy,index}.mts`,
 `vip/lib/{siteConfig,cachedFetch}.mts`, `vip/runners/{report,cli}.mts`, the `.env.example` block,
@@ -145,7 +140,7 @@ and the `doctor` script.
 
 Result against the live instance: **14 passed, 1 warning, 1 error.** The warning is the real
 SDK/core drift (`1.4.0` semver vs `26.08.19-04` CalVer). The error is `proxy.cacheable` catching the
-`no-cache` defect through the running proxy — a Day 1 check finding what Day 2 fixes, which is the
+`no-cache` defect through the running proxy — a Stage 1 check finding what Stage 2 fixes, which is the
 strongest possible validation of the pillar.
 
 Three deviations from the plan as written, all reducing scope rather than adding it:
@@ -167,7 +162,7 @@ Two design notes worth carrying forward:
 
 ### Decision: no preflight endpoint — pre-deploy CI only
 
-A `/api/_vip/preflight` route was built on Day 1 and then **removed the same day**. Recording the
+A `/api/_vip/preflight` route was built on Stage 1 and then **removed the same day**. Recording the
 reasoning so it is not rebuilt.
 
 It was justified by a real gap: env and connectivity checks read the environment of whatever process
@@ -200,9 +195,9 @@ endpoint.
 
 ---
 
-## Day 2 — P4 complete
+## Stage 2 — P4 complete
 
-*≈2 days of work. Must-land: the caching fix, measured, with before/after captured.*
+*~2 days. **Complete when:** the caching fix is in, measured, with before/after captured.*
 
 ### Fix the caching defect — `app/dA/[...path]/route.ts` *(first thing, ~2h)*
 ```ts
@@ -276,12 +271,21 @@ fetched.
 
 ---
 
-## Day 3 — P5 complete + P1 server half
+## Stage 3 — P5 complete + P1 server half
 
-*≈2 days of work. Must-land: dotCMS call spans reaching a backend.*
+*~2 days. **Complete when:** dotCMS call spans reach a backend.*
 
 ### P1 server spans — `instrumentation.ts` + `vip/otel/server.ts` *(judgment work — do first, ~half day)*
 This is now the whole of P1's hard part, since browser RUM is cut.
+
+> **Scope, in one place.** Three files in the client's own frontend. Records one root server span
+> per request plus a child per dotCMS call, exports OTLP to the client's backend, and accepts
+> inbound `traceparent` so those spans join whatever RUM they already run.
+>
+> Not in scope, deliberately: any browser-side data (their RUM does it); anything inside dotCMS core
+> (no OTel there, instance read-only); the admin panel (product team); a collector (not needed at
+> this scale); any listening surface in their repo; anything running on or delivered from dotCMS
+> infrastructure. See the [feasibility study](./02-feasibility.md) for the full table.
 
 - Auto-detected in Next.js 15+, no config flag.
 - Prefer a manual `@opentelemetry/sdk-node` `NodeSDK` over `@vercel/otel` — the repo is deliberately
@@ -293,7 +297,7 @@ This is now the whole of P1's hard part, since browser RUM is cut.
   SDK), each hooking module loading. `undici` covers `fetch`, which is how the SDK and the `/dA`
   proxy talk out. That is the entire surface needed.
 
-Stand up the Grafana Cloud free-tier backend now, not on Day 4 — you want the pipe proven before the
+Stand up the Grafana Cloud free-tier backend now, not on Stage 4 — you want the pipe proven before the
 hard part.
 
 **Overhead, and where it lands.** Client bundle: zero — server-side only. Per request: ~6 spans at
@@ -339,14 +343,14 @@ This is the pillar's real payload: *"is dotCMS slow, or are we?"* per request.
 
 ---
 
-## Day 4 — P1 dashboard + integration story
+## Stage 4 — P1 dashboard + integration story
 
-*≈1 day of work. Must-land: dotCMS call spans and a working dashboard.*
+*~1 day. **Complete when:** the dashboard renders call latency, cache-hit ratio and vitals.*
 
 > **Rescoped 2026-09-09** after the [client observability research](./04-client-observability-research.md).
 > Browser RUM is cut: almost all target enterprises already run Datadog/New Relic, whose RUM SDKs
 > already inject W3C `traceparent` and already display OTel backend traces. Building our own duplicates
-> a product they own, behind a pre-GA SDK. **This was the risk day; it no longer is.**
+> a product they own, behind a pre-GA SDK. **This was the riskiest part of the suite; it no longer is.**
 
 ### Verify inbound trace context *(verify, do not build — ~1h)*
 OTel's default global propagator is `W3CTraceContextPropagator`, so an inbound `traceparent` on a
@@ -360,7 +364,7 @@ error rate, rate-limit consumption from `x-dotratelimit-*`.
 
 ### Core Web Vitals scorecard
 A plain, non-engineer-readable view for the marketing/content audience, rendered from the Lighthouse
-JSON produced on Day 3. They will never open a tracing UI; give them a scorecard.
+JSON produced on Stage 3. They will never open a tracing UI; give them a scorecard.
 
 ### "Bring your own RUM" documentation
 The deliverable that replaces the code. A worked integration example for Datadog and New Relic showing
@@ -376,15 +380,15 @@ Ship as sample code in the docs, not as part of the product.
 call latency, cache-hit ratio and vitals.
 
 ### Freed capacity — ~1.5 days
-Spend it on the gap the research surfaced: **preview error rates as a release-gating SLO**, which
-appears in the enterprise CMS literature and is absent from the suite. Otherwise, hold it as slack
-against the crunch.
+Cutting browser RUM freed roughly a day and a half. The natural place to spend it is the gap the
+research surfaced: **preview error rates as a release-gating SLO**, which appears in the enterprise
+CMS literature and is absent from this suite.
 
 ---
 
-## Day 5 — P3 complete + demo
+## Stage 5 — P3 complete + demo
 
-*≈1.5–2 days of work. Deliberately the lightest day: it is the buffer.*
+*~1.5–2 days. The lightest stage — P3 is inexpensive because P2's assertions already exist.*
 
 ### Content checks — `vip/assertions/content.ts` *(cheap — the assertions already exist)*
 - Home, one article detail, `/archives`, `/search` return 200 with expected markers.
@@ -445,7 +449,7 @@ passed review and shipped.
   already display OTel backend traces. A `web-vitals` beacon ships as documented sample code for the
   minority with none.
 - Multi-tenant managed hosting of any backend.
-- Alerting, SLOs, anomaly detection — the APM boundary flagged for Staff Engineer review.
+- Alerting, SLOs, anomaly detection — the APM boundary flagged as an open question.
 - Draft/preview visibility.
 - Any change to the site's rendering strategy — routes stay server-rendered per request; no ISR or
   revalidation is introduced.

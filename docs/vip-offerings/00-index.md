@@ -30,7 +30,10 @@ CITGO project. Five pillars:
 - **Browser RUM is cut.** Target enterprises already run Datadog/New Relic, whose RUM SDKs already
   inject W3C `traceparent` and display OTel backend traces. We accept inbound trace context and stop
   there. A `web-vitals` beacon ships as *documented sample code*, not product.
-- **OTel is still in scope** — server-side only. Cutting RUM did not cut OpenTelemetry.
+- **OTel is still in scope** — server-side only. Cutting RUM did not cut OpenTelemetry. P1 is three
+  files in the client's own frontend, exporting OTLP to the client's own backend. It touches no
+  dotCMS infrastructure, needs no privileged access, and ships no listening surface. See the
+  feasibility study's P1 scope table.
 - **AVIF is dropped.** Measured on the live instance: 35,740 B vs WebP's 28,200 B, and quality-tuned
   AVIF is unreachable because `/40q/avif` silently returns WebP.
 - **P3 is P2's assertions on a timer.** One shared library, three runners. `CheckContext` is
@@ -38,7 +41,7 @@ CITGO project. Five pillars:
 - **Scope is frontend only.** Backend and admin-panel observability belong to the product team.
 - **Host- and CI-agnostic.** The deliverables are a CLI and a library; schedulers and workflow files
   are reference examples. No `VERCEL_*`, no assumed CDN, no assumed CI vendor.
-- **No runtime endpoint.** A `/api/_vip/preflight` route was built on Day 1 and removed the same
+- **No runtime endpoint.** A `/api/_vip/preflight` route was built on Stage 1 and removed the same
   day. Preflight is a **pre-deploy CI gate only** (`npm run doctor`, non-zero exit on error). One
   inbound request fanned out to nine upstream dotCMS calls, and the realistic failure was an ops
   engineer pointing an uptime monitor at something that looks like a health probe — which a bearer
@@ -54,7 +57,8 @@ CITGO project. Five pillars:
    disk while developing.
 3. **Repo conventions:** tabs not spaces, no `loader` prop on `<Image>`, `citgo-red` / `citgo-link`
    tokens never hardcoded.
-4. **Budget:** 5 calendar days, ~8–10 days of work.
+4. **Estimated effort:** ~8–10 days of work. No fixed delivery date — stages are ordered by
+   dependency.
 
 ## Measured evidence — do not re-probe the client's instance
 
@@ -94,11 +98,11 @@ Negotiation:       the {n}q filter ignores BOTH User-Agent and Accept — return
 
 ## Where to start
 
-[Day 1 of the implementation plan](./03-implementation-plan.md#day-1--foundation--p2-complete):
-`vip/assertions/types.ts`, then env and connectivity checks. Must-land is `npm run doctor` green
-against the real instance.
+[Stage 1 of the implementation plan](./03-implementation-plan.md#day-1--foundation--p2-complete):
+`vip/assertions/types.ts`, then env and connectivity checks. The stage is complete when
+`npm run doctor` is green against the real instance.
 
 ## Still open
 
-One question, reserved for Staff Platform Engineer review: **where does the suite stop relative to
+One question, deliberately left open for platform review: **where does the suite stop relative to
 alerting, SLOs and dashboards?**

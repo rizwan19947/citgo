@@ -3,12 +3,11 @@
 **Question:** should we build an MVP of the VIP add-on suite, on top of the CITGO headless frontend,
 in ~2 weeks?
 
-> **Revised 2026-09-09/11.** Two changes since first draft. (1) The calendar compressed to **5 days**
-> — a schedule change, not a scope cut. (2) **Browser RUM was cut** after the
+> **Revised 2026-09-09/11.** **Browser RUM was cut** after the
 > [client observability research](./04-client-observability-research.md) found that target
 > enterprises already own it and their agents already propagate W3C `traceparent`. Net work is now
-> **~8–10 days** across five, and the pre-GA dependency is off the critical path. Everything else in
-> this study stands.
+> **~8–10 days**, and the pre-GA dependency is off the critical path. Everything else in this study
+> stands.
 
 **Answer: yes — with two pillars rescoped and one merged.** The suite addresses a real, unserved gap;
 four of five pillars need no infrastructure beyond the existing deployment; and the strongest proof
@@ -30,6 +29,41 @@ shipped in this project.
 Server spans in the Next.js runtime around every dotCMS SDK call and `/dA` proxy hop, exported over
 OTLP to a customer-owned backend, and accepting inbound `traceparent` so they join whatever RUM the
 client already runs.
+
+**Exact scope, since this pillar is the one most often misread.** It is three files in the client's
+own frontend — `instrumentation.ts`, `vip/otel/server.ts`, `vip/otel/dotcms-span.ts`.
+
+*What it records.* Per request: a root server span, plus one child span per dotCMS call. An article
+page fires roughly five. Each dotCMS span carries operation, `siteId`, path, status, duration, and
+the `x-dotratelimit-*` / `x-dotrequest-cost` headers.
+
+```
+GET /june-aug-2022/some-article                        1,840 ms
+├─ dotcms.page.get           /june-aug-2022/…            310 ms
+├─ dotcms.content.getLatestIssue                          40 ms
+├─ dotcms.content.getFooterContent                        35 ms
+├─ dotcms.content.getIssueBySlug                       1,190 ms   ← .depth(3)
+└─ dotcms.content.getAllIssues                           180 ms
+```
+
+*What it answers.* Which call is slow. **Whether dotCMS is slow or we are** — root duration minus
+the sum of dotCMS children. How much rate-limit budget each site burns. Whether the caching fix
+worked, by `/dA` span volume on a repeat navigation.
+
+*What it deliberately does not do:*
+
+| Not in scope | Why |
+|---|---|
+| Any browser-side data — vitals, sessions, user timing | The client's existing RUM already does this, and its agent already propagates W3C `traceparent`, so our spans join their traces with no agent from us |
+| Anything inside dotCMS core | Core emits no OpenTelemetry, and the instance is read-only |
+| The dotCMS admin panel | Backend and authoring observability belong to the product team |
+| An OTel collector | Not needed at this scale — OTLP exports direct from the app |
+| Any listening surface in the client's repo | A preflight endpoint was built and removed; see the implementation plan |
+| Anything running on, or delivered from, dotCMS infrastructure | It runs in the client's deployment, on their credentials, exporting to their backend |
+
+That last row is the one worth stating plainly to anyone who assumes this means exposing dotCMS's
+own observability stack externally, or that it needs an answer to privileged-resource access. It
+needs neither.
 
 > **Browser RUM cut 2026-09-09** — see [client observability research](./04-client-observability-research.md).
 > Almost all target enterprises already run Datadog/New Relic, whose RUM SDKs already inject W3C
@@ -129,11 +163,8 @@ these without instrumentation.
 
 ## 4. Effort
 
-> **Recalendared 2026-09-09** — the same work, compressed from 10 days into 5. The estimates below
-> are unchanged and remain the honest figure; what changed is that they are now absorbed by ~14–16
-> hour days rather than by cutting scope.
-
-Solo, 10 working days, crunch available. Estimates assume the merges and drops above.
+Solo effort, assuming the merges and drops above. These are sizing estimates, not a schedule —
+there is no fixed delivery date.
 
 | Pillar | Est. | Infra needed | Certainty |
 |---|---|---|---|
@@ -144,10 +175,9 @@ Solo, 10 working days, crunch available. Estimates assume the merges and drops a
 | P1 Observability *(RUM cut)* | ~1.5 d | OTLP backend | **High** — server spans only |
 | | **~8–10 d** | | |
 
-Compressed into 5 calendar days that is roughly **12–14 hour days** — a schedule decision, not an
-estimating one. The original figure was 8.5–11 days with P1 at 3–4 and rated Low–Medium certainty;
-cutting browser RUM removed both the largest single estimate and the only pre-GA dependency, so what
-remains is high-certainty work that responds to hours in the way the browser SDK never would have.
+The original figure was 8.5–11 days with P1 at 3–4 and rated Low–Medium certainty. Cutting browser
+RUM removed both the largest single estimate and the only pre-GA dependency, so what remains is
+high-certainty work.
 
 A `web-vitals` beacon remains available as documented sample code for a client with no RUM of their
 own — roughly two hours — but it is not built as part of the MVP.
@@ -328,7 +358,7 @@ evidence the MVP cannot produce.
 ## 10. Decisions taken, and what remains open
 
 Recorded 2026-09-09 by the initiative owner. Seven of the eight questions this study raised are
-settled; one is deliberately reserved for the Staff Platform Engineer.
+settled; one is deliberately left open.
 
 | Question | Decision |
 |---|---|
@@ -340,7 +370,7 @@ settled; one is deliberately reserved for the Staff Platform Engineer.
 | **OTel dependency** in the client's build | **Acceptable and disclosed.** Observability is a stated part of the VIP plan and clients may opt out. Note the scope precisely: **OTel server-side only**; the browser half is delegated to whatever RUM the client already runs. |
 | **Multisite partitioning** | **Partition by `siteId`, with include/exclude lists.** Traces and synthetic checks are tagged per site, and configuration selects which sites participate — for dotCMS's reasons or the client's. |
 
-### Still open — for the Staff Platform Engineer
+### Still open
 
 **Where does the suite stop relative to alerting, SLOs and dashboards?**
 
