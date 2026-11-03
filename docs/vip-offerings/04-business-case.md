@@ -2,10 +2,11 @@
 
 ## In one paragraph
 
-Headless dotCMS sites break in ways normal testing misses: wrong settings, images that never cache,
-an SDK that falls behind dotCMS. The VIP tools catch these problems before and after deploy. We
-recommend building them as an internal standard first (D15). Building them is small and low-risk;
-the real cost is supporting code that lives in client projects.
+Headless dotCMS sites break in ways normal testing misses: wrong settings, missing content, an SDK
+that falls behind dotCMS. The VIP tools catch these problems before and after deploy. They're built
+for any headless dotCMS project and tested on CITGO. We recommend making them our own reference for
+future headless projects first (D15). Building them is small and low-risk; the real cost is
+supporting code that lives in client projects.
 
 ## Why it's needed
 
@@ -15,10 +16,10 @@ the real cost is supporting code that lives in client projects.
   Falling behind is a regular risk, not a one-off.
 - **Headless sites fail at the joins:** settings, images, caching, versions. Not in content
   modelling, which dotCMS does well.
-- **We have proof from our own project.** A well-built, handed-off site still had defects nobody
-  saw: images never cached (F1), image quality backwards (F2), an outdated SDK (F3), a main image
-  that loads late (F4) and silent loading failures (F5). No test, review or standard Lighthouse run
-  caught them.
+- **We have proof from our own project.** A well-built, handed-off site still had problems nobody
+  saw: an image cache that never worked (F1), image quality backwards (F2), an outdated SDK (F3), a
+  main image that loads late (F4) and silent loading failures (F5). No test, review or standard
+  Lighthouse run caught them.
 - **Multisite matters commercially.** dotCMS (Cloud, Enterprise or Community) is licensed per
   server, with no limit on sites. Multisite is easy to sell, so a solid multisite setup is worth
   having.
@@ -30,13 +31,13 @@ Doctor (P2) ──checks──▶ dotCMS SDK ──▶ image proxy ──▶ ima
      │                       │                └──────┬──────┘
      │                       │                 Image fixes (P4)
      │                       ▼
-     └──same checks──▶ Watchdog (P3)           SEO and speed (P5)
+     └──same checks──▶ Watchdog (P3)           Speed checks (P5)
 ```
 
-The doctor proves the setup is right once; the watchdog proves it stays right; the image fixes and
-speed checks keep what visitors get fast and correct. Each part covers a different way the same
-pipeline can fail. With tracing deferred (D3), nothing measures the live site from inside; the
-watchdog checks it from outside.
+The doctor proves the setup is right before deploy. The watchdog proves a running site has every
+page, article and image it should. The image fixes and speed checks keep pages fast. Each part
+covers a different way the same pipeline can fail. With tracing deferred (D3), nothing measures the
+live site from inside; the watchdog checks it from outside.
 
 ## What clients ask for
 
@@ -45,19 +46,19 @@ watchdog checks it from outside.
 | dotCMS response times | No: tracing is deferred (D3) |
 | Request IDs, to trace a problem | No: tracing is deferred (D3) |
 | Broken links and images | Yes: the watchdog (P3) |
-| Caching | The image fixes (P4) fix it. Measuring cache hits needs CDN logs or lab tests |
+| Caching | No: left to each client's CDN (D11) |
 | Preview error rates as a release gate | No: out of scope |
 | Click-to-edit for editors | Partly, through dotCMS's visual editor |
 
 Who uses what:
-- **Platform and operations teams:** the doctor, in any CI pipeline. Data in their own monitoring
-  tools waits on tracing (P1).
-- **Frontend developers:** problems caught before release, by the doctor and Lighthouse in CI.
+- **Platform and operations teams:** the doctor, by hand now and in their pipelines later (D4).
+  Data in their own monitoring tools waits on tracing (P1).
+- **Frontend developers:** problems caught before release, by the doctor and the speed checks.
 - **Marketing and content teams:** "Did it publish? Is anything broken? Is it fast?" The watchdog
   and the Lighthouse report answer that.
 
-**Our pitch:** dotCMS-aware checks nobody else offers — setup, version drift, missing images,
-missing content — that run in any CI with nothing to install.
+**Our pitch:** dotCMS-aware checks nobody else offers — setup, version drift, missing pages,
+missing images — that run anywhere with nothing to install.
 
 ## Market
 
@@ -77,27 +78,20 @@ Checked 2026-09-09.
 
 ## Effort
 
-About 3.5–5 days remain; stage estimates are in the [plan](./03-plan.md#status). Every stage is
-well understood; the watchdog is the least certain, because its content checks are new. The first
+About 3–4 days remain; stage estimates are in the [plan](./03-plan.md#status). Every stage is well
+understood; the watchdog is the least certain, because its content checks are new. The first
 estimate was 8.5–11 days. Dropping browser monitoring (D2) and tracing (D3) removed the riskiest
-work, and cutting low-value items on 2026-11-03 removed up to a day more.
+work, and cutting low-value items and answering the open questions (both on 2026-11-03) removed
+another 1–2 days.
 
 ## Cost
 
-**Building the first version: $0 a month.**
+**Building the first version: $0 a month.** The tools are a command-line program plus code
+changes, run on a developer's machine against the existing site. There's nothing new to host.
 
-| Item | Choice | Cost |
-|---|---|---|
-| Website | The existing deployment | $0 |
-| Infrastructure | None: it's a command-line tool plus code changes | $0 |
-| Scheduler | GitHub Actions (one example; any scheduler works) | $0 within limits |
-
-One GitHub trap: private repos get 2,000 free minutes a month. A 2-minute check every 30 minutes
-uses 2,880. Run every 2 hours instead (720 minutes), or use Checkly's free plan.
-
-**For clients:** they run the tool in their own CI or scheduler, so dotCMS pays nothing. If they
-want hosted checks, Checkly Team costs $64 a month; running Playwright themselves is free, but
-someone has to maintain it.
+**For clients:** they run the tools themselves, by hand now and in their CI later, so dotCMS pays
+nothing. If they want hosted checks, Checkly Team costs $64 a month; running Playwright themselves
+is free, but someone has to maintain it.
 
 **A hosted version isn't planned.** If dotCMS ever hosted monitoring data for clients (only if
 tracing comes back), it would take 0.5–1 full-time engineer plus infrastructure: servers, data
@@ -109,9 +103,9 @@ is one reason we're not committing to a product (D15).
 For:
 - Nobody else offers setup checks or content-aware image checks.
 - It targets how headless sites actually fail.
-- It's proven: the defects above are real.
+- It's proven: the problems above are real.
 - It's mostly website code, so it works across dotCMS versions.
-- It's cheap: $0 to build, and nothing new to host.
+- It's cheap: $0 to build, and nothing to host.
 - It gives the organisation a standard it doesn't have yet.
 
 Against:
@@ -131,8 +125,8 @@ add-on, maintained by whoever touched it last.
 
 ## Packaging
 
-1. **Internal standard first.** The default quality bar for every headless project. No pricing,
-   service levels or support team needed.
+1. **Our own reference first.** The default for every future headless project. No pricing, service
+   levels or support team needed.
 2. **Professional Services package second.** PS delivers these projects; a configurable package
    speeds up delivery and is billed as part of the engagement.
 3. **A product only if demand proves it.** A product needs versioning, upgrades, support guarantees,
@@ -143,13 +137,13 @@ Each step produces the evidence for the next, so nothing irreversible is decided
 
 ## How to present it
 
-- The defects (F1–F5) are in **our own** project. "Look what we found in a client's build" is
+- The problems (F1–F5) are in **our own** project. "Look what we found in a client's build" is
   accurate, but it backfires. Present them as *why we built the tools*: the team that wrote the code
   couldn't see these problems without them.
 - Don't call the image proxy's handling of browser format requests a defect, as the September
   docs did. It has no effect (D11).
 - End the demo with: every finding was invisible in a project that passed review and shipped.
-- SEO and speed (P5) is the easiest part to sell: every buyer understands SEO.
+- The speed checks (P5) are the easiest part to sell: everyone understands slow pages.
 
 ## Sources
 

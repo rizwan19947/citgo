@@ -94,14 +94,14 @@ From its source code (2026-11-02):
 F1–F3 were measured on 2026-09-03; F4–F6 were found in the code on 2026-11-02. None would show up
 in tests, code review or a standard Lighthouse run.
 
-**F1 — No image is ever cached.** dotCMS says "don't cache", and our image proxy
-(`app/dA/[...path]/route.ts`) passes that on; its fallback to a one-year cache never runs. Every
-image downloads again on every page. The most valuable fix in the suite. Fix: Stage 2. The
-doctor's `proxy.cacheable` check catches it.
+**F1 — The intended image cache never worked.** Our image proxy (`app/dA/[...path]/route.ts`) has
+a fallback to a one-year cache, but dotCMS always sends "don't cache", so the fallback never runs
+and every image downloads again on every page. Not fixed, on purpose: browser caching stays off for
+now, and caching is each client's CDN decision (D11). Stage 3 removes the dead fallback.
 
 **F2 — Image quality is backwards.** `getAdaptiveQuality()` in `utils/imageLoader.ts` gives the
 smallest images the lowest quality (q25), rising to q75 for the largest. It saves bytes where there
-are few to save. Fix: Stage 2.
+are few to save. Fix: Stage 3.
 
 **F3 — The SDK is on an old version line.** `1.4.0` (old numbering) runs against dotCMS
 `26.08.19-04` (date-based). Not fixed: upgrading isn't planned (D13). The doctor tracks drift from
@@ -110,27 +110,18 @@ the handover versions (B2).
 **F4 — The home page's main image loads late.** The hero image in `components/HomePage.tsx` is the
 largest thing on the page, but it loads lazily. Its mobile and desktop versions are both on the
 page, one hidden with CSS. Today probably only the visible one downloads, but loading both early
-would download both. Fix: Stage 2.
+would download both. Fix: Stage 3.
 
 **F5 — Loading failures are silent.** Every dotCMS fetch (`utils/getDotCMSPage.ts`,
 `utils/getDotCMSContent.ts`) catches errors and returns nothing. The page then shows "not found"
-or an empty section, and builds still pass. This is the likely cause of CITGO's missing articles.
-We detect it (the watchdog, Q4) but don't change it: that's an app decision outside this project.
+or an empty section, and builds still pass. In September 2026, about 50–60 articles went missing on
+CITGO's own copy (Windows/IIS), most likely this way: it builds pages ahead of time, a setup this
+suite doesn't target (D6). The watchdog's article check catches it (Stage 2); changing the error
+handling is an app decision outside this project.
 
 **F6 — Two layout requests wait for each other.** `app/layout.tsx` puts them in `Promise.all` but
 `await`s each one inside it, so they run one after the other on every page. Fix: two lines; not
 scheduled — owner's call.
-
-## CITGO's own deployment
-
-What we knew as of September 2026:
-- CITGO copied the code and runs it on Windows Server with IIS. Their test site is only reachable
-  inside their network.
-- About 50–60 older articles showed IIS's own "not found" page there, while the same addresses
-  worked locally and on our demo sites. New articles failed too, and republishing didn't help.
-- Most likely cause: their copy builds pages ahead of time, and pages whose data failed to load got
-  no page at all. F5 lets that build pass.
-- How it ended isn't recorded (Q1).
 
 ## Sources
 

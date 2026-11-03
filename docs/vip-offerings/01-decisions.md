@@ -1,7 +1,6 @@
 # Decisions
 
-What we decided, and why. Don't reopen a decision without new evidence. Open questions are at the
-end.
+What we decided, and why. Don't reopen a decision without new evidence.
 
 ## Scope
 
@@ -15,7 +14,7 @@ screens belong to the dotCMS product team.
   (`components/CookieBanner.tsx`) is only an "OK" notice, and data from consenting visitors alone
   is skewed anyway.
 - These sites get too little traffic for Google's visitor data, which needs roughly 10–15k views a
-  month. Lab tests in CI (P5) are more reliable.
+  month. Lighthouse lab tests (P5) are more reliable.
 - The browser tooling is still unfinished and would keep changing.
 
 Trade-off: a client with no monitoring of their own gets no visitor data from us; Lighthouse lab
@@ -37,23 +36,24 @@ for that day:
 - Server timings can't show cache hits: those never reach the server.
 - When dotCMS looks slow, the cause is usually the client's own hosting.
 
-**D4 — Any host, any CI.** We ship a command-line tool and code, not a hosted service. CI and
-scheduler files are examples. Nothing Vercel-specific. Where hosts differ (CDN caching, say), the
-docs say so.
+**D4 — Local first; any host and CI later.** For the MVP, the tools run on a developer's machine.
+Connecting them to CI/CD (pipelines, schedules) comes after the MVP is approved, and must then work
+with any host and any CI. We ship a command-line tool and code, not a hosted service. Nothing
+Vercel-specific. Where hosts differ (CDN caching, say), the docs say so.
 
-**D5 — Small changes.** New code goes in `vip/`, except files Next needs elsewhere
-(`app/sitemap.ts`) and CI examples. Edits to existing files stay small and are listed in the plan.
-New features are off by default (the sitemap and structured data use the existing `SITE_INDEXING`
-switch). Bug fixes are on.
+**D5 — Small scope, small changes.** Build only what's needed, not what we could. New code goes in
+`vip/`. Edits to existing files stay small and are listed in the plan. New features are off by
+default; bug fixes are on.
 
-**D6 — Pages render the same way.** Every page is still built fresh on each request. No page
-caching and no periodic rebuilds.
+**D6 — Server-rendered projects only.** Every page is built fresh on each request, with no page
+caching and no periodic rebuilds. Projects that build static pages ahead of time (SSG) are out of
+scope.
 
 ## How the doctor works
 
 **D7 — Doctor and watchdog share one set of checks.** One tool, run two ways: before deploy (the
-doctor) and on a schedule against the live site (the watchdog). Checks get their settings passed
-in, so the same check works in both places and the two can't disagree.
+doctor) and against a running site (the watchdog, run by hand for now). Checks get their settings
+passed in, so the same check works in both places and the two can't disagree.
 
 **D8 — The doctor runs before deploy, not inside the live site.** A health-check web page was
 built once and removed the same day.
@@ -62,8 +62,9 @@ built once and removed the same day.
 - Each client would want it secured differently, and clients own the code after handover (D14).
 - The rate limit wasn't the problem; it has plenty of room.
 
-Trade-off: the doctor checks the settings CI has, not the live site's. A client who needs that can
-run the doctor inside their own deployment. The watchdog also checks the live site from outside.
+Trade-off: the doctor checks the settings where it runs, not the live site's. A client who needs
+that can run the doctor inside their own deployment. The watchdog also checks the live site from
+outside.
 
 **D9 — The doctor installs nothing.** It runs on plain Node with no packages, not even the dotCMS
 SDK, so it runs anywhere.
@@ -71,29 +72,28 @@ SDK, so it runs anywhere.
 Trade-off: the doctor never loads a page through dotCMS's page API. A problem that only affects
 page loading (a permission issue, a missing home page, or a dotCMS upgrade that changes the page
 API) won't be caught before deploy. None of our past problems were like that, and the watchdog's
-page checks cover it later.
+page checks cover it.
 
-**D10 — Build order: doctor → image fixes → SEO and speed → watchdog.**
-- The watchdog reuses the doctor's checks.
+**D10 — Build order: doctor → watchdog → image fixes → speed checks.**
+- The watchdog reuses the doctor's checks, and catches pages that silently 404 (F5) early.
 - Speed budgets should be set after the image fixes, not before.
 - The doctor goes first: everything else depends on correct setup.
 
-Whether the watchdog's content checks move earlier is Q4.
-
 ## Images
 
-**D11 — Images stay WebP. No AVIF, no per-browser formats.**
-- AVIF came out 27% bigger than WebP, and dotCMS can't tune its quality.
+**D11 — Images: WebP only, and no browser caching for now.**
+- AVIF came out 27% bigger than WebP, and dotCMS can't tune its quality. Revisit if dotCMS adds
+  quality control for it.
 - Serving each browser a different format gains nothing. dotCMS ignores what the browser asks for,
-  every current browser supports WebP, and many CDNs cache such responses badly, which would undo
-  the caching fix.
-
-Revisit AVIF if dotCMS adds quality control for it.
+  every current browser supports WebP, and many CDNs cache such responses badly.
+- No browser caching: clients will eventually put a CDN in front, and caching strategies differ
+  from client to client. Telling browsers to cache this many images makes little sense yet. So the
+  image proxy keeps passing on dotCMS's "don't cache", and caching is each client's CDN decision.
 
 ## Sites and versions
 
 **D12 — Every result names its site.** The doctor checks every configured site. The watchdog
-checks one site per run; to leave a site out, don't schedule it. (This replaced the old
+checks one site per run; to leave a site out, don't run it for that site. (This replaced the old
 include/exclude lists.)
 
 **D13 — We support the versions present at handover.** The doctor warns when the client upgrades
@@ -104,49 +104,19 @@ dotCMS but the website's SDK stays behind. We don't plan for future versions in 
 **D14 — The client owns the code after handover.** Fixes are theirs, through a support ticket or a
 paid support plan. This covers everything we add.
 
-**D15 — An internal standard first, not a product.** First our default for every headless project,
-then a Professional Services package, and a sold product only if demand proves it. Reasoning in the
-[business case](./04-business-case.md#packaging).
+**D15 — First, our own reference for future headless projects.** The tools are client-agnostic:
+CITGO is where they're tested, not what they're built for, so project details live in config, not
+code. After that comes a Professional Services package, and a sold product only if demand proves
+it. Reasoning in the [business case](./04-business-case.md#packaging).
 
 ## Out of scope
 
 - Changing anything in the client's dotCMS.
 - Any monitoring: tracing (D3), browser monitoring (D2), alerts, dashboards, uptime targets. Where
   the suite should stop on alerts and dashboards was an open question; it returns with P1.
-- AVIF and per-browser image formats (D11).
+- Connecting the tools to CI/CD, until the MVP is approved (D4).
+- SEO extras: sitemap, structured data, configurable page titles (D5).
+- Static-site (SSG) projects, and changes to how pages render (D6).
+- AVIF, per-browser image formats, and browser image caching (D11).
 - Hosting anything for clients.
 - Fixing drafts that leak onto the site. Detecting them is a parked idea in the plan.
-- Changing how pages render (D6).
-
-## Open questions
-
-**Q1 — How does CITGO's own deployment build its pages?**
-CITGO runs their own copy on Windows/IIS, where about 50–60 articles returned 404 in September
-([details](./02-evidence.md#citgos-own-deployment)). We don't know how that ended.
-- Why it matters: if they build pages ahead of time, the watchdog's article check (Q4) matters
-  most. It also affects where the watchdog can run (Q5).
-- Recommendation: find out before Stage 4.
-
-**Q2 — Is the next milestone for CITGO, or for our own reference?**
-- Why it matters: these sites are deliberately hidden from search engines, so for CITGO a sitemap,
-  structured data and configurable page titles would be unused code.
-- Recommendation: for CITGO, skip all three. For our own reference, build them, switched off by
-  default.
-
-**Q3 — How long should browsers cache images?**
-Replacing an image in dotCMS keeps its address (F1). With a one-year cache, visitors could see the
-old image for a year, with no way to clear it.
-- Recommendation: cache for a day, then refresh quietly in the background for up to a week
-  (`public, max-age=86400, stale-while-revalidate=604800`).
-- Alternative: a new address for every image version, cached forever. More work, and old addresses
-  can stop working after an update.
-- Needed from the client: do they use a CDN, can they clear it, and do editors replace images or
-  upload new ones?
-
-**Q4 — Should the watchdog check every article, and be built right after Stage 1b?**
-- Why: it would catch missing articles like CITGO's (F5), however their site is built.
-- Recommendation: yes to both. The scheduler examples stay last.
-
-**Q5 — Where can the watchdog run for CITGO?**
-Their test site is only reachable inside their network.
-- Recommendation: run it on a machine inside their network, or skip scheduled checks for them.

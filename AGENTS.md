@@ -30,8 +30,8 @@ Local dev: `npm run dev`. Production build: `npm run build`.
 
 ## Active initiative: VIP Offerings
 
-Add-on tools for headless dotCMS sites, built on this project: the doctor (setup checks), a
-watchdog, image fixes, and SEO and speed checks. Tracing is deferred. **Status (2026-11-03):** the
+Add-on tools for any headless dotCMS project, developed and tested here: the doctor (setup
+checks), a watchdog, image fixes and speed checks. Tracing is deferred. **Status (2026-11-03):** the
 doctor is built; the rest is planned.
 
 **Read `docs/vip-offerings/00-index.md` first.** It links the decisions, evidence and plan, so you
@@ -43,7 +43,9 @@ Things that catch people out:
   it (GETs, plus the read-only `_search` POST); never change its content or settings.
 - **No monitoring for now.** No OpenTelemetry, tracing or browser monitoring. Adding any needs a
   new decision (D3 in `docs/vip-offerings/01-decisions.md`).
-- **Any host, any CI.** We ship a command-line tool and code; CI files are examples only.
+- **Local first.** The tools run on a developer's machine. CI integration comes after the MVP is
+  approved.
+- **No CITGO-specific code in `vip/`.** Project details go in `vip/config.json`.
 - **The doctor is plain Node with no packages.** Don't import anything into it, not even the
   dotCMS SDK. Node can't run some TypeScript features (`enum`, `namespace`, constructor shorthand),
   and relative imports need `.mts`. `tsc` won't catch these; running `npm run doctor` will.
