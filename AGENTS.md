@@ -30,26 +30,23 @@ Local dev: `npm run dev`. Production build: `npm run build`.
 
 ## Active initiative: VIP Offerings
 
-An add-on suite built on this project: config preflight (the `doctor` CLI), a watchdog, an image
-pipeline, and an SEO/performance baseline. A fifth pillar, dotCMS call tracing, is deferred.
-**Status (2026-11-03):** the doctor is built (Stage 1); everything else is planned.
+Add-on tools for headless dotCMS sites, built on this project: the doctor (setup checks), a
+watchdog, image fixes, and SEO and speed checks. Tracing is deferred. **Status (2026-11-03):** the
+doctor is built; the rest is planned.
 
-**Read `docs/vip-offerings/00-index.md` first.** It links the settled decisions, the evidence and
-the plan, so you don't re-measure the client's instance or reopen closed questions.
+**Read `docs/vip-offerings/00-index.md` first.** It links the decisions, evidence and plan, so you
+don't re-measure the client's dotCMS or reopen settled questions.
 
 Things that catch people out:
 
-- **The dotCMS instance is read-only and rate-limited.** It is the client's live dev environment,
-  already handed off. No content types, fields, plugins or server config. Checks only read: GETs,
-  plus the read-only `_search` POST.
-- **No observability for now.** No OpenTelemetry or tracing (deferred), and nothing browser-side
-  (no RUM, no vitals beacon). Don't add either without a new decision — see D3 in
-  `docs/vip-offerings/01-decisions.md`.
-- **Host- and CI-agnostic.** The deliverables are a CLI and a library; schedulers and workflow
-  files are reference examples only.
-- **The doctor runs on plain Node type stripping** (`node vip/runners/cli.mts`). Only erasable
-  TypeScript works — no `enum`, `namespace` or parameter properties — and relative imports need an
-  explicit `.mts`. `tsc` won't catch a violation; running `npm run doctor` will.
+- **The client's dotCMS is read-only and rate-limited.** It's their live dev system. Only read from
+  it (GETs, plus the read-only `_search` POST); never change its content or settings.
+- **No monitoring for now.** No OpenTelemetry, tracing or browser monitoring. Adding any needs a
+  new decision (D3 in `docs/vip-offerings/01-decisions.md`).
+- **Any host, any CI.** We ship a command-line tool and code; CI files are examples only.
+- **The doctor is plain Node with no packages.** Don't import anything into it, not even the
+  dotCMS SDK. Node can't run some TypeScript features (`enum`, `namespace`, constructor shorthand),
+  and relative imports need `.mts`. `tsc` won't catch these; running `npm run doctor` will.
 
 ## Critical conventions (read before editing)
 

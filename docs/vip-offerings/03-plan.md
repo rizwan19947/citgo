@@ -1,307 +1,267 @@
 # Plan
 
-How the rest of the suite gets built. Decisions (D, Q) are in [01-decisions](./01-decisions.md);
-facts and defects (F) are in [02-evidence](./02-evidence.md). Tasks waiting on an open question are
-marked *(pending Qn)*.
+The build, stage by stage. Reasons are in [Decisions](./01-decisions.md); facts are in
+[Evidence](./02-evidence.md). Tasks marked *(Qn)* wait on an open question.
 
 ## Status
 
-| Stage | Pillar | Estimate | Certainty | Status |
-|---|---|---|---|---|
-| 1 | P2 — doctor CLI | ~2 d | — | Done 2026-09-11 |
-| 1b | P2 — harden the doctor | ~1 d | High | Next |
-| 2 | P4 — images and caching | 1.5–2 d (+0.5 d if Q4 builds negotiation) | High — behaviour measured | Planned |
-| 3 | P5 — SEO and performance | 0.5–1.5 d, depending on Q2 | High — mostly built | Planned |
-| 4 | P3 — watchdog, then demo | 1–1.5 d | Medium | Planned |
-| — | P1 — dotCMS call tracing | — | — | Deferred (D3) |
+| Stage | What | Estimate | Status |
+|---|---|---|---|
+| 1 | Doctor (P2) | ~2 days | Done 2026-09-11 |
+| 1b | Harden the doctor | ~1 day | Next |
+| 2 | Image fixes (P4) | ~1 day | Planned |
+| 3 | SEO and speed (P5) | 0.5–1.5 days, depending on Q2 | Planned |
+| 4 | Watchdog (P3), then the demo | 1–1.5 days | Planned |
+| — | dotCMS call tracing (P1) | — | Deferred (D3) |
 
-About 4–6 days remain. Order follows D9; no fixed delivery date.
+About 3.5–5 days remain. There's no fixed deadline.
 
-## Code layout
+## Where the code lives
 
 ```
 vip/
-  assertions/            check library — P2 and P3 both use it
-    types.mts            Check, CheckResult, CheckContext, result helpers   built
-    index.mts            registry, buildContext(), runChecks()              built
-    env.mts              env completeness and SITE_N shape                  built
-    connectivity.mts     reachability, auth, version alignment, rate limit  built
-    sites.mts            per-site resolution matrix                         built
-    proxy.mts            /dA round-trip, cacheability, no leaks             built
-    content.mts          pages, coverage, assets, search                    Stage 4
-  lib/
-    siteConfig.mts       SITE_N parser mirroring utils/site-config.ts       built
-    cachedFetch.mts      disk cache for local development                   built
-  runners/
-    cli.mts              npm run doctor                                     built
-    report.mts           text and JSON output                               built
-  tests/                 node:test + a localhost mock dotCMS                Stage 1b
-  baseline.json          core and SDK versions at handover                  Stage 1b
-  image/lqip.ts          /24w/30q → data URI                                Stage 2 (optional)
-  seo/                   parameterised metadata builders                    Stage 3 (pending Q2)
-app/sitemap.ts           per-site sitemap                                   Stage 3 (pending Q2)
-.github/workflows/       lighthouse.yml (Stage 3), watchdog.yml (Stage 4) — examples (D4)
+  assertions/          the checks, shared by the doctor and the watchdog
+    types.mts          shared types and helpers                 built
+    index.mts          the list of checks, and the code that runs them   built
+    env.mts            settings checks                          built
+    connectivity.mts   dotCMS connection and version checks     built
+    sites.mts          per-site checks                          built
+    proxy.mts          image proxy checks                       built
+    content.mts        page, article, image and search checks   Stage 4
+  lib/siteConfig.mts   reads SITE_N exactly as the app does     built
+  runners/cli.mts      the `npm run doctor` command             built
+  runners/report.mts   text and JSON output                     built
+  tests/               tests against a fake local dotCMS        Stage 1b
+  baseline.json        the versions at handover                 Stage 1b
+app/sitemap.ts         sitemap                                  Stage 3 (Q2)
+.github/workflows/     example CI files                         Stages 3 and 4
 ```
 
-- `assertions/`, `lib/`, `runners/` and `tests/` run on plain Node: `.mts`, erasable syntax only,
-  explicit `.mts` imports ([index, hard constraint 4](./00-index.md#hard-constraints)).
-- `image/` and `seo/` are imported by the Next app: plain `.ts`, normal Next rules.
-- Checks take everything from `CheckContext` (D7). Code in `lib/` may read the environment.
+Rules for code in `vip/`:
+- Plain Node, nothing to install (D9).
+- Node can't run some TypeScript features (`enum`, `namespace`, constructor shorthand like
+  `constructor(private x)`). `tsc` won't catch them; running `npm run doctor` will.
+- Relative imports end in `.mts`.
+- Checks get their settings passed in and never read `process.env` themselves (D7).
 
-## Stage 1: Doctor CLI (done)
+## Stage 1: The doctor (done)
 
-Built 2026-09-11.
+Built 2026-09-11. To run it:
 
 ```
-npm run doctor                                    # checks .env; exits 1 on any error
-npm run doctor -- --json                          # machine-readable output
-npm run doctor -- --base-url https://staging.x    # also runs the /dA proxy checks (or set VIP_BASE_URL)
-VIP_CACHE=1 npm run doctor                        # replay reads from disk ($VIP_CACHE_DIR, default <tmp>/vip-doctor-cache)
+npm run doctor                               # check the settings; fails if anything is wrong
+npm run doctor -- --json                     # machine-readable output
+npm run doctor -- --base-url https://site    # also test the image proxy on a running site
 ```
 
-| Check | Severity | Asserts |
-|---|---|---|
-| `env.required` | error | `DOTCMS_HOST`, `DOTCMS_AUTH_TOKEN`, `DEFAULT_SITE_HOST` and at least one `SITE_N` are set |
-| `env.site-format` | error | Each `SITE_N` is `hostname\|siteIdentifier\|assetSlug` |
-| `env.site-numbering` | error | No gaps. `utils/site-config.ts` stops at the first missing index, so `SITE_1, SITE_3` silently drops `SITE_3` |
-| `env.site-identifier-shape` | warn | Values look like site identifiers, not inodes |
-| `env.frontend-host-override` | error | `FRONTEND_HOST_OVERRIDE`, if set, matches a `SITE_N` hostname. If not, `siteId` is `undefined` and the site silently serves wrong or empty content. The most valuable single check |
-| `env.default-site-host` | error | `DEFAULT_SITE_HOST` matches a `SITE_N` hostname |
-| `dotcms.reachable` | error | The host answers; records latency and TLS |
-| `dotcms.auth` | error | The token isn't rejected (401/403) |
-| `dotcms.version-alignment` | warn | Installed `@dotcms/client` vs `x-dotcms-version` and `x-dotcms-min-sdk` |
-| `dotcms.rate-limit` | info | Reports the rate-limit budget |
-| `sites.resolve` | error | Every `SITE_N` identifier resolves, to the hostname it claims |
-| `sites.live-issue` | error | Every site has a live Issue; without one the home page falls back to the generic renderer |
-| `sites.assets` | error | `public/assets/{assetSlug}/header-logo.svg` exists for every site |
-| `proxy.round-trip` | error | `/dA/{realAssetId}/200maxw/75q` through the frontend returns an image |
-| `proxy.cacheable` | error | That response is cacheable (catches F1) |
-| `proxy.no-leak` | error | Its headers contain neither the dotCMS host nor the token |
+What it checks today:
 
-- Site checks run for **every** `SITE_N`, even when `FRONTEND_HOST_OVERRIDE` pins one. A site that
-  only breaks when someone flips the override is a site nobody notices is broken.
-- Proxy checks need a running frontend. Without a base URL they skip, so the doctor is green
-  against `.env` alone.
-- Cost per run: 1 request plus 2 per site (7 for three sites); 2 more with a base URL. Checks share
-  one memoised probe per `CheckContext` and run in sequence; site probes run two at a time.
-- Result against the live instance (2026-09-11, with a base URL): 14 passed, 1 warning (the real
-  SDK/core drift, F3), 1 error (`proxy.cacheable` catching F1, which Stage 2 fixes).
+| Check | What it checks |
+|---|---|
+| `env.required` | The required settings exist: `DOTCMS_HOST`, `DOTCMS_AUTH_TOKEN`, `DEFAULT_SITE_HOST`, at least one `SITE_N` |
+| `env.site-format` | Each `SITE_N` has the form `hostname\|siteIdentifier\|assetSlug` |
+| `env.site-numbering` | `SITE_N` numbers have no gaps. The app stops at the first gap, so later sites would silently disappear |
+| `env.site-identifier-shape` | Site IDs look like identifiers, not inodes *(warning; removed in 1b)* |
+| `env.frontend-host-override` | `FRONTEND_HOST_OVERRIDE`, if set, names a configured site. Otherwise the site quietly shows wrong or empty content. The most valuable check |
+| `env.default-site-host` | `DEFAULT_SITE_HOST` names a configured site |
+| `dotcms.reachable` | dotCMS answers (also reports response time and whether it uses HTTPS) |
+| `dotcms.auth` | dotCMS accepts the token |
+| `dotcms.version-alignment` | The installed SDK (read from `node_modules`) and the live dotCMS version are on the same version line. It remembers nothing between runs *(warning; replaced in 1b by B2)* |
+| `dotcms.rate-limit` | Reports the rate limit; never fails *(removed in 1b)* |
+| `sites.resolve` | Each site ID exists and belongs to the site it's listed under |
+| `sites.live-issue` | Each site has a published Issue. Without one, its home page falls back to a generic layout |
+| `sites.assets` | Each site's logo exists in `public/assets/` |
+| `proxy.round-trip` | The image proxy returns an image |
+| `proxy.cacheable` | That image can be cached (catches F1) |
+| `proxy.no-leak` | The proxy's response doesn't reveal the dotCMS address or token |
 
-Built differently from the original plan — each change removed scope:
+- Site checks cover every site, even when a deployment is pinned to one. Otherwise a broken site
+  is only found when someone switches to it.
+- The proxy checks need a running site. Without `--base-url` they're skipped, so the doctor can
+  pass on settings alone.
+- A full run makes 7 requests to dotCMS for three sites, plus 2 with `--base-url`.
+- First live run (2026-09-11, with `--base-url`): 14 passed, 1 warning (the SDK version, F3) and
+  1 failure (uncached images, F1, fixed in Stage 2).
 
-| Planned | Built | Why |
-|---|---|---|
-| `tsx vip/runners/cli.ts` | `node vip/runners/cli.mts` | Node strips types itself and `process.loadEnvFile()` reads `.env`: no `tsx`, no `dotenv`, zero new dependencies |
-| `.ts` files | `.mts` files | `package.json` has no `"type": "module"`, so `.ts` would load as CommonJS. `.mts` forces ESM |
-| — | `allowImportingTsExtensions` in `tsconfig.json` | Node needs explicit `.mts` imports and TypeScript needs this flag to allow them. Safe because `noEmit` is set |
+How it's built: plain `node` runs the `.mts` files directly, so there's no build step and nothing to
+install. The files are `.mts` because `package.json` doesn't declare ES modules, and
+`tsconfig.json` sets `allowImportingTsExtensions` so `.mts` imports pass type-checking.
 
 ## Stage 1b: Harden the doctor (next)
 
-A 2026-11-02 audit found these bugs. B1–B3 and B5–B7 were reproduced against a localhost mock
-(no calls to the client's instance); B8–B9 by testing the Node behaviour directly; B4 from the
-SDK and doctor source.
+**Goal:** fix the doctor's bugs, remove what it doesn't need, and add tests.
 
-| ID | Bug | Evidence | Fix |
-|---|---|---|---|
-| B1 | The doctor trims `SITE_N` values; the app doesn't | `SITE_1=citgonow.com \|id\|slug` passes the doctor, while the app resolves `siteId: undefined` | Parse exactly as `utils/site-config.ts` does; flag whitespace as an error |
-| B2 | The version check can't detect core drift | SDK `1.4.0` against core `26.08.19-04` and against `27.03.02-01` gives the same warning; once the SDK is on CalVer, any core passes | Compare against `vip/baseline.json` (core and SDK at handover). Any difference warns until the baseline is updated. Implements D12 |
-| B3 | The minimum-SDK check compares strings | `26.9.2` against minimum `26.10.0` passes; `26.10.0` against `26.9.0` fails. Dormant while the minimum is `0.0.0` | Compare numerically after normalising padding (`26.08.19-04` ↔ `26.8.19-4`); below the minimum is an error |
-| B4 | The Page API is never exercised, and hand-written queries differ from the SDK's | The doctor calls `/api/v1/appconfiguration` and `/api/v1/site/{id}`, which the app never uses. The app's `page.get()` goes through `/api/v1/graphql`. The doctor's queries lack the SDK's `SYSTEM_HOST` scoping and language filter | *(pending Q5)* Call `@dotcms/client` the way the app does: per site, `page.get("/")` and the latest-Issue query at `.depth(3)`. Assert the shapes the app relies on — site identity, banner, articles, image fields. Route the SDK's requests through the doctor's fetch with its `httpClient` option. This is the real SDK↔core compatibility test |
-| B5 | `VIP_CACHE` hides a revoked token | With the cache primed by a good token, a bad token still passes | Include a hash of the token in the cache key |
-| B6 | An object-shaped image field breaks `proxy.round-trip` | It errors with "could not find a live Article image" | Normalise the field the way `utils/resolveImage.ts` does |
-| B7 | Dashed identifiers are flagged as inodes | Older or migrated dotCMS sites have dashed identifiers | Decide from the `identifier` and `inode` the site lookup returns, not from the value's shape |
-| B8 | `process.exit()` truncates piped output | [Node runtime](./02-evidence.md#node-runtime) | Set `process.exitCode` instead |
-| B9 | Env loading differs from Next's | No `$VAR` expansion; `.env.production` is ignored | Load with `loadEnvConfig()` from `@next/env` |
+Bugs found in the 2026-11-02 audit (each reproduced against a fake dotCMS or confirmed in the code):
+
+| ID | Problem | Fix |
+|---|---|---|
+| B1 | The doctor ignores stray spaces in `SITE_N`; the app doesn't. A space before a `\|` passes the doctor but breaks the site | Read `SITE_N` exactly as the app does, and flag spaces as an error |
+| B2 | The version check can't see a dotCMS upgrade: it gives the same warning before and after, and passes any date-based SDK against any dotCMS | Compare against the versions saved in `vip/baseline.json`, and warn on any difference. Read the SDK version from `package-lock.json`, so this works without `npm install` |
+| B3 | The doctor's searches differ from the app's: they skip content shared by all sites, and the language filter | Search the way the SDK does (`+(conhost:{siteId} conhost:SYSTEM_HOST)` and `+languageId:1`), in both `sites.live-issue` and the image lookup behind `proxy.round-trip` |
+| B4 | If dotCMS returns an image field as an object instead of text, `proxy.round-trip` fails wrongly | Read the field the way `utils/resolveImage.ts` does |
+| B5 | Site IDs with dashes are flagged as inodes, but older dotCMS sites do use dashed IDs | Remove `env.site-identifier-shape`. In `sites.resolve`, compare the configured ID with what dotCMS returns, and say so if it's an inode |
+| B6 | `process.exit()` can cut off long output | Set `process.exitCode` instead |
+| B7 | The doctor reads fewer settings files than Next does (it skips `.env.production` and the like) | Load the same files, in the same order, as [Next does](./02-evidence.md#nextjs-1624). `$VAR` references stay unexpanded |
 
 Also in this stage:
-- **Node version:** add `"engines": { "node": ">=22.18" }` and an `.nvmrc`. On older Node the
-  doctor crashes before any check runs.
-- **Messages:** say what actually happens ("serves wrong or empty content"), not "fails silently".
-- **Check scopes:** tag each check `local` (env and files), `upstream` (dotCMS) or `deployed`
-  (needs a base URL), so the CLI can choose checks by mode. `dotcms.version-alignment` and
-  `sites.assets` read files; run remotely, they'd check the runner's checkout, not the deployment.
-  Fix the comment in `types.mts` that says checks never touch the filesystem, and its stale
-  "from Day 5" reference.
-- **Portability:** check a site's aliases before failing `sites.resolve` on a hostname mismatch.
-- **Tests:** there are none. Add `vip/tests/` with `node:test` and a localhost mock dotCMS, with
-  B1–B9 as cases.
-- **Re-baseline** *(needs owner approval — it touches the client's instance)*: one
-  `VIP_CACHE=1 npm run doctor` run (7 read-only requests) to record the current core version in
-  `vip/baseline.json`. Core may have changed since 2026-09-03.
+- **Remove what isn't needed:**
+  - `VIP_CACHE`, the disk cache in `vip/lib/cachedFetch.mts` (and its `VIP_CACHE_DIR`). Tests
+    replace it, the rate limit isn't a concern, and the cache could hide a revoked token or give CI
+    stale data.
+  - `VIP_BASE_URL`, which repeats `--base-url`.
+  - The `dotcms.rate-limit` check: it can't fail, and the limit isn't a concern.
+  - The minimum-SDK comparison: dotCMS sends `0.0.0`, and B2 already catches upgrades (D13). Add it
+    back if dotCMS ever sends a real minimum.
+- **Node version:** add `"engines": { "node": ">=22.18" }` to `package.json`.
+- **Messages:** say what actually happens ("shows wrong or empty content"), not "fails silently".
+- **Comments:** fix `types.mts`, which says checks never read files (two do) and mentions "Day 5".
+- **Tests:** add `vip/tests/`, using Node's built-in test runner and a fake local dotCMS, with a
+  test for each bug. From then on, develop against the fake, not the client's dotCMS.
+- **Baseline:** create `vip/baseline.json` from the versions on record: SDK `1.4.0` and dotCMS
+  `26.08.19-04` (measured 2026-09-03). No request needed.
 
-Touches outside `vip/`: `package.json`, a new `.nvmrc`.
+Files outside `vip/`: `package.json`.
 
-**Done when:** B1–B9 are fixed, each with a test; the baseline is committed; and the doctor is
-green against the live instance. With a base URL, `proxy.cacheable` stays red until Stage 2.
+**Done when:** all seven bugs are fixed with tests, the removals are done, the baseline is saved,
+and one live run of `npm run doctor` passes. That run needs the owner's OK: it makes 7 read-only
+requests to the client's dotCMS, without `--base-url`. If it warns about the version, dotCMS has
+changed since handover: tell the owner, but it doesn't block the stage. With `--base-url`, the
+image-cache check keeps failing until Stage 2.
 
-## Stage 2: P4 images and caching
+## Stage 2: Image fixes (P4)
 
-### 2.1 Fix `/dA` caching (F1) — first, ~2 h
+**Goal:** images get cached, image quality makes sense, and the home page's main image loads first.
 
-- In `app/dA/[...path]/route.ts`, set our own `Cache-Control` rather than passing dotCMS's through.
-  Policy *(pending Q3)* — recommended: `public, max-age=86400, stale-while-revalidate=604800`. Never
-  `immutable` on identifier URLs: replacing an image keeps its URL.
-- If dotCMS sends `ETag` or `Last-Modified` on `/dA` (not in the recorded headers), pass them
-  through so revalidation can return 304. Check during the before/after measurement.
-- Measure and screenshot before and after: DevTools, repeat navigation. This is the demo's headline
-  number.
-- Quote it with its caveat. The header is correct on any host, but whether it produces cache *hits*
-  depends on what sits in front: some CDNs also want `s-maxage` or `CDN-Cache-Control`, and with no
-  CDN you get browser caching only. Don't present the number as universal.
-- Then tighten `proxy.cacheable` to assert the chosen policy, and extend `proxy.no-leak` to fail on
-  any forwarded `x-dot*` header (`x-dotcms-version`, `x-dot-server`) — the likely leak if someone
-  later forwards upstream headers.
+**2.1 Cache images (F1)** — first, about 2 hours
+- In `app/dA/[...path]/route.ts`, set our own cache rule instead of passing on dotCMS's "don't
+  cache". The rule *(Q3)* — recommended: `public, max-age=86400, stale-while-revalidate=604800`.
+  Never cache these addresses forever: replacing an image keeps its address.
+- Measure and screenshot before and after (DevTools, visiting a page twice). It's the demo's
+  headline number.
+- Quote it carefully. The rule works on any host, but the actual saving depends on what sits in
+  front: some CDNs need extra settings, and without a CDN only browsers cache. Don't present it as
+  a universal number.
+- Update the doctor's `proxy.cacheable` check to expect the new rule.
 
-### 2.2 Format negotiation *(pending Q4 — recommended: don't build)*
+**2.2 Fix image quality (F2)**
+- The loader's input, the image width, is right. How it picks a quality is backwards: small images
+  get the lowest quality, and large ones the highest.
 
-If built: forward `Accept`, pick WebP or an explicit `/jpeg` in the frontend, add `Vary: Accept`,
-and optionally honour `Save-Data`. Either way, no AVIF (D10). Leave a code comment pointing at the
-measurements so nobody adds it back.
+  | Image width | Quality used | Size | Size at q75 | Saved |
+  |---|---|---|---|---|
+  | 100px | 25 | 2,128 B | 3,674 B | 1,546 B |
+  | 400px | 30 | 14,142 B | 26,530 B | 12,388 B |
+  | 1920px | 75 | 135,808 B | 135,808 B | 0 B |
 
-### 2.3 Image quality (F2)
+  Lowering only the hero image to q50 would save more than all the thumbnails combined.
+- q25 looks bad at any size: compression artifacts are just as visible on a small image. WebP
+  photos start to look worse at around q40–50. And phones with sharp screens request bigger images,
+  which can still fall in the q25 bracket.
+- **Fix:** one quality, between 55 and 65, for every size; let resizing save the bytes. Set it in
+  `utils/imageLoader.ts`, not on each image (Next warns about quality values it doesn't know).
+  Delete the unused "force high quality" path (`quality={101}`).
+- Add a comment in the loader saying why images stay WebP (D11), so nobody adds AVIF back.
 
-Render width is the right input: it already includes device pixel ratio. The mapping is what's
-wrong. It saves bytes where there are few to save:
+**2.3 Load the main image first (F4)**
+- First, check in DevTools which hero images download today, on mobile and desktop (2 minutes).
+- Rebuild the hero with Next's `getImageProps()` and a `<picture>` element (one source for mobile,
+  one for desktop), marked `preload` with high fetch priority. Only one image downloads, and it
+  downloads first.
 
-| Render width | Applied q | Bytes | Bytes at q75 | Saved |
-|---|---|---|---|---|
-| 100w | 25 | 2,128 | 3,674 | 1,546 B |
-| 400w | 30 | 14,142 | 26,530 | 12,388 B |
-| 1920w | 75 | 135,808 | 135,808 | 0 B |
+Files: `app/dA/[...path]/route.ts`, `utils/imageLoader.ts`, `components/HomePage.tsx`.
 
-- Dropping the hero from q75 to q50 saves more than every thumbnail on the page combined.
-- q25 is too low at any size. Compression artifacts are per pixel, so they're as visible in a
-  100px thumbnail as in a hero. For photographic WebP, visible degradation starts around q40–50.
-- Because width includes pixel ratio, a 100px thumbnail on a 3× phone requests 300w and still gets
-  q25.
-- **Fix:** one quality, 55–65, at every width; let resizing do the byte-saving. Set it in the
-  loader rather than through `quality` props, since Next warns in dev about props not listed in
-  `images.qualities`. Every `<Image>` passes `75` or nothing today; the loader's `quality={101}`
-  "force high quality" path is unused.
+**Done when:** a second visit loads images from cache (before/after captured), the hero loads first
+with one image per screen size, and every image uses the single quality.
 
-### 2.4 Hero loading and art direction (F4)
+## Stage 3: SEO and speed (P5)
 
-- First, in DevTools (2 min): which hero images download today, on mobile and on desktop.
-- Render the hero with `getImageProps()` and one `<picture>` — a `<source media>` for mobile — with
-  `preload` and `fetchPriority="high"`. One image per breakpoint, fetched eagerly.
-- Use the same `<picture>` pattern in `components/content-types/Banner.tsx`.
-- Note: `components/content-types/Article.tsx` resolves `mobileImage` but never renders it.
+**Goal:** CI fails when pages get slower or heavier.
 
-### 2.5 LQIP placeholders (optional)
+Already in place (see `docs/seo-handover.md`): page titles and descriptions with fallbacks, the
+`SITE_INDEXING` switch (off, so search engines stay away), per-site canonical and social-sharing
+tags, `robots.txt`, self-hosted fonts, and de-duplicated dotCMS requests.
 
-- Source: `/dA/{id}/24w/30q` (494 B, ~660 characters of base64), fetched on the server and passed
-  as `placeholder="blur"` with `blurDataURL`.
-- Hero and card grid only. Not the 100px sidebar or search-dropdown thumbnails: at today's quality
-  they're ~2.1 KB each, so a placeholder would be ~31% of the image, to smooth a flash that barely
-  happens.
-- Cost: pages render per request (D6), so placeholders ride uncached on every HTML response.
-  `HomePage` is a client component, so each one is sent twice — in the HTML and in the RSC payload.
-- Never block a render on it. Use a placeholder only if it's already in the per-process cache; on a
-  miss, render without it and fill the cache in the background.
-- Off by default (D5).
+**3.1 Lighthouse in CI**
+- Add an example workflow, `.github/workflows/lighthouse.yml` (D4).
+- Fail the build on numbers that don't wobble: total image bytes, request count, and "main image
+  loaded lazily".
+- Report timings (LCP, CLS, TBT) as warnings only, using the middle result of 3–5 runs. CI
+  machines vary too much to fail a build on timings.
+- Check the performance score, not the SEO score. The SEO score fails on purpose while the sites
+  stay hidden from search engines.
 
-Touches: `app/dA/[...path]/route.ts`, `utils/imageLoader.ts`, `components/HomePage.tsx`,
-`components/content-types/Banner.tsx`; for LQIP, also the pages that render `HomePage`.
+**3.2 Only if Q2 says so**
+- **Configurable page titles:** replace the hardcoded "CITGO" name and `https://${hostname}` with
+  settings.
+- **Sitemap:** `app/sitemap.ts` lists the live issues and articles, only when `SITE_INDEXING` is
+  on. Make it dynamic. Otherwise Next builds it once at deploy time (with `FRONTEND_HOST_OVERRIDE`
+  set, the site lookup never reads the request), and D6 rules out periodic rebuilds. Add the
+  sitemap line to `robots.txt` only when indexing is on.
+- **Structured data:** `Article` and `BreadcrumbList` JSON-LD on article pages, behind the same
+  switch.
 
-**Done when:** a repeat navigation serves images from cache, with before/after captured; the hero
-loads eagerly with one image per breakpoint; every image uses the flat quality; LQIP renders, if
-built.
+Files: `.github/workflows/lighthouse.yml`; with 3.2, also `utils/getMetadata.ts`, `app/sitemap.ts`,
+`app/robots.ts` and the article page.
 
-## Stage 3: P5 SEO and performance
+**Done when:** Lighthouse CI fails on a deliberately oversized image. With 3.2, the sitemap and
+structured data appear and disappear with `SITE_INDEXING`.
 
-Already built (see `docs/seo-handover.md`): metadata builders with fallbacks
-(`utils/getMetadata.ts`), the fail-closed `SITE_INDEXING` gate, per-site canonicals and
-OpenGraph/Twitter tags, `app/robots.ts`, self-hosted fonts (`next/font/local`) and per-request
-dedup with React `cache()`. The sites are deliberately `noindex`.
+## Stage 4: Watchdog (P3)
 
-### 3.1 Lighthouse CI
+**Goal:** check the live site on a schedule. The checks mostly exist; this stage adds content
+checks and scheduling.
 
-- Example workflow `.github/workflows/lighthouse.yml` (a reference, per D4).
-- **Fail the build on stable measures:** total image bytes, request count, and the "LCP image was
-  lazily loaded" audit.
-- **Report timing metrics (LCP, CLS, TBT) as warnings,** taking the median of 3–5 runs. CI runners
-  are too noisy to gate on them.
-- Assert on the performance category, not SEO: the "blocked from indexing" audit fails by design.
-- Optional: a one-page scorecard of the results for non-engineers (lab data).
+**4.1 Content checks** (`vip/assertions/content.mts`)
+- The home page, one article, `/archives` and `/search` load with the expected content. These are
+  the first checks that load real pages through dotCMS's page API (D9).
+- **Every article** *(Q4)*: each live article loads, with no 404. This would have caught CITGO's
+  missing articles (F5), however their site is built.
+- **Images:** every image used by live content exists. Check with `HEAD` requests sent straight to
+  dotCMS; through the proxy, a `HEAD` downloads the whole image. Name each missing image.
+- **Search:** searching for a live article's title finds that article.
+- Keep requests few and spread out. Results can get long, which is why B6 matters.
 
-### 3.2 Only if Q2 says so
+**4.2 Running against a live site**
+- One site per run: the site behind `--base-url`, matched by hostname, or named with `--site`
+  (handy for a test address). To skip a site, don't schedule it (D12).
+- Tag each check as settings-only, dotCMS, or live-site (`local`, `upstream`, `deployed`). A
+  scheduled run skips settings-only checks, because they'd check the runner's copy of the code, not
+  the live site.
 
-- **Parameterise metadata.** Replace the hardcoded `"CITGO"` site name and the
-  `https://${hostname}` pattern with config, keeping call sites working. Move the builders into
-  `vip/seo/` only once a second project needs them.
-- **Sitemap.** `app/sitemap.ts` lists live issues and articles for the resolved site, behind
-  `SITE_INDEXING`, failing closed. Mark it dynamic: with `FRONTEND_HOST_OVERRIDE` set,
-  `getSiteConfig()` never calls `headers()`, so Next would otherwise build it once at build time —
-  and D6 rules out revalidation. Add the `Sitemap:` line to `app/robots.ts` only when indexing is
-  on.
-- **JSON-LD.** `Article` and `BreadcrumbList` structured data on article pages, behind the same
-  gate.
-
-Touches: `.github/workflows/lighthouse.yml` (new); if 3.2 is built, also `utils/getMetadata.ts`,
-`app/sitemap.ts` (new), `app/robots.ts` and the article page.
-
-**Done when:** Lighthouse CI fails on a deliberately regressed image budget. If 3.2 is built, the
-sitemap and JSON-LD appear and disappear with `SITE_INDEXING`.
-
-## Stage 4: P3 watchdog
-
-The same CLI, pointed at a deployed site (D7). It's the lightest stage, because the checks already
-exist.
-
-### 4.1 Content checks — `vip/assertions/content.mts`
-
-- Home, one article, `/archives` and `/search` return 200 with expected markers.
-- **Coverage** *(pending Q6)*: every live Article on each site returns 200 at
-  `/{issueSlug}/{articleSlug}`. This catches the client's 404s (F5), whatever the rendering mode.
-- **Assets:** collect image identifiers from live content and send a `HEAD` for each to dotCMS
-  directly, not through the proxy — a `HEAD` through the route runs `GET` and downloads the image.
-  Report every 404 by identifier.
-- **Search:** `/api/search?q={knownTerm}&siteId={id}` returns `total > 0`.
-- Cap concurrency and respect the rate limiter. Per-asset results produce large JSON, which is why
-  B8 matters.
-- Honour `VIP_SITES` and `VIP_SITES_EXCLUDE` (D11): an excluded site is never probed. Report per
-  site.
-
-### 4.2 Schedulers — examples, not the product
-
-- **Plain cron**, which also covers GitLab CI, Jenkins, Azure DevOps or a bare VM:
+**4.3 Scheduling (examples only)**
+- Plain cron, which also fits GitLab, Jenkins, Azure DevOps or any server:
   `0 */2 * * * cd /app && npm run doctor -- --json --base-url https://…`
-- **GitHub Actions** (`.github/workflows/watchdog.yml`): fail the run and open or update an issue on
-  a regression. Run every 2 hours, not every 30 minutes. A 2-minute job every 30 minutes uses 2,880
-  minutes a month, over the 2,000 a private repo gets. That limit is GitHub's; self-hosted runners
-  and cron have none.
-- For CITGO, the runner has to sit inside their network (Q7).
+- GitHub Actions (`.github/workflows/watchdog.yml`): a problem fails the run. Run every 2 hours,
+  not every 30 minutes: a 2-minute job every 30 minutes uses 2,880 minutes a month, more than the
+  2,000 free minutes a private repo gets. That limit is GitHub's; other schedulers don't have it.
+- For CITGO, the runner must be inside their network (Q5).
 
-### 4.3 Demo assembly
+**4.4 Demo prep:** collect the screenshots taken along the way, and rehearse once.
 
-The screenshots captured along the way, and one full rehearsal.
+Files: `.github/workflows/watchdog.yml`.
 
-Touches: `.github/workflows/watchdog.yml` (new).
+**Done when:** the scheduled run passes, and breaking an image reference makes it fail, naming the
+image.
 
-**Done when:** the scheduled run is green, and breaking an asset reference turns it red, naming the
-identifier.
+## Demo (30 minutes)
 
-## Demo script (30 min)
+1. **Doctor, broken setup.** Point `FRONTEND_HOST_OVERRIDE` at a site that doesn't exist. The site
+   quietly shows the wrong content; `npm run doctor` names the cause.
+2. **Doctor, version drift.** The doctor warns that dotCMS changed since handover. (To demo it,
+   edit `vip/baseline.json`.)
+3. **Image caching.** DevTools before and after a second visit; quote the saving with its CDN
+   caveat.
+4. **Main image.** Before: Lighthouse flags the lazy hero. After: one image, loaded first.
+5. **SEO, if built.** Flip `SITE_INDEXING`; the sitemap and structured data appear and disappear.
+6. **Watchdog.** A failed run that names a broken image (and, with Q4, a missing article).
 
-1. **Break the wiring (P2).** Point `FRONTEND_HOST_OVERRIDE` at an unconfigured host. The site
-   silently serves wrong or empty content; `npm run doctor` names the cause.
-2. **Version drift (P2).** The doctor flags core moving off the handover baseline. To demo it,
-   edit `vip/baseline.json`.
-3. **Caching (P4).** DevTools before and after on a repeat navigation; quote the measured
-   difference with its CDN caveat.
-4. **Hero (P4).** Lighthouse's lazy-loaded-LCP audit before; one eager image per breakpoint after.
-   LQIP on Slow 3G, if built.
-5. **SEO (P5, if built).** Toggle `SITE_INDEXING`; the sitemap and JSON-LD appear and disappear.
-6. **Watchdog (P3).** A red run naming a broken asset identifier — and, with Q6, a missing article.
+End with: every one of these was invisible in a project that passed review and shipped.
 
-Close on the [business case](./04-business-case.md#pitch-framing) point: each of these was invisible
-in a project that passed review and shipped.
+## Parked ideas
 
-## Parked ideas (not scheduled)
-
-- **P1, dotCMS call tracing.** Deferred. What's already known for reviving it is in D3.
-- **Draft-leak detection.** `.depth()` returns unpublished related content
-  ([dotCMS platform](./02-evidence.md#dotcms-platform)); a check could flag non-live Articles in a
-  live Issue's relationships.
-- **Preview error rate as a release-gating SLO.** A recurring enterprise ask; out with the rest of
-  observability (D3).
+- **dotCMS call tracing (P1).** Deferred; notes for bringing it back are in D3.
+- **Blurred image previews (LQIP).** Cut 2026-11-03. Each preview is small (494 B), but needs its
+  own server request and is sent to the browser twice. Once caching works, the benefit is small.
+- **Draft-leak check.** dotCMS can return unpublished related content
+  ([evidence](./02-evidence.md#how-dotcms-works)); a check could flag unpublished articles inside a
+  live Issue.
