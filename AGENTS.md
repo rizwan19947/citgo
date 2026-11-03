@@ -28,25 +28,28 @@ Local dev: `npm run dev`. Production build: `npm run build`.
 | `docs/seo-handover.md`       | SEO implementation + indexing reference (the sites are deliberately `noindex`)                               |
 | `docs/vip-offerings/`        | **Active initiative** — see below                                                                            |
 
-## Active initiative: VIP Offerings (planning complete, not yet built)
+## Active initiative: VIP Offerings
 
-A five-pillar add-on suite prototyped on this project — observability, config preflight, asset
-watchdog, image pipeline, SEO/perf baseline. **As of 2026-09-11 nothing is implemented**; the work is
-four planning docs plus an index.
+An add-on suite built on this project: config preflight (the `doctor` CLI), a watchdog, an image
+pipeline, and an SEO/performance baseline. A fifth pillar, dotCMS call tracing, is deferred.
+**Status (2026-11-03):** the doctor is built (Stage 1); everything else is planned.
 
-**Read `docs/vip-offerings/00-index.md` first.** It carries the settled decisions, the hard
-constraints, and every measurement already taken against the client's instance — so you do not
-re-probe it or re-litigate closed questions.
+**Read `docs/vip-offerings/00-index.md` first.** It links the settled decisions, the evidence and
+the plan, so you don't re-measure the client's instance or reopen closed questions.
 
-Three things that catch people out:
+Things that catch people out:
 
-- **The dotCMS instance is read-only.** It is the client's live dev environment, already handed off.
-  No content types, no fields, no plugins, no server config. Every check is a GET, and a live rate
-  limiter applies.
-- **Browser RUM was deliberately cut; OpenTelemetry was not.** P1 is server-side spans only. The
-  browser half is delegated to whatever RUM the client already runs.
-- **Everything must stay host- and CI-agnostic.** The deliverables are a CLI and a library;
-  schedulers and workflow files are reference examples only.
+- **The dotCMS instance is read-only and rate-limited.** It is the client's live dev environment,
+  already handed off. No content types, fields, plugins or server config. Checks only read: GETs,
+  plus the read-only `_search` POST.
+- **No observability for now.** No OpenTelemetry or tracing (deferred), and nothing browser-side
+  (no RUM, no vitals beacon). Don't add either without a new decision — see D3 in
+  `docs/vip-offerings/01-decisions.md`.
+- **Host- and CI-agnostic.** The deliverables are a CLI and a library; schedulers and workflow
+  files are reference examples only.
+- **The doctor runs on plain Node type stripping** (`node vip/runners/cli.mts`). Only erasable
+  TypeScript works — no `enum`, `namespace` or parameter properties — and relative imports need an
+  explicit `.mts`. `tsc` won't catch a violation; running `npm run doctor` will.
 
 ## Critical conventions (read before editing)
 
@@ -80,8 +83,6 @@ takes `siteId`. **Do not casually expand what this file returns** — keep its b
 
 Convention: the `SITE_N` list is **identical on every deployment**; only `FRONTEND_HOST_OVERRIDE` varies (it pins each
 per-site production deployment). An override host missing from `SITE_N` silently resolves `siteId: undefined`.
-
-Convention: the `SITE_N` list is **identical on every deployment**; only `FRONTEND_HOST_OVERRIDE` varies (it pins each per-site production deployment). An override host missing from `SITE_N` silently resolves `siteId: undefined`.
 
 ### Routing — `app/[[...slug]]/page.tsx` (catch-all) + dedicated routes
 
