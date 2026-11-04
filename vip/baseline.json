@@ -1,0 +1,6 @@
+{
+  "sdk": "1.4.0",
+  "dotcms": "26.08.19-04",
+  "recorded": "2026-09-03",
+  "note": "Versions present at handover (D13). The doctor warns when either changes; after testing an upgrade, update both."
+}

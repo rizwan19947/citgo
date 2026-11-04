@@ -5,7 +5,6 @@ import { connectivityChecks } from "./connectivity.mts";
 import { siteChecks } from "./sites.mts";
 import { proxyChecks } from "./proxy.mts";
 import { parseSites } from "../lib/siteConfig.mts";
-import { createCachedFetch } from "../lib/cachedFetch.mts";
 
 export * from "./types.mts";
 
@@ -20,9 +19,8 @@ export const allChecks: Check[] = [
 export interface BuildContextOptions {
 	env?: Record<string, string | undefined>;
 	repoRoot?: string;
+	/** A running site's origin (--base-url). Undefined skips the proxy checks. */
 	baseUrl?: string;
-	/** Disk-cache read-only requests. Development only — never in CI or the watchdog. */
-	cache?: boolean;
 }
 
 export function buildContext(options: BuildContextOptions = {}): CheckContext {
@@ -34,10 +32,11 @@ export function buildContext(options: BuildContextOptions = {}): CheckContext {
 		rawSiteKeys,
 		dotcmsHost: (env.DOTCMS_HOST ?? "").replace(/\/$/, ""),
 		authToken: env.DOTCMS_AUTH_TOKEN ?? "",
-		baseUrl: options.baseUrl ?? env.VIP_BASE_URL,
+		detailContentType: env.DETAIL_CONTENT_TYPE?.trim() || undefined,
+		baseUrl: options.baseUrl,
 		env,
 		repoRoot: options.repoRoot ?? process.cwd(),
-		fetch: createCachedFetch(options.cache ?? env.VIP_CACHE === "1"),
+		fetch,
 	};
 }
 

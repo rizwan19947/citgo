@@ -2,12 +2,14 @@
 import type { SiteEntry } from "../assertions/types.mts";
 
 /*
- * Parses SITE_N the way utils/site-config.ts does — deliberately including its stopping behaviour,
- * because detecting that behaviour is the point.
+ * Parses SITE_N exactly the way utils/site-config.ts does — including its stopping behaviour and
+ * its lack of trimming, because detecting both is the point.
  *
  * The app's loop is `while (process.env[`SITE_${i}`]) { ... i++ }`, so it halts at the first missing
- * index. SITE_1 + SITE_3 with no SITE_2 means SITE_3 is silently dropped and that site never
- * resolves. We scan a wider range and mark which entries the app would actually see.
+ * index: SITE_1 + SITE_3 with no SITE_2 means SITE_3 is silently dropped. It also splits on "|" and
+ * uses the parts as they are, so "citgonow.com |id|slug" makes a site keyed "citgonow.com " that no
+ * request ever matches. We scan a wider range, mark which entries the app would see, and keep the
+ * parts untrimmed.
  */
 
 const SCAN_LIMIT = 24;
@@ -37,14 +39,7 @@ export function parseSites(env: Record<string, string | undefined>): ParsedSites
 	const sites: SiteEntry[] = present.map((index) => {
 		const raw = env[`SITE_${index}`]!;
 		const [hostname = "", siteId = "", assetSlug = ""] = raw.split("|");
-		return {
-			index,
-			raw,
-			hostname: hostname.trim(),
-			siteId: siteId.trim(),
-			assetSlug: assetSlug.trim(),
-			visibleToApp: index <= reachableUpTo,
-		};
+		return { index, raw, hostname, siteId, assetSlug, visibleToApp: index <= reachableUpTo };
 	});
 
 	return {
@@ -52,16 +47,4 @@ export function parseSites(env: Record<string, string | undefined>): ParsedSites
 		rawSiteKeys,
 		droppedByGap: present.filter((i) => i > reachableUpTo),
 	};
-}
-
-/**
- * dotCMS site identifiers are 32 hex characters with no dashes; inodes are dashed UUIDs.
- * README warns to use the identifier, and this is the cheap way to catch the confusion.
- */
-export function looksLikeIdentifier(value: string): boolean {
-	return /^[0-9a-f]{32}$/i.test(value);
-}
-
-export function looksLikeInode(value: string): boolean {
-	return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }

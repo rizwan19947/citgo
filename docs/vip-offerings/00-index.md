@@ -7,15 +7,15 @@ any project that follows this reference setup, and developed and tested on CITGO
 SDK that falls behind dotCMS. This project had several such problems that nobody noticed
 ([evidence](./02-evidence.md#defects-found)).
 
-**Status (2026-11-04):** the first tool, the doctor, is built. Hardening it (Stage 1b) is next.
-About 3–4 days of work remain.
+**Status (2026-11-04):** the first tool, the doctor, is built and hardened (Stages 1 and 1b). The
+watchdog (Stage 2) is next. About 2–2.5 days of work remain.
 
 ## The five parts
 
 | ID | Part | What it does | When |
 |---|---|---|---|
 | P1 | dotCMS call tracing | Would time each call the site makes to dotCMS | Deferred (D3) |
-| P2 | Doctor | Checks the site's settings and its dotCMS connection before deploy | Built; Stage 1b next |
+| P2 | Doctor | Checks the site's settings and its dotCMS connection before deploy | Built (Stages 1, 1b) |
 | P3 | Watchdog | Checks a running site: its key pages, newest articles and their images. Run by hand for now | Stage 2 |
 | P4 | Image fixes | Fixes image quality and how the main image loads | Stage 3 |
 | P5 | Speed checks | Lighthouse fails the run when pages get slower or heavier | Stage 4 |
@@ -41,7 +41,7 @@ About 3–4 days of work remain.
 ## Working rules
 
 - Reuse the [evidence](./02-evidence.md). Don't re-measure the client's dotCMS.
-- Develop against the fake local dotCMS (from Stage 1b), not the client's.
+- Develop against the fake dotCMS in `vip/tests/` (`npm run doctor:test`), not the client's.
 - Runs against the client's dotCMS or the live site need the owner's OK.
 - Take before/after numbers and screenshots when you change something.
 
@@ -61,7 +61,8 @@ D6, D10, D11 and D15.
 | 2026-11-03 | Tracing deferred; doctor made install-free; low-value items cut |
 | 2026-11-03 | Open questions answered: client-agnostic and server-rendered only; no SEO extras; no image caching; watchdog next, run by hand |
 | 2026-11-04 | Watchdog scoped to the newest items (D16); project details moved to env settings |
+| 2026-11-04 | Stage 1b done. Its live run found dotCMS upgraded to 26.10.13-01 since handover |
 
 ## Next step
 
-Build [Stage 1b](./03-plan.md#stage-1b-harden-the-doctor-next). Nothing blocks it.
+Build [Stage 2](./03-plan.md#stage-2-watchdog-p3), the watchdog.

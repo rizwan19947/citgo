@@ -1,8 +1,9 @@
 /* Node type-stripping: erasable syntax only — no enum, namespace, or parameter properties. See assertions/types.mts. */
-import { existsSync } from "node:fs";
+import { statSync } from "node:fs";
 import { join } from "node:path";
 import type { Check, CheckContext, CheckResult, SiteEntry } from "./types.mts";
 import { fail, pass, skip, timer } from "./types.mts";
+import { searchLive } from "../lib/dotcms.mts";
 
 /*
  * Multisite resolution matrix.
@@ -33,37 +34,43 @@ interface SiteProbe {
 	site: SiteEntry;
 	resolved: boolean;
 	resolvedHostname?: string;
-	issueCount?: number;
+	resolvedIdentifier?: string;
+	resolvedInode?: string;
+	liveCount?: number;
+	liveError?: string;
 	error?: string;
 }
 
 async function probeSite(ctx: CheckContext, site: SiteEntry): Promise<SiteProbe> {
-	const auth = { Authorization: `Bearer ${ctx.authToken}` };
+	let probe: SiteProbe;
 	try {
-		const siteRes = await ctx.fetch(`${ctx.dotcmsHost}/api/v1/site/${site.siteId}`, { headers: auth });
+		const siteRes = await ctx.fetch(`${ctx.dotcmsHost}/api/v1/site/${encodeURIComponent(site.siteId)}`, {
+			headers: { Authorization: `Bearer ${ctx.authToken}` },
+		});
 		if (!siteRes.ok) {
 			return { site, resolved: false, error: `site lookup returned ${siteRes.status}` };
 		}
-		const body = await siteRes.json();
-		const entity = body?.entity ?? {};
-		// The SDK type says `hostname`; runtime has been seen using `hostName`. Accept either.
-		const resolvedHostname: string | undefined = entity.hostname ?? entity.hostName;
-
-		const searchRes = await ctx.fetch(`${ctx.dotcmsHost}/api/content/_search`, {
-			method: "POST",
-			headers: { ...auth, "Content-Type": "application/json" },
-			body: JSON.stringify({
-				query: `+contentType:Issue +live:true +conhost:${site.siteId}`,
-				limit: 1,
-			}),
-		});
-		const searchBody = await searchRes.json();
-		const issueCount = searchBody?.entity?.resultsSize;
-
-		return { site, resolved: true, resolvedHostname, issueCount };
+		const entity = (await siteRes.json())?.entity ?? {};
+		probe = {
+			site,
+			resolved: true,
+			// The SDK type says `hostname`; runtime has been seen using `hostName`. Accept either.
+			resolvedHostname: entity.hostname ?? entity.hostName,
+			resolvedIdentifier: entity.identifier,
+			resolvedInode: entity.inode,
+		};
 	} catch (e) {
 		return { site, resolved: false, error: e instanceof Error ? e.message : String(e) };
 	}
+
+	if (ctx.detailContentType) {
+		try {
+			probe.liveCount = (await searchLive(ctx, ctx.detailContentType, site.siteId, 1)).total;
+		} catch (e) {
+			probe.liveError = e instanceof Error ? e.message : String(e);
+		}
+	}
+	return probe;
 }
 
 const probeCache = new WeakMap<CheckContext, Promise<SiteProbe[]>>();
@@ -96,6 +103,24 @@ const resolves: Check = {
 			);
 		}
 
+		// The configured value must be the site's identifier. Its shape proves nothing — older sites
+		// have dashed identifiers, like inodes — so compare with what dotCMS returned.
+		const wrongId = probes.filter((p) => p.resolvedIdentifier && p.resolvedIdentifier !== p.site.siteId);
+		if (wrongId.length) {
+			return fail(
+				resolves,
+				wrongId
+					.map((p) =>
+						p.resolvedInode === p.site.siteId
+							? `SITE_${p.site.index} (${p.site.hostname}) uses the site's inode; use its identifier ${p.resolvedIdentifier}`
+							: `SITE_${p.site.index} (${p.site.hostname}) resolves to identifier ${p.resolvedIdentifier}`,
+					)
+					.join("; "),
+				t(),
+				{ wrongId: wrongId.map((p) => ({ configured: p.site.siteId, identifier: p.resolvedIdentifier })) },
+			);
+		}
+
 		// A resolvable id that belongs to a *different* site is the subtler failure.
 		const mismatched = probes.filter(
 			(p) => p.resolvedHostname && p.resolvedHostname !== p.site.hostname,
@@ -104,7 +129,11 @@ const resolves: Check = {
 			return fail(
 				resolves,
 				mismatched
-					.map((p) => `SITE_${p.site.index} claims ${p.site.hostname} but the identifier resolves to ${p.resolvedHostname}`)
+					.map(
+						(p) =>
+							`SITE_${p.site.index} claims ${JSON.stringify(p.site.hostname)} but the identifier ` +
+							`resolves to ${JSON.stringify(p.resolvedHostname)}`,
+					)
 					.join("; "),
 				t(),
 				{ mismatched: mismatched.map((p) => ({ configured: p.site.hostname, actual: p.resolvedHostname })) },
@@ -117,59 +146,68 @@ const resolves: Check = {
 	},
 };
 
-const hasLiveIssue: Check = {
-	id: "sites.live-issue",
-	label: "Every site has at least one live Issue",
+const liveContent: Check = {
+	id: "sites.live-content",
+	label: "Every site has published detail items",
 	severity: "error",
 	async run(ctx) {
 		const t = timer();
-		if (!ctx.sites.length) return skip(hasLiveIssue, "Skipped — no sites configured", t());
-		const probes = await probeAll(ctx);
+		if (!ctx.sites.length) return skip(liveContent, "Skipped — no sites configured", t());
+		if (!ctx.detailContentType) {
+			return skip(
+				liveContent,
+				"Skipped — set DETAIL_CONTENT_TYPE to the content type with detail pages (for example Article)",
+				t(),
+			);
+		}
+		const probes = (await probeAll(ctx)).filter((p) => p.resolved);
 
-		const empty = probes.filter((p) => p.resolved && !p.issueCount);
+		const failed = probes.filter((p) => p.liveError);
+		if (failed.length) {
+			return fail(liveContent, failed.map((p) => `${p.site.hostname}: ${p.liveError}`).join("; "), t());
+		}
+		const empty = probes.filter((p) => !p.liveCount);
 		if (empty.length) {
-			// Without a live Issue the home page falls through to the generic Page renderer.
 			return fail(
-				hasLiveIssue,
-				`No live Issue for: ${empty.map((p) => p.site.hostname).join(", ")} — the home page will not render`,
+				liveContent,
+				`No published ${ctx.detailContentType} items on: ${empty.map((p) => p.site.hostname).join(", ")}`,
 				t(),
 				{ empty: empty.map((p) => p.site.hostname) },
 			);
 		}
-		return pass(
-			hasLiveIssue,
-			probes
-				.filter((p) => p.resolved)
-				.map((p) => `${p.site.hostname}: ${p.issueCount}`)
-				.join(", "),
-			t(),
-		);
+		return pass(liveContent, probes.map((p) => `${p.site.hostname}: ${p.liveCount}`).join(", "), t());
 	},
 };
 
+function isDirectory(path: string): boolean {
+	try {
+		return statSync(path).isDirectory();
+	} catch {
+		return false;
+	}
+}
+
 const assetsPresent: Check = {
 	id: "sites.assets",
-	label: "Every site's header logo exists on disk",
+	label: "Every site's asset folder exists",
 	severity: "error",
 	async run(ctx) {
 		const t = timer();
 		if (!ctx.sites.length) return skip(assetsPresent, "Skipped — no sites configured", t());
 
 		const missing = ctx.sites.filter(
-			(s) => !existsSync(join(ctx.repoRoot, "public/assets", s.assetSlug, "header-logo.svg")),
+			(s) => !s.assetSlug || !isDirectory(join(ctx.repoRoot, "public/assets", s.assetSlug)),
 		);
 		if (missing.length) {
 			return fail(
 				assetsPresent,
-				missing
-					.map((s) => `${s.hostname}: public/assets/${s.assetSlug}/header-logo.svg`)
-					.join("; "),
+				missing.map((s) => `${s.hostname}: public/assets/${s.assetSlug}/`).join("; "),
 				t(),
 				{ missing: missing.map((s) => s.assetSlug) },
 			);
 		}
-		return pass(assetsPresent, `${ctx.sites.length} logo(s) present`, t());
+		return pass(assetsPresent, `${ctx.sites.length} asset folder(s) present`, t());
 	},
 };
 
-export const siteChecks: Check[] = [resolves, hasLiveIssue, assetsPresent];
+export const siteChecks: Check[] = [resolves, liveContent, assetsPresent];

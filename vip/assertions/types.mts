@@ -1,10 +1,11 @@
 /*
  * Shared contract for the VIP check library.
  *
- * Consumed by the `doctor` CLI and, from Day 5, the scheduled watchdog — both of which are the
- * same command with different arguments. A check never reads process.env or the filesystem
- * directly; everything it needs arrives on CheckContext, which is what lets one implementation
- * serve both a pre-deploy gate and a remote content probe.
+ * Used by the `doctor` command, and later by the watchdog: the same checks run in both. A check gets
+ * its settings through CheckContext and never reads process.env itself, which is what lets one check
+ * run before deploy and against a running site. Two checks also read files under
+ * CheckContext.repoRoot: the version check (package-lock.json, vip/baseline.json) and the site
+ * assets check (public/assets/).
  *
  * ── Runtime constraint for everything under vip/ ──
  *
@@ -33,7 +34,7 @@ export interface CheckResult {
 	skipped?: boolean;
 }
 
-/** One parsed SITE_N entry, plus whether site-config.ts's loop would actually see it. */
+/** One SITE_N entry, split exactly as utils/site-config.ts splits it: on "|", untrimmed. */
 export interface SiteEntry {
 	index: number;
 	raw: string;
@@ -50,7 +51,9 @@ export interface CheckContext {
 	rawSiteKeys: string[];
 	dotcmsHost: string;
 	authToken: string;
-	/** Deployed frontend origin. Undefined skips the proxy checks rather than failing them. */
+	/** The content type that has detail pages (DETAIL_CONTENT_TYPE). Undefined skips the checks that need it. */
+	detailContentType?: string;
+	/** A running site's origin (--base-url). Undefined skips the proxy checks rather than failing them. */
 	baseUrl?: string;
 	env: Record<string, string | undefined>;
 	repoRoot: string;

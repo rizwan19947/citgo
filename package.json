@@ -2,12 +2,16 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "doctor": "node vip/runners/cli.mts"
+    "doctor": "node vip/runners/cli.mts",
+    "doctor:test": "node --test \"vip/tests/*.test.mts\""
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

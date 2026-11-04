@@ -8,13 +8,13 @@ The build, stage by stage. Reasons are in [Decisions](./01-decisions.md); facts 
 | Stage | What | Estimate | Status |
 |---|---|---|---|
 | 1 | Doctor (P2) | ~2 days | Done 2026-09-11 |
-| 1b | Harden the doctor | 1–1.5 days | Next |
-| 2 | Watchdog (P3) | ~1 day | Planned |
+| 1b | Harden the doctor | 1–1.5 days | Done 2026-11-04 |
+| 2 | Watchdog (P3) | ~1 day | Next |
 | 3 | Image fixes (P4) | 0.5–1 day | Planned |
 | 4 | Speed checks (P5), then the demo | ~0.5 day | Planned |
 | — | dotCMS call tracing (P1) | — | Deferred (D3) |
 
-About 3–4 days remain. There's no fixed deadline.
+About 2–2.5 days remain. There's no fixed deadline.
 
 ## Where the code lives
 
@@ -29,10 +29,11 @@ vip/
     proxy.mts          image proxy checks                                built
     content.mts        page, article and image checks                    Stage 2
   lib/siteConfig.mts   reads SITE_N exactly as the app does              built
+  lib/dotcms.mts       searches and type lookups, as the SDK does them   built
   runners/cli.mts      the `npm run doctor` command                      built
   runners/report.mts   text and JSON output                              built
-  baseline.json        the versions at handover                          Stage 1b
-  tests/               tests against a fake local dotCMS                 Stage 1b
+  baseline.json        the versions at handover                          built
+  tests/               tests against a fake local dotCMS                 built
   lighthouserc.json    speed budgets                                     Stage 4
 ```
 
@@ -66,7 +67,7 @@ What it checks today:
 | `env.default-site-host` | `DEFAULT_SITE_HOST` names a configured site |
 | `dotcms.reachable` | dotCMS answers (also reports response time and whether it uses HTTPS) |
 | `dotcms.auth` | dotCMS accepts the token |
-| `dotcms.version-alignment` | The installed SDK (read from `node_modules`) and the live dotCMS version are on the same version line. It remembers nothing between runs *(warning; replaced in 1b by B2)* |
+| `dotcms.version-alignment` | The installed SDK (read from `node_modules`) and the live dotCMS version are on the same version line. It remembers nothing between runs *(warning; replaced in 1b by `dotcms.version-baseline`, B2)* |
 | `dotcms.rate-limit` | Reports the rate limit; never fails *(removed in 1b)* |
 | `sites.resolve` | Each site ID exists and belongs to the site it's listed under |
 | `sites.live-issue` | Each site has a published Issue. Without one, its home page falls back to a generic layout *(becomes `sites.live-content` in 1b)* |
@@ -87,10 +88,14 @@ How it's built: plain `node` runs the `.mts` files directly, so there's no build
 install. The files are `.mts` because `package.json` doesn't declare ES modules, and
 `tsconfig.json` sets `allowImportingTsExtensions` so `.mts` imports pass type-checking.
 
-## Stage 1b: Harden the doctor (next)
+## Stage 1b: Harden the doctor (done)
 
 **Goal:** fix the doctor's bugs, remove what it doesn't need, make it work for any project, and add
 tests.
+
+**Status:** done 2026-11-04. All of the below is in, with 20 tests (`npm run doctor:test`), and each
+bug's test fails if the bug comes back. The live run passed: 10 passed, 1 warning, 2 skipped (no
+`--base-url`). The warning is real: dotCMS moved from 26.08.19-04 to 26.10.13-01 after handover.
 
 Bugs found in the 2026-11-02 audit (each reproduced against a fake dotCMS or confirmed in the code):
 
@@ -98,7 +103,7 @@ Bugs found in the 2026-11-02 audit (each reproduced against a fake dotCMS or con
 |---|---|---|
 | B1 | The doctor ignores stray spaces in `SITE_N`; the app doesn't. A space before a `\|` passes the doctor but breaks the site | Read `SITE_N` exactly as the app does, and flag spaces as an error |
 | B2 | The version check can't see a dotCMS upgrade: it gives the same warning before and after, and passes any date-based SDK against any dotCMS | Compare against the versions saved in `vip/baseline.json`, and warn on any difference. Read the SDK version from `package-lock.json`, so this works without `npm install` |
-| B3 | The doctor's searches differ from the app's: they skip content shared by all sites, and the language filter | Search the way the SDK does (`+(conhost:{siteId} conhost:SYSTEM_HOST)` and `+languageId:1`) in both content searches: the live-content check and the image lookup |
+| B3 | The doctor's searches skip the app's language filter | Add it the way the SDK does (`+languageId:1` in the query, and `languageId: 1` in the request) to both content searches: the live-content check and the image lookup |
 | B4 | If dotCMS returns an image field as an object instead of text, `proxy.round-trip` fails wrongly | Read the field the way `utils/resolveImage.ts` does |
 | B5 | Site IDs with dashes are flagged as inodes, but older dotCMS sites do use dashed IDs | Remove `env.site-identifier-shape`. In `sites.resolve`, compare the configured ID with what dotCMS returns, and say so if it's an inode |
 | B6 | `process.exit()` can cut off long output | Set `process.exitCode` instead |
@@ -143,6 +148,15 @@ stage.
 
 **Goal:** check a running site by hand: its key pages, its newest detail pages and their images.
 Connecting it to CI comes after the MVP is approved (D4).
+
+**Before starting (carried over from Stage 1b):**
+- Owner decision pending: dotCMS is now 26.10.13-01. Recommended: keep the version warning until
+  this stage's first live run passes, then update `vip/baseline.json` to the new version.
+- `contentTypeDefinition()` in `vip/lib/dotcms.mts` reads only image fields; add the URL pattern
+  (`urlMapPattern`). Its response shape is unverified on the client's dotCMS (image fields are
+  matched by a `clazz` ending in `ImageField`), so check it on the first live run.
+- "Newest" means last modified first (`modDate desc`), through the search's `sort` field, which
+  the SDK also sends.
 
 **2.1 What it checks** (`vip/assertions/content.mts`)
 - **Pages:** each page in `WATCHDOG_PAGES` loads with status 200 (default `/`; CITGO:

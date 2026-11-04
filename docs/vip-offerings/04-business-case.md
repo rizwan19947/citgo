@@ -78,7 +78,7 @@ Checked 2026-09-09.
 
 ## Effort
 
-About 3–4 days remain; stage estimates are in the [plan](./03-plan.md#status). Every stage is well
+About 2–2.5 days remain; stage estimates are in the [plan](./03-plan.md#status). Every stage is well
 understood; the watchdog is the least certain, because its content checks are new. The first
 estimate was 8.5–11 days. Dropping browser monitoring (D2) and tracing (D3) removed the riskiest
 work, and cutting low-value items and answering the open questions (both on 2026-11-03) removed

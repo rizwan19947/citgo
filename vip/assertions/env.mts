@@ -1,9 +1,11 @@
 /* Node type-stripping: erasable syntax only — no enum, namespace, or parameter properties. See assertions/types.mts. */
-import type { Check } from "./types.mts";
+import type { Check, SiteEntry } from "./types.mts";
 import { fail, pass, timer } from "./types.mts";
-import { looksLikeIdentifier, looksLikeInode } from "../lib/siteConfig.mts";
 
 /* Environment shape. All of these are pure — no network, no filesystem. */
+
+/** Configured hostnames, quoted so a stray space is visible in the message. */
+const quotedHosts = (sites: SiteEntry[]) => sites.map((s) => JSON.stringify(s.hostname)).join(", ") || "none";
 
 const required: Check = {
 	id: "env.required",
@@ -27,11 +29,18 @@ const siteFormat: Check = {
 	severity: "error",
 	async run(ctx) {
 		const t = timer();
-		const bad = ctx.sites
-			.filter((s) => s.raw.split("|").length !== 3 || !s.hostname || !s.siteId || !s.assetSlug)
-			.map((s) => `SITE_${s.index}`);
-		return bad.length
-			? fail(siteFormat, `Malformed: ${bad.join(", ")} — expected three pipe-delimited parts`, t(), { bad })
+		const problems: string[] = [];
+		for (const s of ctx.sites) {
+			const parts = s.raw.split("|");
+			if (parts.length !== 3 || parts.some((p) => !p.trim())) {
+				problems.push(`SITE_${s.index}: expected three non-empty parts separated by "|"`);
+			} else if (parts.some((p) => /\s/.test(p))) {
+				// The app uses the parts as they are, so a stray space makes a site no request matches.
+				problems.push(`SITE_${s.index}: contains spaces, which the app keeps — remove them`);
+			}
+		}
+		return problems.length
+			? fail(siteFormat, problems.join("; "), t(), { problems })
 			: pass(siteFormat, `${ctx.sites.length} entries well-formed`, t());
 	},
 };
@@ -55,30 +64,6 @@ const siteNumbering: Check = {
 	},
 };
 
-const siteIdentifierShape: Check = {
-	id: "env.site-identifier-shape",
-	label: "SITE_N uses site identifiers, not inodes",
-	severity: "warn",
-	async run(ctx) {
-		const t = timer();
-		// Identifiers are 32 hex with no dashes; inodes are dashed UUIDs. sites.resolve is the
-		// authoritative check — this one catches the mistake before a network round-trip.
-		const suspect = ctx.sites.filter((s) => !looksLikeIdentifier(s.siteId));
-		if (!suspect.length) return pass(siteIdentifierShape, "All look like identifiers", t());
-		return fail(
-			siteIdentifierShape,
-			suspect
-				.map(
-					(s) =>
-						`SITE_${s.index} (${s.hostname}): ${looksLikeInode(s.siteId) ? "looks like an inode" : "unexpected shape"}`,
-				)
-				.join("; "),
-			t(),
-			{ suspect: suspect.map((s) => s.hostname) },
-		);
-	},
-};
-
 const frontendHostOverride: Check = {
 	id: "env.frontend-host-override",
 	label: "FRONTEND_HOST_OVERRIDE matches a configured site",
@@ -93,12 +78,12 @@ const frontendHostOverride: Check = {
 		if (match) {
 			return pass(frontendHostOverride, `Pinned to ${override} (SITE_${match.index})`, t());
 		}
-		// The documented silent failure: resolve() spreads an undefined config, yielding
-		// { siteId: undefined }, and every dotCMS call then fails quietly with no error surfaced.
+		// The app resolves an override it can't find to { siteId: undefined }. Content searches then
+		// have no site limit and return every site's content: wrong content, never an error.
 		return fail(
 			frontendHostOverride,
-			`"${override}" matches no SITE_N hostname. Site resolution yields siteId: undefined and ` +
-				`every dotCMS call fails silently. Configured: ${ctx.sites.map((s) => s.hostname).join(", ") || "none"}`,
+			`"${override}" matches no SITE_N hostname, so the site gets no siteId and quietly shows ` +
+				`wrong or empty content. Configured: ${quotedHosts(ctx.sites)}`,
 			t(),
 			{ override, configured: ctx.sites.map((s) => s.hostname) },
 		);
@@ -118,7 +103,8 @@ const defaultSiteHost: Check = {
 			? pass(defaultSiteHost, `Falls back to ${fallback} (SITE_${match.index})`, t())
 			: fail(
 					defaultSiteHost,
-					`"${fallback}" matches no SITE_N hostname — unmatched requests resolve to an undefined site`,
+					`"${fallback}" matches no SITE_N hostname, so requests that match no site get no siteId ` +
+						`and show wrong or empty content. Configured: ${quotedHosts(ctx.sites)}`,
 					t(),
 					{ fallback },
 				);
@@ -129,7 +115,6 @@ export const envChecks: Check[] = [
 	required,
 	siteFormat,
 	siteNumbering,
-	siteIdentifierShape,
 	frontendHostOverride,
 	defaultSiteHost,
 ];
