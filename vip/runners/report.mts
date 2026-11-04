@@ -1,8 +1,16 @@
 /* Node type-stripping: erasable syntax only — no enum, namespace, or parameter properties. See assertions/types.mts. */
-import type { RunSummary } from "../assertions/index.mts";
+import type { Command, RunSummary } from "../assertions/index.mts";
 import { checkLabels } from "../assertions/index.mts";
 
-/* Shared formatter. `--json` feeds CI and the watchdog; the text form is for humans. */
+/* Shared formatter. `--json` is for CI and scripts; the text form is for people. */
+
+/** What a run checked, for the report's heading. */
+export interface RunInfo {
+	command: Command;
+	/** The one site a watchdog run checked (D12). */
+	site?: string;
+	baseUrl?: string;
+}
 
 const COLOR = process.stdout.isTTY && !process.env.NO_COLOR;
 const paint = (code: string, s: string) => (COLOR ? `\x1b[${code}m${s}\x1b[0m` : s);
@@ -12,8 +20,10 @@ const red = (s: string) => paint("31", s);
 const yellow = (s: string) => paint("33", s);
 const green = (s: string) => paint("32", s);
 
-export function renderText(summary: RunSummary): string {
-	const lines: string[] = ["", bold("  Headless Doctor"), ""];
+export function renderText(summary: RunSummary, run: RunInfo): string {
+	const lines: string[] = ["", bold(`  Headless ${run.command === "watchdog" ? "Watchdog" : "Doctor"}`)];
+	if (run.site) lines.push(dim(`  ${run.site} at ${run.baseUrl}`));
+	lines.push("");
 
 	for (const r of summary.results) {
 		const label = checkLabels[r.id] ?? r.id;
@@ -41,9 +51,12 @@ export function renderText(summary: RunSummary): string {
 	return lines.join("\n");
 }
 
-export function renderJson(summary: RunSummary): string {
+export function renderJson(summary: RunSummary, run: RunInfo): string {
 	return JSON.stringify(
 		{
+			command: run.command,
+			site: run.site,
+			baseUrl: run.baseUrl,
 			status: summary.worst,
 			passed: summary.passed,
 			warnings: summary.warnings,

@@ -45,7 +45,7 @@ measures the live site from inside; the watchdog checks it from outside.
 |---|---|
 | dotCMS response times | No: tracing is deferred (D3) |
 | Request IDs, to trace a problem | No: tracing is deferred (D3) |
-| Broken links and images | Yes: the watchdog (P3) |
+| Broken links and images | Partly: the watchdog (P3) checks key pages, the newest items and their images. It doesn't follow links inside pages |
 | Caching | No: left to each client's CDN (D11) |
 | Preview error rates as a release gate | No: out of scope |
 | Click-to-edit for editors | Partly, through dotCMS's visual editor |
@@ -78,9 +78,9 @@ Checked 2026-09-09.
 
 ## Effort
 
-About 2–2.5 days remain; stage estimates are in the [plan](./03-plan.md#status). Every stage is well
-understood; the watchdog is the least certain, because its content checks are new. The first
-estimate was 8.5–11 days. Dropping browser monitoring (D2) and tracing (D3) removed the riskiest
+About 1–1.5 days remain; stage estimates are in the [plan](./03-plan.md#status). The doctor and the
+watchdog are built, and the remaining stages are well understood. The first estimate was 8.5–11
+days. Dropping browser monitoring (D2) and tracing (D3) removed the riskiest
 work, and cutting low-value items and answering the open questions (both on 2026-11-03) removed
 another 1–2 days.
 

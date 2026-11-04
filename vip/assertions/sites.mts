@@ -8,9 +8,10 @@ import { searchLive } from "../lib/dotcms.mts";
 /*
  * Multisite resolution matrix.
  *
- * Runs for EVERY configured SITE_N, not just the one FRONTEND_HOST_OVERRIDE pins. Multisite is
- * foundational in this project, and a site that only breaks once someone flips the override is a
- * site nobody discovers is broken.
+ * The doctor runs these for EVERY configured SITE_N, not just the one FRONTEND_HOST_OVERRIDE pins.
+ * Multisite is foundational in this project, and a site that only breaks once someone flips the
+ * override is a site nobody discovers is broken. The watchdog runs them for the one site it checks
+ * (D12).
  *
  * Concurrency is capped: these run against a rate-limited shared instance.
  */
@@ -88,6 +89,7 @@ const resolves: Check = {
 	id: "sites.resolve",
 	label: "Every SITE_N identifier resolves to a real site",
 	severity: "error",
+	commands: ["doctor", "watchdog"],
 	async run(ctx): Promise<CheckResult> {
 		const t = timer();
 		if (!ctx.sites.length) return skip(resolves, "Skipped — no sites configured", t());
@@ -150,6 +152,7 @@ const liveContent: Check = {
 	id: "sites.live-content",
 	label: "Every site has published detail items",
 	severity: "error",
+	commands: ["doctor", "watchdog"],
 	async run(ctx) {
 		const t = timer();
 		if (!ctx.sites.length) return skip(liveContent, "Skipped — no sites configured", t());
@@ -191,6 +194,7 @@ const assetsPresent: Check = {
 	id: "sites.assets",
 	label: "Every site's asset folder exists",
 	severity: "error",
+	commands: ["doctor"],
 	async run(ctx) {
 		const t = timer();
 		if (!ctx.sites.length) return skip(assetsPresent, "Skipped — no sites configured", t());

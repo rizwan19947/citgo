@@ -30,8 +30,9 @@ Local dev: `npm run dev`. Production build: `npm run build`.
 
 ## Active initiative: VIP Offerings
 
-Add-on tools for any headless dotCMS project, developed and tested here: the doctor (setup
-checks), a watchdog, image fixes and speed checks. Tracing is deferred.
+Add-on tools for any headless dotCMS project, developed and tested here: the doctor
+(`npm run doctor`, setup checks before deploy), the watchdog (`npm run watchdog -- --base-url …`,
+checks a running site), image fixes and speed checks. Tracing is deferred.
 
 **Read `docs/vip-offerings/00-index.md` first.** It has the current status and next step, and links
 the decisions, evidence and plan, so you don't re-measure the client's dotCMS or reopen settled
@@ -47,10 +48,10 @@ Things that catch people out:
   approved.
 - **No CITGO-specific code in `vip/`.** Project details are env settings (`DETAIL_CONTENT_TYPE`,
   `WATCHDOG_LATEST`, `WATCHDOG_PAGES`).
-- **The doctor is plain Node with no packages.** Don't import anything into it, not even the
+- **The tools are plain Node with no packages.** Don't import anything into `vip/`, not even the
   dotCMS SDK. Node can't run some TypeScript features (`enum`, `namespace`, constructor shorthand),
-  and relative imports need `.mts`. `tsc` won't catch these; running `npm run doctor` will. Test it
-  with `npm run doctor:test`, which uses a fake dotCMS, never the client's.
+  and relative imports need `.mts`. `tsc` won't catch these; running `npm run doctor` will. Test
+  both tools with `npm run doctor:test`, which uses a fake dotCMS, never the client's.
 
 ## Critical conventions (read before editing)
 

@@ -1,11 +1,11 @@
 /*
  * Shared contract for the VIP check library.
  *
- * Used by the `doctor` command, and later by the watchdog: the same checks run in both. A check gets
- * its settings through CheckContext and never reads process.env itself, which is what lets one check
- * run before deploy and against a running site. Two checks also read files under
- * CheckContext.repoRoot: the version check (package-lock.json, vip/baseline.json) and the site
- * assets check (public/assets/).
+ * Two commands run these checks: the doctor (settings and dotCMS, before deploy) and the watchdog
+ * (dotCMS and a running site). Each check lists the commands that run it, so a check both need is
+ * written once (D7). A check gets its settings through CheckContext and never reads process.env
+ * itself. Two checks also read files under CheckContext.repoRoot: the version check
+ * (package-lock.json, vip/baseline.json) and the site assets check (public/assets/).
  *
  * ── Runtime constraint for everything under vip/ ──
  *
@@ -46,6 +46,7 @@ export interface SiteEntry {
 }
 
 export interface CheckContext {
+	/** The configured sites. The watchdog narrows this to the one site it checks (D12). */
 	sites: SiteEntry[];
 	/** Every SITE_N key present in the environment, including ones after a numbering gap. */
 	rawSiteKeys: string[];
@@ -53,17 +54,22 @@ export interface CheckContext {
 	authToken: string;
 	/** The content type that has detail pages (DETAIL_CONTENT_TYPE). Undefined skips the checks that need it. */
 	detailContentType?: string;
-	/** A running site's origin (--base-url). Undefined skips the proxy checks rather than failing them. */
+	/** The running site's address (the watchdog's --base-url). Undefined skips the running-site checks. */
 	baseUrl?: string;
 	env: Record<string, string | undefined>;
 	repoRoot: string;
 	fetch: typeof fetch;
 }
 
+/** The doctor checks settings and dotCMS before deploy; the watchdog checks dotCMS and a running site. */
+export type Command = "doctor" | "watchdog";
+
 export interface Check {
 	id: string;
 	label: string;
 	severity: Severity;
+	/** The commands that run this check. */
+	commands: Command[];
 	run(ctx: CheckContext): Promise<CheckResult>;
 }
 

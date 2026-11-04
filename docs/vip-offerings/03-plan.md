@@ -9,12 +9,12 @@ The build, stage by stage. Reasons are in [Decisions](./01-decisions.md); facts 
 |---|---|---|---|
 | 1 | Doctor (P2) | ~2 days | Done 2026-09-11 |
 | 1b | Harden the doctor | 1–1.5 days | Done 2026-11-04 |
-| 2 | Watchdog (P3) | ~1 day | Next |
+| 2 | Watchdog (P3) | ~1 day | Done 2026-11-04 |
 | 3 | Image fixes (P4) | 0.5–1 day | Planned |
 | 4 | Speed checks (P5), then the demo | ~0.5 day | Planned |
 | — | dotCMS call tracing (P1) | — | Deferred (D3) |
 
-About 2–2.5 days remain. There's no fixed deadline.
+About 1–1.5 days remain. There's no fixed deadline.
 
 ## Where the code lives
 
@@ -27,10 +27,11 @@ vip/
     connectivity.mts   dotCMS connection and version checks              built
     sites.mts          per-site checks                                   built
     proxy.mts          image proxy checks                                built
-    content.mts        page, article and image checks                    Stage 2
+    content.mts        page, newest-item and image checks                built
   lib/siteConfig.mts   reads SITE_N exactly as the app does              built
   lib/dotcms.mts       searches and type lookups, as the SDK does them   built
-  runners/cli.mts      the `npm run doctor` command                      built
+  lib/runningSite.mts  page and image requests to the running site       built
+  runners/cli.mts      the doctor and watchdog commands                  built
   runners/report.mts   text and JSON output                              built
   baseline.json        the versions at handover                          built
   tests/               tests against a fake local dotCMS                 built
@@ -52,7 +53,6 @@ Built 2026-09-11. To run it:
 ```
 npm run doctor                               # check the settings; fails if anything is wrong
 npm run doctor -- --json                     # machine-readable output
-npm run doctor -- --base-url https://site    # also test the image proxy on a running site
 ```
 
 What it checks today:
@@ -72,15 +72,14 @@ What it checks today:
 | `sites.resolve` | Each site ID exists and belongs to the site it's listed under |
 | `sites.live-issue` | Each site has a published Issue. Without one, its home page falls back to a generic layout *(becomes `sites.live-content` in 1b)* |
 | `sites.assets` | Each site's logo exists in `public/assets/` |
-| `proxy.round-trip` | The image proxy returns an image |
+| `proxy.round-trip` | The image proxy returns an image *(moved to the watchdog in Stage 2)* |
 | `proxy.cacheable` | That image can be cached *(removed in 1b: no browser caching for now, D11)* |
-| `proxy.no-leak` | The proxy's response doesn't reveal the dotCMS address or token |
+| `proxy.no-leak` | The proxy's response doesn't reveal the dotCMS address or token *(moved to the watchdog in Stage 2)* |
 
 - Site checks cover every site, even when a deployment is pinned to one. Otherwise a broken site
   is only found when someone switches to it.
-- The proxy checks need a running site. Without `--base-url` they're skipped, so the doctor can
-  pass on settings alone.
-- A full run makes 7 requests to dotCMS for three sites, plus 2 with `--base-url`.
+- The proxy checks, and `--base-url` with them, moved to the watchdog in Stage 2 (D7).
+- A full run makes 7 requests to dotCMS for three sites.
 - First live run (2026-09-11, with `--base-url`): 14 passed, 1 warning (the SDK version, F3) and
   1 failure (uncached images, F1).
 
@@ -144,48 +143,68 @@ owner's OK: it makes 7 read-only requests to the client's dotCMS, without `--bas
 about the version, dotCMS has changed since handover: tell the owner, but it doesn't block the
 stage.
 
-## Stage 2: Watchdog (P3)
+## Stage 2: Watchdog (P3) (done)
 
 **Goal:** check a running site by hand: its key pages, its newest detail pages and their images.
 Connecting it to CI comes after the MVP is approved (D4).
 
-**Before starting (carried over from Stage 1b):**
-- Owner decision pending: dotCMS is now 26.10.13-01. Recommended: keep the version warning until
-  this stage's first live run passes, then update `vip/baseline.json` to the new version.
-- `contentTypeDefinition()` in `vip/lib/dotcms.mts` reads only image fields; add the URL pattern
-  (`urlMapPattern`). Its response shape is unverified on the client's dotCMS (image fields are
-  matched by a `clazz` ending in `ImageField`), so check it on the first live run.
-- "Newest" means last modified first (`modDate desc`), through the search's `sort` field, which
-  the SDK also sends.
+**Status:** done 2026-11-04, with 21 tests (`npm run doctor:test` runs them with the doctor's).
+Each test fails if its bug comes back. The live run passed (2.4).
 
-**2.1 What it checks** (`vip/assertions/content.mts`)
-- **Pages:** each page in `WATCHDOG_PAGES` loads with status 200 (default `/`; CITGO:
-  `/,/archives,/search`). These are the first checks that load real pages through dotCMS's page
+**2.1 Running it**
+
+```
+npm run watchdog -- --base-url https://www.example.com
+npm run watchdog -- --base-url http://localhost:3000 --site www.example.com
+npm run watchdog -- --base-url https://www.example.com --json
+```
+
+- One site per run (D12): the one whose hostname matches the address, or the one named with
+  `--site`. With no match, it stops and lists the configured sites. The report names the site.
+- The doctor and the watchdog split the checks (D7). The doctor runs settings and dotCMS checks;
+  the watchdog runs dotCMS and running-site checks. The image-proxy checks moved from the doctor's
+  `--base-url` to the watchdog. Given `--base-url`, the doctor now points to the watchdog.
+- Settings: `DETAIL_CONTENT_TYPE`, `WATCHDOG_LATEST` (default 5) and `WATCHDOG_PAGES` (default
+  `/`; CITGO: `/,/archives,/search`).
+
+**2.2 What it checks**
+
+| Check | What it checks |
+|---|---|
+| `dotcms.*`, `sites.resolve`, `sites.live-content` | The doctor's dotCMS checks, for this site only |
+| `proxy.round-trip`, `proxy.no-leak` | The image proxy, as the doctor checked it before |
+| `content.pages` | Each page in `WATCHDOG_PAGES` returns 200, following redirects, within 30 seconds |
+| `content.latest` | The `WATCHDOG_LATEST` most recently changed items return 200 at their address (D16). The address comes from the type's URL map pattern in dotCMS. Catches pages that silently 404 (F5) |
+| `content.images` | The images in those items' image fields are published in dotCMS. Looked up 100 at a time, on any site and in any language. Each missing image is named with its item and field |
+
+- Pages load one at a time. These are the first checks that load real pages through dotCMS's page
   API (D9).
-- **Newest items:** the `WATCHDOG_LATEST` most recently changed items of `DETAIL_CONTENT_TYPE`
-  (default 5) each load at their address with status 200 (D16). This catches pages that silently
-  404 (F5).
-- **Images:** every image those same items use exists in dotCMS, looked up a few hundred IDs at a
-  time. Name each missing image. The proxy check already proves images actually download.
-- Each run reads the type's definition from dotCMS once: its URL pattern (CITGO:
-  `/{issueSlug}/{slug}`) and its image fields. That's one request, however many items there are.
-- With the defaults, a run makes about 40 dotCMS requests per site
-  ([what a page costs](./02-evidence.md#what-a-page-costs)). Keep them spread out. At high counts
-  the results get long, which is why B6 matters.
+- Each run reads the type's definition from dotCMS once: its URL pattern and its image fields.
+- A run makes 7 dotCMS requests of its own, then loads each page and item once, plus one image.
+  With CITGO's settings, that's about 41 dotCMS requests per site
+  ([what a page costs](./02-evidence.md#what-a-page-costs)).
 
-**2.2 Running it**
-- `npm run watchdog -- --base-url https://…` is the same tool in watchdog mode. It checks one
-  running site, local or deployed: the one behind that address, matched by hostname, or named with
-  `--site`. To skip a site, don't run it for that site (D12).
-- Tag each check as settings-only, dotCMS, or running-site (`local`, `upstream`, `deployed`). The
-  watchdog skips settings-only checks, which would check this machine's copy of the code, not the
-  running site.
-- Runs touch the client's dotCMS, so they need the owner's OK.
+**2.3 Limits**
+- Only the type's image fields are checked, not images inside the body text (Block Editor or
+  migrated Markdown).
+- A missing page has to answer 404. It does in this setup; a project that streams its pages
+  answers 200 ([evidence](./02-evidence.md#nextjs-1624)).
+
+**2.4 Live runs** (each needs the owner's OK)
+- Run 1 (2026-11-04) had no site running, so no pages loaded. It did confirm the content type
+  response, CITGO's URL pattern (`/{issueSlug}/{slug}`) and newest-first sorting
+  ([evidence](./02-evidence.md#from-the-watchdogs-first-run-2026-11-04)).
+- Run 2 (2026-11-04, local dev server) passed: 9 passed, 1 warning (the version), no errors, in 30
+  seconds ([evidence](./02-evidence.md#from-the-watchdogs-second-run-2026-11-04)). The baseline
+  then moved to dotCMS 26.10.13-01 (D13).
+- Run 2 checked only `/`, because `WATCHDOG_PAGES` wasn't set. For CITGO, set it to
+  `/,/archives,/search`.
 
 Files outside `vip/`: `package.json` (the `watchdog` script).
 
 **Done when:** a run against the CITGO site checks its pages, its newest articles and their
 images, and the tests show a missing article and a missing image each failing the run by name.
+Both done 2026-11-04.
 
 ## Stage 3: Image fixes (P4)
 

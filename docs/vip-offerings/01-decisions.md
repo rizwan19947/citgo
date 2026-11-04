@@ -51,9 +51,11 @@ scope.
 
 ## How the doctor and watchdog work
 
-**D7 — Doctor and watchdog share one set of checks.** One tool, run two ways: before deploy (the
-doctor) and against a running site (the watchdog, run by hand for now). Checks get their settings
-passed in, so the same check works in both places and the two can't disagree.
+**D7 — Doctor and watchdog share one set of checks.** One tool, two commands. The doctor checks
+settings and dotCMS before deploy; the watchdog checks dotCMS and a running site (by hand for now).
+Each check lists the commands that run it, so a check both need is written once and the two can't
+disagree. Checks get their settings passed in. On 2026-11-04 the image-proxy checks moved from the
+doctor's `--base-url` to the watchdog, so each command has one job.
 
 **D8 — The doctor runs before deploy, not inside the live site.** A health-check web page was
 built once and removed the same day.
@@ -84,8 +86,9 @@ page checks cover it.
 use. Setting the number at or above the total checks everything; there's no separate full-check
 mode.
 - Loading every item doesn't scale. Each article page makes 5 dotCMS calls, so checking 3 sites of
-  3,000 articles would take about 45,000 calls and roughly an hour. The default takes about 40
-  requests per site and a few seconds.
+  3,000 articles would take about 45,000 calls and, at about 4 seconds a page (measured on a
+  dev server, 2026-11-04), roughly 10 hours. The default takes about 40 requests per site and
+  about 30 seconds.
 - A long run gives unclear results: because of F5, a brief dotCMS hiccup looks the same as a
   broken page.
 - New and recently edited content is where new errors appear. Clients publish at different rates,
@@ -108,8 +111,10 @@ mode.
 checks one site per run; to leave a site out, don't run it for that site. (This replaced the old
 include/exclude lists.)
 
-**D13 — We support the versions present at handover.** The doctor warns when the client upgrades
-dotCMS but the website's SDK stays behind. We don't plan for future versions in advance.
+**D13 — We support the versions present at handover.** The doctor and the watchdog warn when the
+client upgrades dotCMS but the website's SDK stays behind. Once an upgrade is tested, the baseline
+(`vip/baseline.json`) moves to it: dotCMS 26.10.13-01 passed the watchdog on 2026-11-04. We don't
+plan for future versions in advance.
 
 ## Business
 

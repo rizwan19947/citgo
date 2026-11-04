@@ -7,8 +7,8 @@ any project that follows this reference setup, and developed and tested on CITGO
 SDK that falls behind dotCMS. This project had several such problems that nobody noticed
 ([evidence](./02-evidence.md#defects-found)).
 
-**Status (2026-11-04):** the first tool, the doctor, is built and hardened (Stages 1 and 1b). The
-watchdog (Stage 2) is next. About 2–2.5 days of work remain.
+**Status (2026-11-04):** the doctor (Stages 1 and 1b) and the watchdog (Stage 2) are done. The
+image fixes (Stage 3) are next. About 1–1.5 days of work remain.
 
 ## The five parts
 
@@ -16,7 +16,7 @@ watchdog (Stage 2) is next. About 2–2.5 days of work remain.
 |---|---|---|---|
 | P1 | dotCMS call tracing | Would time each call the site makes to dotCMS | Deferred (D3) |
 | P2 | Doctor | Checks the site's settings and its dotCMS connection before deploy | Built (Stages 1, 1b) |
-| P3 | Watchdog | Checks a running site: its key pages, newest articles and their images. Run by hand for now | Stage 2 |
+| P3 | Watchdog | Checks a running site: its key pages, newest articles and their images. Run by hand for now | Built (Stage 2) |
 | P4 | Image fixes | Fixes image quality and how the main image loads | Stage 3 |
 | P5 | Speed checks | Lighthouse fails the run when pages get slower or heavier | Stage 4 |
 
@@ -62,7 +62,9 @@ D6, D10, D11 and D15.
 | 2026-11-03 | Open questions answered: client-agnostic and server-rendered only; no SEO extras; no image caching; watchdog next, run by hand |
 | 2026-11-04 | Watchdog scoped to the newest items (D16); project details moved to env settings |
 | 2026-11-04 | Stage 1b done. Its live run found dotCMS upgraded to 26.10.13-01 since handover |
+| 2026-11-04 | Watchdog built; the image-proxy checks moved to it from the doctor (D7) |
+| 2026-11-04 | Watchdog's live run passed on dotCMS 26.10.13-01; the version baseline moved to it |
 
 ## Next step
 
-Build [Stage 2](./03-plan.md#stage-2-watchdog-p3), the watchdog.
+Build [Stage 3](./03-plan.md#stage-3-image-fixes-p4), the image fixes.

@@ -46,6 +46,7 @@ const reachable: Check = {
 	id: "dotcms.reachable",
 	label: "dotCMS host is reachable",
 	severity: "error",
+	commands: ["doctor", "watchdog"],
 	async run(ctx) {
 		const t = timer();
 		if (!ctx.dotcmsHost) return fail(reachable, "DOTCMS_HOST is not set", t());
@@ -66,6 +67,7 @@ const auth: Check = {
 	id: "dotcms.auth",
 	label: "Auth token is accepted",
 	severity: "error",
+	commands: ["doctor", "watchdog"],
 	async run(ctx) {
 		const t = timer();
 		if (!ctx.authToken) return fail(auth, "DOTCMS_AUTH_TOKEN is not set", t());
@@ -114,6 +116,7 @@ const versionBaseline: Check = {
 	id: "dotcms.version-baseline",
 	label: "SDK and dotCMS versions match the handover baseline",
 	severity: "warn",
+	commands: ["doctor", "watchdog"],
 	async run(ctx) {
 		const t = timer();
 		const p = await probe(ctx);

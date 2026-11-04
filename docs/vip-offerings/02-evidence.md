@@ -41,11 +41,36 @@ What this tells us:
 
 The rate limit isn't a concern: five searches used 1–2 of 100,000 tokens, which refill.
 
+## Live runs
+
 ### From the doctor's live run (2026-11-04)
 
 - dotCMS now reports version `26.10.13-01`, up from `26.08.19-04` on 2026-09-03 (F3).
 - Published articles: citgonow.com 539, citgonowlubes.com 218, citgoretailconnections.com 255.
 - dotCMS answered the first request in about 1 second.
+
+### From the watchdog's first run (2026-11-04)
+
+Run against `localhost:3000` for citgoretailconnections.com. No site was running, so no pages
+loaded, but the dotCMS side confirmed:
+- The Article type's URL map pattern is `/{issueSlug}/{slug}`, read from
+  `/api/v1/contenttype/id/Article`. Image fields are recognised by their `clazz`, as the code
+  assumes.
+- A search sorted `modDate desc` returns the most recently changed items first.
+- The image lookup works: the 5 newest articles use 4 images, all published.
+- The `/issue/{issueSlug}/article/{slug}` links in `Banner.tsx` and `Issue.tsx` don't match that
+  pattern, so they only work if something else maps them, such as a vanity URL. Those components
+  render only on generic dotCMS pages (`views/Page.tsx`).
+
+### From the watchdog's second run (2026-11-04)
+
+Run against a local dev server (`npm run dev`) for citgoretailconnections.com, checking `/` and the
+5 newest articles: 9 passed, 1 warning (the version), no errors.
+- Every page answered 200 through dotCMS's page API. The image proxy returned an image without
+  leaking the dotCMS host or token. So the site works on dotCMS `26.10.13-01`, and the baseline
+  moved to it (D13).
+- The run took 30 seconds. Each article page took about 4 seconds, and the home page 4.3 seconds.
+  dotCMS answered the first request in about 1 second and later ones in about half a second.
 
 ## How dotCMS works
 
@@ -94,6 +119,11 @@ From its source code (2026-11-02):
   standard widths, so a phone 390px wide with a 3× screen picks 1200px.
 - A `HEAD` request to a route runs the full `GET`, so a `HEAD` to `/dA/...` downloads the whole
   image.
+- **A missing page answers 404 only if the response hasn't started.** A page that calls
+  `notFound()` before then gets a real 404 (`app-render.js`, checked 2026-11-04). This app has no
+  `loading.tsx`, so a missing article always answers 404, which the watchdog relies on. Once a page
+  streams (behind `loading.tsx` or `<Suspense>`), status 200 has already gone out, so a missing
+  page answers 200.
 - Settings files load in this order, first value wins: `.env.{mode}.local`, `.env.local`,
   `.env.{mode}`, `.env`. The mode is `development` in dev and `production` otherwise
   (`.env.local` is skipped in tests). Values already set in the environment win, and `$VAR`
@@ -127,8 +157,9 @@ Fix: Stage 3.
 
 **F3 — The SDK is on an old version line.** `1.4.0` (old numbering) ran against dotCMS
 `26.08.19-04` (date-based) at handover, and against `26.10.13-01` by 2026-11-04. Not fixed:
-upgrading isn't planned (D13). The doctor tracks drift from the handover versions (B2), and flagged
-this upgrade on its first live run.
+upgrading isn't planned (D13). The doctor tracks drift from the baseline versions (B2). It flagged
+this upgrade on its first live run; the watchdog then showed the site still works on it, and the
+baseline moved to it.
 
 **F4 — The home page's main image loads late.** The hero image in `components/HomePage.tsx` is the
 largest thing on the page, but it loads lazily. Its mobile and desktop versions are both on the

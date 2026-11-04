@@ -1,100 +1,21 @@
 /* Node type-stripping: erasable syntax only — no enum, namespace, or parameter properties. See assertions/types.mts. */
-import { after, before, beforeEach, describe, test } from "node:test";
+import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
-import { allChecks, buildContext, runChecks, type CheckResult } from "../assertions/index.mts";
-import { SITE_ID, SITE_INODE, startFakeDotcms, type FakeDotcms } from "./fake-dotcms.mts";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { allChecks, buildContext, type CheckResult } from "../assertions/index.mts";
+import { SITE_ID, SITE_INODE } from "./fake-dotcms.mts";
+import { CLI, VIP, check, cli, dotcms, env, envFile, repo, setUpFakeDotcms } from "./helpers.mts";
 
 /*
  * The doctor's tests. Everything runs against a fake dotCMS on localhost, never the client's.
  * Each bug from the 2026-11-02 audit (B1–B7 in docs/vip-offerings/03-plan.md) has a test.
  */
 
-const VIP = join(dirname(fileURLToPath(import.meta.url)), "..");
-const CLI = join(VIP, "runners/cli.mts");
-const exec = promisify(execFile);
+setUpFakeDotcms();
 
-let dotcms: FakeDotcms;
-const tempDirs: string[] = [];
-
-before(async () => {
-	dotcms = await startFakeDotcms();
-});
-after(async () => {
-	await dotcms.close();
-	for (const dir of tempDirs) rmSync(dir, { recursive: true, force: true });
-});
-beforeEach(() => dotcms.reset());
-
-interface RepoOptions {
-	sdk?: string;
-	baseline?: Record<string, string> | null;
-	assetSlugs?: string[];
-	files?: Record<string, string>;
-}
-
-/** A throwaway project folder holding the files the checks read. */
-function repo(options: RepoOptions = {}): string {
-	const root = mkdtempSync(join(tmpdir(), "vip-doctor-"));
-	tempDirs.push(root);
-	writeFileSync(
-		join(root, "package-lock.json"),
-		JSON.stringify({ packages: { "node_modules/@dotcms/client": { version: options.sdk ?? "1.4.0" } } }),
-	);
-	if (options.baseline !== null) {
-		mkdirSync(join(root, "vip"));
-		writeFileSync(
-			join(root, "vip/baseline.json"),
-			JSON.stringify(options.baseline ?? { sdk: "1.4.0", dotcms: "26.08.19-04" }),
-		);
-	}
-	for (const slug of options.assetSlugs ?? ["one"]) mkdirSync(join(root, "public/assets", slug), { recursive: true });
-	for (const [name, content] of Object.entries(options.files ?? {})) writeFileSync(join(root, name), content);
-	return root;
-}
-
-/** Settings for a correctly wired one-site project, pointed at the fake dotCMS. */
-function env(overrides: Record<string, string | undefined> = {}): Record<string, string | undefined> {
-	return {
-		DOTCMS_HOST: dotcms.url,
-		DOTCMS_AUTH_TOKEN: "good",
-		DEFAULT_SITE_HOST: "one.example",
-		SITE_1: `one.example|${SITE_ID}|one`,
-		DETAIL_CONTENT_TYPE: "Article",
-		...overrides,
-	};
-}
-
-const envFile = (settings: Record<string, string | undefined>) =>
-	Object.entries(settings)
-		.filter(([, value]) => value !== undefined)
-		.map(([key, value]) => `${key}=${value}`)
-		.join("\n");
-
-async function check(settings = env(), root = repo(), baseUrl?: string): Promise<Record<string, CheckResult>> {
-	const summary = await runChecks(buildContext({ env: settings, repoRoot: root, baseUrl }));
-	return Object.fromEntries(summary.results.map((r) => [r.id, r]));
-}
-
-/** Runs the real command in `cwd` with no inherited environment; returns its exit code and report. */
-async function cli(cwd: string, extraEnv: Record<string, string> = {}) {
-	try {
-		// Next's types make NODE_ENV required on ProcessEnv; this child deliberately starts without it.
-		const { stdout } = await exec(process.execPath, [CLI, "--json"], { cwd, env: extraEnv as NodeJS.ProcessEnv });
-		return { code: 0, results: JSON.parse(stdout).results as CheckResult[] };
-	} catch (e) {
-		const failure = e as { code: number; stdout: string };
-		return { code: failure.code, results: JSON.parse(failure.stdout).results as CheckResult[] };
-	}
-}
-
-test("a correctly wired project passes every check", async () => {
-	const results = await check(env(), repo(), dotcms.url);
+test("a correctly wired project passes every doctor check", async () => {
+	const results = await check(env(), repo(), undefined, "doctor");
 	for (const r of Object.values(results)) assert.ok(r.ok && !r.skipped, `${r.id}: ${r.message}`);
 });
 
@@ -151,7 +72,7 @@ describe("B4: image fields shaped as objects", () => {
 	for (const image of [{ identifier: "img123" }, { idPath: "/dA/img123/image/photo.jpg" }]) {
 		test(`finds the image in ${JSON.stringify(image)}`, async () => {
 			dotcms.state.content.Article[SITE_ID] = [{ title: "First", image }];
-			const r = (await check(env(), repo(), dotcms.url))["proxy.round-trip"];
+			const r = (await check(env(), repo(), dotcms.url, "watchdog"))["proxy.round-trip"];
 			assert.ok(r.ok && !r.skipped, r.message);
 			assert.equal(r.detail?.assetId, "img123");
 		});
@@ -179,11 +100,11 @@ describe("B5: identifiers judged by dotCMS, not by their shape", () => {
 test("B6: the command's output arrives whole, and its exit code reflects errors", async () => {
 	const passing = await cli(repo({ files: { ".env": envFile(env()) } }));
 	assert.equal(passing.code, 0);
-	assert.ok(passing.results.length > 0);
+	assert.ok(passing.report.results.length > 0);
 
 	const failing = await cli(repo({ files: { ".env": envFile(env({ DOTCMS_AUTH_TOKEN: "revoked" })) } }));
 	assert.equal(failing.code, 1);
-	assert.equal(failing.results.find((r) => r.id === "dotcms.auth")?.ok, false);
+	assert.equal(failing.report.results.find((r) => r.id === "dotcms.auth")?.ok, false);
 
 	// process.exit() right after a large write cuts piped output short, so the command must not call it.
 	assert.doesNotMatch(readFileSync(CLI, "utf8"), /^\s*process\.exit\(/m);
@@ -197,17 +118,17 @@ describe("B7: env files load in Next's order", () => {
 	const defaultSiteHost = (results: CheckResult[]) => results.find((r) => r.id === "env.default-site-host")?.ok;
 
 	test(".env.production beats .env by default", async () => {
-		assert.equal(defaultSiteHost((await cli(repo({ files: files() }))).results), true);
+		assert.equal(defaultSiteHost((await cli(repo({ files: files() }))).report.results), true);
 	});
 
 	test("with NODE_ENV=development, .env.production isn't read", async () => {
-		const { results } = await cli(repo({ files: files() }), { NODE_ENV: "development" });
-		assert.equal(defaultSiteHost(results), false);
+		const { report } = await cli(repo({ files: files() }), { NODE_ENV: "development" });
+		assert.equal(defaultSiteHost(report.results), false);
 	});
 
 	test("a real environment variable beats every file", async () => {
-		const { results } = await cli(repo({ files: files() }), { DEFAULT_SITE_HOST: "wrong.example" });
-		assert.equal(defaultSiteHost(results), false);
+		const { report } = await cli(repo({ files: files() }), { DEFAULT_SITE_HOST: "wrong.example" });
+		assert.equal(defaultSiteHost(report.results), false);
 	});
 });
 
@@ -229,7 +150,7 @@ test("removed checks and settings are gone", () => {
 describe("works for any project, not just CITGO", () => {
 	test("checks that need a content type skip, saying what to set", async () => {
 		const results = await check(env({ DETAIL_CONTENT_TYPE: undefined }), repo(), dotcms.url);
-		for (const id of ["sites.live-content", "proxy.round-trip"]) {
+		for (const id of ["sites.live-content", "proxy.round-trip", "content.latest", "content.images"]) {
 			assert.ok(results[id].skipped, id);
 			assert.match(results[id].message, /DETAIL_CONTENT_TYPE/);
 		}

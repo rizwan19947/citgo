@@ -1,6 +1,6 @@
 {
   "sdk": "1.4.0",
-  "dotcms": "26.08.19-04",
-  "recorded": "2026-09-03",
-  "note": "Versions present at handover (D13). The doctor warns when either changes; after testing an upgrade, update both."
+  "dotcms": "26.10.13-01",
+  "recorded": "2026-11-04",
+  "note": "Versions the site was last tested on (D13). Handover was SDK 1.4.0 on dotCMS 26.08.19-04 (2026-09-03); the watchdog passed on dotCMS 26.10.13-01 on 2026-11-04. The doctor and watchdog warn when either changes; after testing an upgrade, update both."
 }

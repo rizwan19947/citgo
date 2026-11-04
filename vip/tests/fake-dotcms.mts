@@ -3,9 +3,9 @@ import { createServer, type IncomingMessage } from "node:http";
 import type { AddressInfo } from "node:net";
 
 /*
- * A fake dotCMS on localhost for the doctor's tests. It answers the read-only endpoints the checks
- * call, records every request, and can be reshaped per test through `state`. It also serves /dA
- * images, so it doubles as the running site for the proxy checks.
+ * A fake dotCMS on localhost for the tests. It answers the read-only endpoints the checks call,
+ * records every request, and can be reshaped per test through `state`. It also plays the running
+ * site: it serves the site's pages and /dA images.
  */
 
 export const SITE_ID = "0123456789abcdef0123456789abcdef";
@@ -24,7 +24,11 @@ export interface FakeState {
 	/** Live items by content type, then by site identifier. */
 	content: Record<string, Record<string, Array<Record<string, unknown>>>>;
 	/** Content type definitions by variable name. */
-	contentTypes: Record<string, { fields: Array<{ variable: string; clazz: string }> }>;
+	contentTypes: Record<string, { urlMapPattern?: string; fields: Array<{ variable: string; clazz: string }> }>;
+	/** Identifiers of published images. */
+	liveAssets: string[];
+	/** The running site's pages and the status each returns. Any other path returns 404. */
+	pages: Record<string, number>;
 }
 
 export interface RecordedRequest {
@@ -47,15 +51,24 @@ function defaultState(): FakeState {
 		token: "good",
 		dotcmsVersion: "26.08.19-04",
 		sites: [{ identifier: SITE_ID, inode: SITE_INODE, hostname: "one.example" }],
-		content: { Article: { [SITE_ID]: [{ title: "First", image: "img123" }] } },
+		content: {
+			Article: {
+				[SITE_ID]: [
+					{ identifier: "a1", title: "First", slug: "first", issueSlug: "issue-1", image: "img123", modDate: 1 },
+				],
+			},
+		},
 		contentTypes: {
 			Article: {
+				urlMapPattern: "/{issueSlug}/{slug}",
 				fields: [
 					{ variable: "title", clazz: "com.dotcms.contenttype.model.field.ImmutableTextField" },
 					{ variable: "image", clazz: "com.dotcms.contenttype.model.field.ImmutableImageField" },
 				],
 			},
 		},
+		liveAssets: ["img123"],
+		pages: { "/": 200, "/issue-1/first": 200 },
 	};
 }
 
@@ -80,12 +93,19 @@ export async function startFakeDotcms(): Promise<FakeDotcms> {
 			res.writeHead(status, { "content-type": "application/json", "x-dotcms-version": state.dotcmsVersion });
 			res.end(JSON.stringify(payload));
 		};
+		const results = (items: Array<Record<string, unknown>>, limit: number) =>
+			json(200, { entity: { resultsSize: items.length, jsonObjectView: { contentlets: items.slice(0, limit) } } });
 
-		// The running site's image proxy: public, like the real one.
+		// The running site: its image proxy and its pages are public, like the real ones.
 		if (path.startsWith("/dA/")) {
 			res.writeHead(200, { "content-type": "image/webp", "cache-control": "no-cache" });
 			return res.end("fake image");
 		}
+		if (!path.startsWith("/api/")) {
+			res.writeHead(state.pages[path] ?? 404, { "content-type": "text/html" });
+			return res.end("<!doctype html><title>fake page</title>");
+		}
+
 		if (req.headers.authorization !== `Bearer ${state.token}`) return json(401, {});
 
 		if (path === "/api/v1/appconfiguration") return json(200, { entity: {} });
@@ -105,13 +125,20 @@ export async function startFakeDotcms(): Promise<FakeDotcms> {
 		}
 
 		if (path === "/api/content/_search" && req.method === "POST") {
-			const { query = "", limit = 10 } = JSON.parse(body || "{}");
+			const { query = "", limit = 10, sort } = JSON.parse(body || "{}");
+
+			// Image lookups: +identifier:("id1" "id2" …) +live:true
+			const ids = /\+identifier:\(([^)]*)\)/.exec(query);
+			if (ids) {
+				const wanted = [...ids[1].matchAll(/"([^"]*)"/g)].map((m) => m[1]);
+				return results(wanted.filter((id) => state.liveAssets.includes(id)).map((identifier) => ({ identifier })), limit);
+			}
+
 			const contentType = /\+contentType:(\S+)/.exec(query)?.[1] ?? "";
 			const site = /\+conhost:(\S+)/.exec(query)?.[1] ?? "";
-			const items = state.content[contentType]?.[site] ?? [];
-			return json(200, {
-				entity: { resultsSize: items.length, jsonObjectView: { contentlets: items.slice(0, limit) } },
-			});
+			const items = [...(state.content[contentType]?.[site] ?? [])];
+			if (sort === "modDate desc") items.sort((a, b) => Number(b.modDate) - Number(a.modDate));
+			return results(items, limit);
 		}
 
 		json(404, {});

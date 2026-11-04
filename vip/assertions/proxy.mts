@@ -2,12 +2,11 @@
 import type { Check, CheckContext } from "./types.mts";
 import { fail, pass, skip, timer } from "./types.mts";
 import { contentTypeDefinition, resolveImageId, searchLive } from "../lib/dotcms.mts";
+import { fetchSite, whyFailed } from "../lib/runningSite.mts";
 
 /*
- * /dA image proxy round-trip.
- *
- * These need a running site, so they skip cleanly without --base-url rather than failing —
- * `npm run doctor` against .env alone should still pass.
+ * /dA image proxy round-trip, through the running site. The watchdog runs these; without a base URL
+ * they skip.
  *
  * The test image comes from live content of DETAIL_CONTENT_TYPE, through that type's image fields
  * as dotCMS defines them, so nothing is tied to one project or one asset.
@@ -54,7 +53,9 @@ function probe(ctx: CheckContext): Promise<ProbeOutcome> {
 		try {
 			const assetId = await findAssetId(ctx, ctx.detailContentType);
 			if (assetId instanceof Error) return assetId;
-			const res = await ctx.fetch(`${ctx.baseUrl.replace(/\/$/, "")}/dA/${assetId}/200maxw/75q`);
+			const res = await fetchSite(ctx, `${ctx.baseUrl.replace(/\/$/, "")}/dA/${assetId}/200maxw/75q`);
+			// Only the status and headers matter, so the image itself isn't downloaded.
+			await res.body?.cancel();
 			return {
 				status: res.status,
 				contentType: res.headers.get("content-type"),
@@ -62,7 +63,7 @@ function probe(ctx: CheckContext): Promise<ProbeOutcome> {
 				assetId,
 			};
 		} catch (e) {
-			return e instanceof Error ? e : new Error(String(e));
+			return new Error(whyFailed(e));
 		}
 	})();
 
@@ -74,6 +75,7 @@ const roundTrip: Check = {
 	id: "proxy.round-trip",
 	label: "/dA proxy returns an image",
 	severity: "error",
+	commands: ["watchdog"],
 	async run(ctx) {
 		const t = timer();
 		const p = await probe(ctx);
@@ -91,6 +93,7 @@ const noLeak: Check = {
 	id: "proxy.no-leak",
 	label: "/dA leaks neither the dotCMS host nor the auth token",
 	severity: "error",
+	commands: ["watchdog"],
 	async run(ctx) {
 		const t = timer();
 		const p = await probe(ctx);

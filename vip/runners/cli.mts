@@ -1,19 +1,22 @@
 #!/usr/bin/env node
 /* Node type-stripping: erasable syntax only — no enum, namespace, or parameter properties. See assertions/types.mts. */
-import { buildContext, runChecks } from "../assertions/index.mts";
+import { buildContext, checksFor, pickSite, runChecks, type Command } from "../assertions/index.mts";
 import { renderJson, renderText } from "./report.mts";
 
 /*
- * `npm run doctor` — checks that a headless site is set up correctly before it's deployed.
+ * The VIP tools' command, run two ways:
+ *
+ *   npm run doctor     checks a headless site's settings and its dotCMS connection, before deploy
+ *   npm run watchdog   checks a running site: dotCMS, the image proxy, its key pages, and its newest
+ *                      detail pages and their images. One site per run (D12)
+ *
+ *   npm run doctor -- --json
+ *   npm run watchdog -- --base-url https://www.example.com
+ *   npm run watchdog -- --base-url http://localhost:3000 --site www.example.com
  *
  * Runs on plain Node with nothing to install: Node strips the types and loads the env files
- * itself. Works with any host and any CI, because it's just a command.
- *
- *   npm run doctor
- *   npm run doctor -- --json
- *   npm run doctor -- --base-url https://staging.example.com   # adds the image proxy checks
- *
- * Exits non-zero when any error-severity check fails, so it can gate a pipeline as it is.
+ * itself. Works with any host and any CI, because it's just a command. Exits non-zero when any
+ * error-severity check fails, so it can gate a pipeline as it is.
  */
 
 function arg(name: string): string | undefined {
@@ -38,10 +41,34 @@ for (const file of envFiles) {
 	}
 }
 
-const ctx = buildContext({ baseUrl: arg("base-url") });
-const summary = await runChecks(ctx);
+/** Says why the run can't start, and returns the exit code. */
+function stop(message: string): number {
+	process.stderr.write(`${message}\n`);
+	return 1;
+}
 
-process.stdout.write(process.argv.includes("--json") ? `${renderJson(summary)}\n` : renderText(summary));
+async function main(command: Command): Promise<number> {
+	const baseUrl = arg("base-url");
+	const ctx = buildContext({ baseUrl });
+	let site: string | undefined;
+
+	if (command === "watchdog") {
+		if (!baseUrl) return stop("The watchdog needs the running site's address: npm run watchdog -- --base-url https://…");
+		const picked = pickSite(ctx.sites, baseUrl, arg("site"));
+		if (picked instanceof Error) return stop(picked.message);
+		// One site per run (D12).
+		ctx.sites = [picked];
+		site = picked.hostname;
+	} else if (baseUrl) {
+		return stop(`The doctor doesn't check running sites. Use the watchdog: npm run watchdog -- --base-url ${baseUrl}`);
+	}
+
+	const summary = await runChecks(ctx, checksFor(command));
+	const run = { command, site, baseUrl };
+	process.stdout.write(process.argv.includes("--json") ? `${renderJson(summary, run)}\n` : renderText(summary, run));
+	return summary.errors > 0 ? 1 : 0;
+}
+
 // Set the exit code rather than calling process.exit(), which can cut off output still being
 // written to a pipe.
-process.exitCode = summary.errors > 0 ? 1 : 0;
+process.exitCode = await main(process.argv.includes("--watchdog") ? "watchdog" : "doctor");

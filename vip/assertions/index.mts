@@ -1,9 +1,10 @@
 /* Node type-stripping: erasable syntax only — no enum, namespace, or parameter properties. See assertions/types.mts. */
-import type { Check, CheckContext, CheckResult } from "./types.mts";
+import type { Check, CheckContext, CheckResult, Command, SiteEntry } from "./types.mts";
 import { envChecks } from "./env.mts";
 import { connectivityChecks } from "./connectivity.mts";
 import { siteChecks } from "./sites.mts";
 import { proxyChecks } from "./proxy.mts";
+import { contentChecks } from "./content.mts";
 import { parseSites } from "../lib/siteConfig.mts";
 
 export * from "./types.mts";
@@ -14,12 +15,18 @@ export const allChecks: Check[] = [
 	...connectivityChecks,
 	...siteChecks,
 	...proxyChecks,
+	...contentChecks,
 ];
+
+/** The checks one command runs, in presentation order. */
+export function checksFor(command: Command): Check[] {
+	return allChecks.filter((c) => c.commands.includes(command));
+}
 
 export interface BuildContextOptions {
 	env?: Record<string, string | undefined>;
 	repoRoot?: string;
-	/** A running site's origin (--base-url). Undefined skips the proxy checks. */
+	/** The running site's address (the watchdog's --base-url). Undefined skips the running-site checks. */
 	baseUrl?: string;
 }
 
@@ -38,6 +45,32 @@ export function buildContext(options: BuildContextOptions = {}): CheckContext {
 		repoRoot: options.repoRoot ?? process.cwd(),
 		fetch,
 	};
+}
+
+/**
+ * The one site a watchdog run checks (D12): the SITE_N entry named with --site, or else the one whose
+ * hostname matches the base URL. If neither matches, an Error that lists the configured hostnames.
+ */
+export function pickSite(sites: SiteEntry[], baseUrl: string, name?: string): SiteEntry | Error {
+	let url: URL;
+	try {
+		url = new URL(baseUrl);
+	} catch {
+		return new Error(`--base-url "${baseUrl}" isn't a web address, e.g. https://www.example.com`);
+	}
+	if (url.protocol !== "http:" && url.protocol !== "https:") {
+		return new Error(`--base-url "${baseUrl}" must start with http:// or https://`);
+	}
+
+	const wanted = name ?? url.hostname;
+	const site = sites.find((s) => s.hostname === wanted);
+	if (site) return site;
+	const configured = sites.map((s) => s.hostname).join(", ") || "none";
+	return new Error(
+		name
+			? `--site ${name} matches no SITE_N hostname. Configured: ${configured}`
+			: `${url.hostname} matches no SITE_N hostname, so name the site with --site. Configured: ${configured}`,
+	);
 }
 
 export interface RunSummary {

@@ -11,6 +11,7 @@ const required: Check = {
 	id: "env.required",
 	label: "Required environment variables present",
 	severity: "error",
+	commands: ["doctor"],
 	async run(ctx) {
 		const t = timer();
 		const missing = ["DOTCMS_HOST", "DOTCMS_AUTH_TOKEN", "DEFAULT_SITE_HOST"].filter(
@@ -27,6 +28,7 @@ const siteFormat: Check = {
 	id: "env.site-format",
 	label: "SITE_N entries parse to hostname|siteId|assetSlug",
 	severity: "error",
+	commands: ["doctor"],
 	async run(ctx) {
 		const t = timer();
 		const problems: string[] = [];
@@ -49,6 +51,7 @@ const siteNumbering: Check = {
 	id: "env.site-numbering",
 	label: "SITE_N numbering has no gaps",
 	severity: "error",
+	commands: ["doctor"],
 	async run(ctx) {
 		const t = timer();
 		const dropped = ctx.sites.filter((s) => !s.visibleToApp);
@@ -68,6 +71,7 @@ const frontendHostOverride: Check = {
 	id: "env.frontend-host-override",
 	label: "FRONTEND_HOST_OVERRIDE matches a configured site",
 	severity: "error",
+	commands: ["doctor"],
 	async run(ctx) {
 		const t = timer();
 		const override = ctx.env.FRONTEND_HOST_OVERRIDE;
@@ -94,6 +98,7 @@ const defaultSiteHost: Check = {
 	id: "env.default-site-host",
 	label: "DEFAULT_SITE_HOST matches a configured site",
 	severity: "error",
+	commands: ["doctor"],
 	async run(ctx) {
 		const t = timer();
 		const fallback = ctx.env.DEFAULT_SITE_HOST;
