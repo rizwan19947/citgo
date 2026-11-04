@@ -81,6 +81,10 @@ From its source code (2026-11-02):
 - A custom image loader receives the `quality` value unchanged. In development, Next warns about
   quality values not listed in its settings (by default, only 75).
 - Images load lazily unless marked `preload` (Next 16's replacement for `priority`).
+- **How an image picks its size.** A fixed-width image offers the browser two sizes, 1× and 2× (not
+  3×), each rounded up to Next's standard widths (32–384 for small images, then 640, 750, 828,
+  1080, 1200, 1920, 2048, 3840). A 400px card offers 640px and 828px. A full-width image offers all
+  standard widths, so a phone 390px wide with a 3× screen picks 1200px.
 - A `HEAD` request to a route runs the full `GET`, so a `HEAD` to `/dA/...` downloads the whole
   image.
 - Settings files load in this order, first value wins: `.env.{mode}.local`, `.env.local`,
@@ -107,9 +111,11 @@ a fallback to a one-year cache, but dotCMS always sends "don't cache", so the fa
 and every image downloads again on every page. Not fixed, on purpose: browser caching stays off for
 now, and caching is each client's CDN decision (D11). Stage 3 removes the dead fallback.
 
-**F2 — Image quality is backwards.** `getAdaptiveQuality()` in `utils/imageLoader.ts` gives the
-smallest images the lowest quality (q25), rising to q75 for the largest. It saves bytes where there
-are few to save. Fix: Stage 3.
+**F2 — Image quality is backwards.** `getAdaptiveQuality()` in `utils/imageLoader.ts` picks a
+quality from the pixel width the browser asks for: q25 for the smallest, rising to q75 for the
+largest. So quality follows screen sharpness rather than the image, compression lands where there
+are fewest bytes to save, and small images get hit hardest even though they degrade fastest.
+Fix: Stage 3.
 
 **F3 — The SDK is on an old version line.** `1.4.0` (old numbering) runs against dotCMS
 `26.08.19-04` (date-based). Not fixed: upgrading isn't planned (D13). The doctor tracks drift from

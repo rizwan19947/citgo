@@ -178,23 +178,32 @@ images, and the tests show a missing article and a missing image each failing th
 **Goal:** sensible image quality, and the home page's main image loading first.
 
 **3.1 Fix image quality (F2)**
-- The loader's input, the image width, is right. How it picks a quality is backwards: small images
-  get the lowest quality, and large ones the highest.
 
-  | Image width | Quality used | Size | Size at q75 | Saved |
+Today the loader picks a quality from the pixel width the browser asks for. That goes wrong in
+three ways:
+- **Quality follows the screen, not the image.** The browser asks for more pixels on sharper
+  screens ([how Next picks sizes](./02-evidence.md#nextjs-1624)). A full-width image on a phone
+  asks for about 1,200px and gets the top quality (q75), the opposite of the README's "lower quality
+  for smaller screens". A featured card gets q30 on a normal screen and q50 on a sharp one.
+- **It compresses where there are no bytes to save:**
+
+  | Image width | Quality today | Size | Size at q75 | Saved |
   |---|---|---|---|---|
   | 100px | 25 | 2,128 B | 3,674 B | 1,546 B |
   | 400px | 30 | 14,142 B | 26,530 B | 12,388 B |
-  | 1920px | 75 | 135,808 B | 135,808 B | 0 B |
+  | 1920px (hero) | 75 | 135,808 B | 135,808 B | 0 B |
 
-  Lowering only the hero image to q50 would save more than all the thumbnails combined.
-- q25 looks bad at any size: compression artifacts are just as visible on a small image. WebP
-  photos start to look worse at around q40–50. And phones with sharp screens request bigger images,
-  which can still fall in the q25 bracket.
-- **Fix:** one quality, between 55 and 65, for every size; let resizing save the bytes. Set it in
-  `utils/imageLoader.ts`, not on each image (Next warns about quality values it doesn't know).
-  Delete the unused "force high quality" path (`quality={101}`).
-- Add a comment in the loader saying why images stay WebP (D11), so nobody adds AVIF back.
+  Moving the hero to q60 would save roughly 20 KB per page view (estimated from the measured
+  quality ratios).
+- **Small images handle compression worse.** A thumbnail is a shrunken photo packed with detail.
+  At low quality, each compression block covers a big share of it, so it turns blotchy. Big photos
+  hide moderate compression well. WebP photos start to look worse at around q40–50.
+
+**Fix:** one quality, between 55 and 65, for every size; resizing already keeps small images small.
+Thumbnails cost about 1 KB more each (estimated) and stop looking blotchy. Set the quality in
+`utils/imageLoader.ts`, not on each image (Next warns about quality values it doesn't know), and
+delete the unused "force high quality" path (`quality={101}`). Add a comment in the loader saying
+why images stay WebP (D11), so nobody adds AVIF back.
 
 **3.2 Load the main image first (F4)**
 - First, check in DevTools which hero images download today, on mobile and desktop (2 minutes).
