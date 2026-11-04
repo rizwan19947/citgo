@@ -148,19 +148,25 @@ stage.
 **Goal:** check a running site by hand: its key pages, its newest detail pages and their images.
 Connecting it to CI comes after the MVP is approved (D4).
 
-**Status:** done 2026-11-04, with 21 tests (`npm run doctor:test` runs them with the doctor's).
+**Status:** done 2026-11-04, with 24 tests (`npm run doctor:test` runs them with the doctor's).
 Each test fails if its bug comes back. The live run passed (2.4).
 
 **2.1 Running it**
 
 ```
 npm run watchdog -- --base-url https://www.example.com
-npm run watchdog -- --base-url http://localhost:3000 --site www.example.com
+npm run watchdog -- --base-url http://localhost:3000
+npm run watchdog -- --base-url https://preview.example.dev --site www.example.com
 npm run watchdog -- --base-url https://www.example.com --json
 ```
 
-- One site per run (D12): the one whose hostname matches the address, or the one named with
-  `--site`. With no match, it stops and lists the configured sites. The report names the site.
+- One site per run (D12): the site behind the address. The report names it.
+  - A local address (`localhost`) reaches an app started from this repo, so the env files say which
+    site it serves, decided as the app decides: `FRONTEND_HOST_OVERRIDE`, else a matching hostname,
+    else `DEFAULT_SITE_HOST`. A `--site` that disagrees stops the run, since the app would answer
+    for another site.
+  - Any other address: the site whose hostname matches it, or the one named with `--site`. With no
+    match, the run stops and lists the configured sites.
 - The doctor and the watchdog split the checks (D7). The doctor runs settings and dotCMS checks;
   the watchdog runs dotCMS and running-site checks. The image-proxy checks moved from the doctor's
   `--base-url` to the watchdog. Given `--base-url`, the doctor now points to the watchdog.
@@ -197,8 +203,10 @@ npm run watchdog -- --base-url https://www.example.com --json
 - Run 2 (2026-11-04, local dev server) passed: 9 passed, 1 warning (the version), no errors, in 30
   seconds ([evidence](./02-evidence.md#from-the-watchdogs-second-run-2026-11-04)). The baseline
   then moved to dotCMS 26.10.13-01 (D13).
-- Run 2 checked only `/`, because `WATCHDOG_PAGES` wasn't set. For CITGO, set it to
-  `/,/archives,/search`.
+- Run 3 (2026-11-04) named `--site citgonow.com` while the local app served
+  citgoretailconnections.com. The three pages answered 200, but all 5 articles answered 404: a
+  false alarm ([evidence](./02-evidence.md#from-the-watchdogs-third-run-2026-11-04)). The watchdog
+  now works out which site a local app serves, and stops on a mismatch.
 
 Files outside `vip/`: `package.json` (the `watchdog` script).
 

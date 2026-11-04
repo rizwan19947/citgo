@@ -104,20 +104,49 @@ describe("the doctor and the watchdog split the checks (D7)", () => {
 });
 
 describe("one site per run (D12)", () => {
-	const twoSites = () => env({ SITE_2: `two.example|${SECOND_ID}|two` });
+	const twoSites = (extra: Record<string, string | undefined> = {}) =>
+		env({ SITE_2: `two.example|${SECOND_ID}|two`, ...extra });
+	const pick = (settings: Record<string, string | undefined>, address: string, name?: string) =>
+		pickSite(buildContext({ env: settings }), address, name);
 
-	test("the site is found by the address's hostname", () => {
-		const site = pickSite(buildContext({ env: twoSites() }).sites, "https://two.example:8443/");
+	test("a deployed address picks the site with its hostname", () => {
+		const site = pick(twoSites(), "https://two.example:8443/");
 		assert.ok(!(site instanceof Error), String(site));
 		assert.equal(site.hostname, "two.example");
 	});
 
-	test("with no match, the run stops and lists the configured sites", async () => {
-		const { code, report, stderr } = await watchdog(twoSites(), []);
+	test("an address that matches no site needs --site, and the message lists the sites", () => {
+		const unnamed = pick(twoSites(), "https://preview.example.dev");
+		assert.ok(unnamed instanceof Error);
+		assert.match(unnamed.message, /--site/);
+		assert.match(unnamed.message, /one\.example, two\.example/);
+		const named = pick(twoSites(), "https://preview.example.dev", "two.example");
+		assert.ok(!(named instanceof Error), String(named));
+		assert.equal(named.hostname, "two.example");
+	});
+
+	test("a local address picks the site the local app serves, decided as the app decides", () => {
+		const cases = [
+			[twoSites({ FRONTEND_HOST_OVERRIDE: "two.example" }), "two.example"],
+			[env({ SITE_2: `localhost|${SECOND_ID}|two` }), "localhost"],
+			[twoSites({ DEFAULT_SITE_HOST: "two.example" }), "two.example"],
+		] as const;
+		for (const [settings, expected] of cases) {
+			const site = pick(settings, "http://localhost:3000");
+			assert.ok(!(site instanceof Error), String(site));
+			assert.equal(site.hostname, expected);
+		}
+	});
+
+	test("a --site the local app doesn't serve stops the run, saying how to fix it", async () => {
+		const { code, report, stderr } = await watchdog(twoSites({ FRONTEND_HOST_OVERRIDE: "one.example" }), [
+			"--site",
+			"two.example",
+		]);
 		assert.equal(code, 1);
 		assert.equal(report.results.length, 0);
-		assert.match(stderr, /--site/);
-		assert.match(stderr, /one\.example, two\.example/);
+		assert.match(stderr, /serves one\.example \(FRONTEND_HOST_OVERRIDE\), not two\.example/);
+		assert.match(stderr, /set FRONTEND_HOST_OVERRIDE=two\.example and restart the app/);
 	});
 
 	test("--site names the site, and only that site is checked", async () => {
@@ -176,6 +205,14 @@ describe("newest items (D16)", () => {
 			pagesLoaded().filter((p) => p !== "/"),
 			["/issue-1/item-6", "/issue-1/item-5", "/issue-1/item-4", "/issue-1/item-3", "/issue-1/item-2"],
 		);
+	});
+
+	test("when every item is missing, the failure asks whether the address serves the site", async () => {
+		articles(2);
+		dotcms.state.pages = { "/": 200 };
+		const r = (await check(env(), repo(), dotcms.url, "watchdog"))["content.latest"];
+		assert.equal(r.ok, false);
+		assert.ok(r.message.startsWith(`All 2 returned 404. Check that ${dotcms.url} serves one.example. `), r.message);
 	});
 
 	test("addresses follow the type's URL map pattern from dotCMS", async () => {

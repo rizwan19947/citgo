@@ -12,7 +12,8 @@ import { renderJson, renderText } from "./report.mts";
  *
  *   npm run doctor -- --json
  *   npm run watchdog -- --base-url https://www.example.com
- *   npm run watchdog -- --base-url http://localhost:3000 --site www.example.com
+ *   npm run watchdog -- --base-url http://localhost:3000             # the site your env files pin
+ *   npm run watchdog -- --base-url https://preview.example.dev --site www.example.com
  *
  * Runs on plain Node with nothing to install: Node strips the types and loads the env files
  * itself. Works with any host and any CI, because it's just a command. Exits non-zero when any
@@ -54,7 +55,7 @@ async function main(command: Command): Promise<number> {
 
 	if (command === "watchdog") {
 		if (!baseUrl) return stop("The watchdog needs the running site's address: npm run watchdog -- --base-url https://…");
-		const picked = pickSite(ctx.sites, baseUrl, arg("site"));
+		const picked = pickSite(ctx, baseUrl, arg("site"));
 		if (picked instanceof Error) return stop(picked.message);
 		// One site per run (D12).
 		ctx.sites = [picked];

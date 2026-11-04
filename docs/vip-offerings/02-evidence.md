@@ -72,6 +72,16 @@ Run against a local dev server (`npm run dev`) for citgoretailconnections.com, c
 - The run took 30 seconds. Each article page took about 4 seconds, and the home page 4.3 seconds.
   dotCMS answered the first request in about 1 second and later ones in about half a second.
 
+### From the watchdog's third run (2026-11-04)
+
+Run with `--site citgonow.com` against the same local app, which `FRONTEND_HOST_OVERRIDE` still
+pinned to citgoretailconnections.com.
+- `/`, `/archives` and `/search` answered 200: every site has them.
+- All 5 of citgonow.com's newest articles answered 404. An article's address only resolves on the
+  site it belongs to, so another site's articles answer 404. The run showed nothing about
+  citgonow.com itself.
+- Since then, the watchdog works out which site a local app serves and stops on a mismatch.
+
 ## How dotCMS works
 
 - **Image filters** run left to right: resize, crop, then format. The format must come last, and a

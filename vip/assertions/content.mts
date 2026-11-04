@@ -185,12 +185,18 @@ const latest: Check = {
 
 		const broken = loads.filter((l) => l.status !== 200);
 		const detail = { pattern, total: found.total, items: loads };
+		// Every item missing at once usually means the address serves a different site.
+		const allMissing = loads.length > 1 && loads.every((l) => l.status === 404);
+		const lead = allMissing
+			? `All ${loads.length} returned 404. Check that ${ctx.baseUrl} serves ${ctx.sites[0].hostname}. `
+			: "";
 		return broken.length
 			? fail(
 					latest,
-					broken
-						.map((l) => `${JSON.stringify(l.item)}${l.path ? ` at ${l.path}` : ""}: ${l.error ?? `returned ${l.status}`}`)
-						.join("; "),
+					lead +
+						broken
+							.map((l) => `${JSON.stringify(l.item)}${l.path ? ` at ${l.path}` : ""}: ${l.error ?? `returned ${l.status}`}`)
+							.join("; "),
 					t(),
 					detail,
 				)

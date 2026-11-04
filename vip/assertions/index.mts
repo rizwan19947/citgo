@@ -47,11 +47,19 @@ export function buildContext(options: BuildContextOptions = {}): CheckContext {
 	};
 }
 
+/** Addresses that reach an app running on this machine, started with this repo's env files. */
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
 /**
- * The one site a watchdog run checks (D12): the SITE_N entry named with --site, or else the one whose
- * hostname matches the base URL. If neither matches, an Error that lists the configured hostnames.
+ * The one site a watchdog run checks (D12): the site behind the base URL.
+ * - A local address reaches an app started from this repo, so the env files say which site it
+ *   serves, decided the way utils/site-config.ts decides: FRONTEND_HOST_OVERRIDE, else a SITE_N
+ *   hostname matching the address, else DEFAULT_SITE_HOST. A --site that disagrees is an Error,
+ *   since the app would answer for another site.
+ * - Any other address: the SITE_N entry named with --site, or else the one whose hostname matches.
+ * If no site is found, an Error that says why.
  */
-export function pickSite(sites: SiteEntry[], baseUrl: string, name?: string): SiteEntry | Error {
+export function pickSite(ctx: CheckContext, baseUrl: string, name?: string): SiteEntry | Error {
 	let url: URL;
 	try {
 		url = new URL(baseUrl);
@@ -61,11 +69,30 @@ export function pickSite(sites: SiteEntry[], baseUrl: string, name?: string): Si
 	if (url.protocol !== "http:" && url.protocol !== "https:") {
 		return new Error(`--base-url "${baseUrl}" must start with http:// or https://`);
 	}
+	const find = (hostname: string) => ctx.sites.find((s) => s.hostname === hostname);
 
-	const wanted = name ?? url.hostname;
-	const site = sites.find((s) => s.hostname === wanted);
+	if (LOCAL_HOSTS.has(url.hostname)) {
+		const override = ctx.env.FRONTEND_HOST_OVERRIDE;
+		const [served, why] = override
+			? [override, "FRONTEND_HOST_OVERRIDE"]
+			: find(url.hostname)
+				? [url.hostname, "its hostname"]
+				: [ctx.env.DEFAULT_SITE_HOST ?? "", "DEFAULT_SITE_HOST, as FRONTEND_HOST_OVERRIDE isn't set"];
+		if (name && name !== served) {
+			return new Error(
+				`The app at ${baseUrl} serves ${served || "no site"} (${why}), not ${name}. ` +
+					`To check ${name}, set FRONTEND_HOST_OVERRIDE=${name} and restart the app.`,
+			);
+		}
+		return (
+			find(served) ??
+			new Error(`The app at ${baseUrl} serves ${served || "no site"} (${why}), which matches no SITE_N hostname. Run npm run doctor.`)
+		);
+	}
+
+	const site = find(name ?? url.hostname);
 	if (site) return site;
-	const configured = sites.map((s) => s.hostname).join(", ") || "none";
+	const configured = ctx.sites.map((s) => s.hostname).join(", ") || "none";
 	return new Error(
 		name
 			? `--site ${name} matches no SITE_N hostname. Configured: ${configured}`
