@@ -31,7 +31,6 @@ vip/
   lib/siteConfig.mts   reads SITE_N exactly as the app does              built
   runners/cli.mts      the `npm run doctor` command                      built
   runners/report.mts   text and JSON output                              built
-  config.json          this project's details: content types, pages      Stage 1b
   baseline.json        the versions at handover                          Stage 1b
   tests/               tests against a fake local dotCMS                 Stage 1b
   lighthouserc.json    speed budgets                                     Stage 4
@@ -39,7 +38,7 @@ vip/
 
 Rules for code in `vip/`:
 - Plain Node, nothing to install (D9).
-- No CITGO-specific code: project details come from `vip/config.json` (D15).
+- No CITGO-specific code: project details come from env settings and from dotCMS (D15).
 - Node can't run some TypeScript features (`enum`, `namespace`, constructor shorthand like
   `constructor(private x)`). `tsc` won't catch them; running `npm run doctor` will.
 - Relative imports end in `.mts`.
@@ -70,7 +69,7 @@ What it checks today:
 | `dotcms.version-alignment` | The installed SDK (read from `node_modules`) and the live dotCMS version are on the same version line. It remembers nothing between runs *(warning; replaced in 1b by B2)* |
 | `dotcms.rate-limit` | Reports the rate limit; never fails *(removed in 1b)* |
 | `sites.resolve` | Each site ID exists and belongs to the site it's listed under |
-| `sites.live-issue` | Each site has a published Issue. Without one, its home page falls back to a generic layout *(made project-agnostic in 1b)* |
+| `sites.live-issue` | Each site has a published Issue. Without one, its home page falls back to a generic layout *(becomes `sites.live-content` in 1b)* |
 | `sites.assets` | Each site's logo exists in `public/assets/` |
 | `proxy.round-trip` | The image proxy returns an image |
 | `proxy.cacheable` | That image can be cached *(removed in 1b: no browser caching for now, D11)* |
@@ -106,14 +105,15 @@ Bugs found in the 2026-11-02 audit (each reproduced against a fake dotCMS or con
 | B7 | The doctor reads fewer settings files than Next does (it skips `.env.production` and the like) | Load the same files, in the same order, as [Next does](./02-evidence.md#nextjs-1624). `$VAR` references stay unexpanded |
 
 Also in this stage:
-- **Work for any project (D15):** move CITGO's details out of the checks and into
-  `vip/config.json`:
-  - the content type each site must have published items of (CITGO: `Issue`), with
-    `sites.live-issue` renamed `sites.live-content`;
-  - the content type and field used to find a real image (CITGO: `Article`, `image`);
-  - each site's required logo file (CITGO: `header-logo.svg`).
+- **Work for any project (D15):** take CITGO's content types out of the checks.
+  - `sites.live-issue` becomes `sites.live-content`: each site has published items of the type in
+    `DETAIL_CONTENT_TYPE` (CITGO: `Article`). The Issue check goes: CITGO's home page needs a live
+    Issue, but that's CITGO's own logic.
+  - The proxy check finds its test image on that same type, using the image fields from the type's
+    definition in dotCMS (one extra request, only with `--base-url`).
+  - The logo check becomes "each site's asset folder exists", so it needs no setting.
 
-  A check with nothing configured is skipped, with a message saying what to set.
+  If `DETAIL_CONTENT_TYPE` isn't set, those checks are skipped, with a message saying what to set.
 - **Remove what isn't needed:**
   - `VIP_CACHE`, the disk cache in `vip/lib/cachedFetch.mts` (and its `VIP_CACHE_DIR`). Tests
     replace it, the rate limit isn't a concern, and the cache could hide a revoked token or give CI
@@ -133,25 +133,31 @@ Also in this stage:
 
 Files outside `vip/`: `package.json`.
 
-**Done when:** all seven bugs are fixed with tests; the config move and the removals are done; the
-baseline is saved; and one live run of `npm run doctor` passes. That run needs the owner's OK: it
-makes 7 read-only requests to the client's dotCMS, without `--base-url`. If it warns about the
-version, dotCMS has changed since handover: tell the owner, but it doesn't block the stage.
+**Done when:** all seven bugs are fixed with tests; the project-agnostic changes and the removals
+are done; the baseline is saved; and one live run of `npm run doctor` passes. That run needs the
+owner's OK: it makes 7 read-only requests to the client's dotCMS, without `--base-url`. If it warns
+about the version, dotCMS has changed since handover: tell the owner, but it doesn't block the
+stage.
 
 ## Stage 2: Watchdog (P3)
 
-**Goal:** check a running site by hand: every page, article and image it should have. Connecting
-it to CI comes after the MVP is approved (D4).
+**Goal:** check a running site by hand: its key pages, its newest detail pages and their images.
+Connecting it to CI comes after the MVP is approved (D4).
 
-**2.1 Content checks** (`vip/assertions/content.mts`), driven by `vip/config.json`:
-- **Pages:** each page listed in config loads, with the expected content (CITGO: `/`, `/archives`,
-  `/search`). These are the first checks that load real pages through dotCMS's page API (D9).
-- **Every article:** each published item of the configured detail type loads at its address, with
-  no 404 (CITGO: `Article` at `/{issueSlug}/{slug}`). This catches pages that silently 404 (F5).
-- **Images:** every image used by published content exists. Check with `HEAD` requests sent
-  straight to dotCMS; through the proxy, a `HEAD` downloads the whole image. Name each missing
-  image.
-- Keep requests few and spread out. Results can get long, which is why B6 matters.
+**2.1 What it checks** (`vip/assertions/content.mts`)
+- **Pages:** each page in `WATCHDOG_PAGES` loads with status 200 (default `/`; CITGO:
+  `/,/archives,/search`). These are the first checks that load real pages through dotCMS's page
+  API (D9).
+- **Newest items:** the `WATCHDOG_LATEST` most recently changed items of `DETAIL_CONTENT_TYPE`
+  (default 5) each load at their address with status 200 (D16). This catches pages that silently
+  404 (F5).
+- **Images:** every image those same items use exists in dotCMS, looked up a few hundred IDs at a
+  time. Name each missing image. The proxy check already proves images actually download.
+- Each run reads the type's definition from dotCMS once: its URL pattern (CITGO:
+  `/{issueSlug}/{slug}`) and its image fields. That's one request, however many items there are.
+- With the defaults, a run makes about 40 dotCMS requests per site
+  ([what a page costs](./02-evidence.md#what-a-page-costs)). Keep them spread out. At high counts
+  the results get long, which is why B6 matters.
 
 **2.2 Running it**
 - `npm run watchdog -- --base-url https://…` is the same tool in watchdog mode. It checks one
@@ -160,12 +166,12 @@ it to CI comes after the MVP is approved (D4).
 - Tag each check as settings-only, dotCMS, or running-site (`local`, `upstream`, `deployed`). The
   watchdog skips settings-only checks, which would check this machine's copy of the code, not the
   running site.
-- A full run touches the client's dotCMS for every article and image, so it needs the owner's OK.
+- Runs touch the client's dotCMS, so they need the owner's OK.
 
 Files outside `vip/`: `package.json` (the `watchdog` script).
 
-**Done when:** a run against the CITGO site checks every page, article and image, and the tests
-show a missing article and a missing image each failing the run by name.
+**Done when:** a run against the CITGO site checks its pages, its newest articles and their
+images, and the tests show a missing article and a missing image each failing the run by name.
 
 ## Stage 3: Image fixes (P4)
 
@@ -234,8 +240,8 @@ Files outside `vip/`: `package.json` (the `speed` script).
    quietly shows the wrong content; `npm run doctor` names the cause.
 2. **Doctor, version drift.** The doctor warns that dotCMS changed since handover. (To demo it,
    edit `vip/baseline.json`.)
-3. **Watchdog.** A run against the live site checks every page, article and image. The test data
-   shows a failure that names a missing article.
+3. **Watchdog.** A run against the live site checks its pages, newest articles and their images.
+   The test data shows a failure that names a missing article.
 4. **Image quality.** Bytes per image, before and after.
 5. **Main image.** Before: Lighthouse flags the lazy hero. After: one image, loaded first.
 6. **Speed checks.** A deliberately oversized image fails the run.

@@ -45,7 +45,8 @@ Things that catch people out:
   new decision (D3 in `docs/vip-offerings/01-decisions.md`).
 - **Local first.** The tools run on a developer's machine. CI integration comes after the MVP is
   approved.
-- **No CITGO-specific code in `vip/`.** Project details go in `vip/config.json`.
+- **No CITGO-specific code in `vip/`.** Project details are env settings (`DETAIL_CONTENT_TYPE`,
+  `WATCHDOG_LATEST`, `WATCHDOG_PAGES`).
 - **The doctor is plain Node with no packages.** Don't import anything into it, not even the
   dotCMS SDK. Node can't run some TypeScript features (`enum`, `namespace`, constructor shorthand),
   and relative imports need `.mts`. `tsc` won't catch these; running `npm run doctor` will.

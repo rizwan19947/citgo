@@ -34,10 +34,10 @@ Doctor (P2) ──checks──▶ dotCMS SDK ──▶ image proxy ──▶ ima
      └──same checks──▶ Watchdog (P3)           Speed checks (P5)
 ```
 
-The doctor proves the setup is right before deploy. The watchdog proves a running site has every
-page, article and image it should. The image fixes and speed checks keep pages fast. Each part
-covers a different way the same pipeline can fail. With tracing deferred (D3), nothing measures the
-live site from inside; the watchdog checks it from outside.
+The doctor proves the setup is right before deploy. The watchdog checks that a running site's key
+pages, newest articles and their images work. The image fixes and speed checks keep pages fast.
+Each part covers a different way the same pipeline can fail. With tracing deferred (D3), nothing
+measures the live site from inside; the watchdog checks it from outside.
 
 ## What clients ask for
 

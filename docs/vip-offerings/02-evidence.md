@@ -67,6 +67,14 @@ What version 1.4.0 does (from its source code):
   site set, they return only that shared content, so a misconfigured site shows wrong or empty
   content instead of an error.
 
+## What a page costs
+
+Every page is built fresh on each request (D6), and each build calls dotCMS. From this repo's code:
+- An article page makes 5 calls: the page, the latest issue, the footer, the article's issue, and
+  the list of issues. Three are heavy: two load issues three relationship levels deep, and one
+  loads up to 100 issues.
+- The home page makes 3 calls, `/archives` 3, and `/search` 2.
+
 ## Next.js 16.2.4
 
 From its source code (2026-11-02):

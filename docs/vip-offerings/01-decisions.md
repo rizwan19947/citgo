@@ -49,7 +49,7 @@ default; bug fixes are on.
 caching and no periodic rebuilds. Projects that build static pages ahead of time (SSG) are out of
 scope.
 
-## How the doctor works
+## How the doctor and watchdog work
 
 **D7 — Doctor and watchdog share one set of checks.** One tool, run two ways: before deploy (the
 doctor) and against a running site (the watchdog, run by hand for now). Checks get their settings
@@ -79,6 +79,18 @@ page checks cover it.
 - Speed budgets should be set after the image fixes, not before.
 - The doctor goes first: everything else depends on correct setup.
 
+**D16 — The watchdog checks the newest items, not all of them.** Each run checks the
+`WATCHDOG_LATEST` most recently changed items of the detail type (default 5), and the images they
+use. Setting the number at or above the total checks everything; there's no separate full-check
+mode.
+- Loading every item doesn't scale. Each article page makes 5 dotCMS calls, so checking 3 sites of
+  3,000 articles would take about 45,000 calls and roughly an hour. The default takes about 40
+  requests per site and a few seconds.
+- A long run gives unclear results: because of F5, a brief dotCMS hiccup looks the same as a
+  broken page.
+- New and recently edited content is where new errors appear. Clients publish at different rates,
+  so the number is theirs to set.
+
 ## Images
 
 **D11 — Images: WebP only, and no browser caching for now.**
@@ -105,9 +117,10 @@ dotCMS but the website's SDK stays behind. We don't plan for future versions in 
 paid support plan. This covers everything we add.
 
 **D15 — First, our own reference for future headless projects.** The tools are client-agnostic:
-CITGO is where they're tested, not what they're built for, so project details live in config, not
-code. After that comes a Professional Services package, and a sold product only if demand proves
-it. Reasoning in the [business case](./04-business-case.md#packaging).
+CITGO is where they're tested, not what they're built for, so project details come from a few env
+settings and from dotCMS itself, not from code. After that comes a Professional Services package,
+and a sold product only if demand proves it. Reasoning in the
+[business case](./04-business-case.md#packaging).
 
 ## Out of scope
 

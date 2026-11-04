@@ -7,7 +7,7 @@ any project that follows this reference setup, and developed and tested on CITGO
 SDK that falls behind dotCMS. This project had several such problems that nobody noticed
 ([evidence](./02-evidence.md#defects-found)).
 
-**Status (2026-11-03):** the first tool, the doctor, is built. Hardening it (Stage 1b) is next.
+**Status (2026-11-04):** the first tool, the doctor, is built. Hardening it (Stage 1b) is next.
 About 3–4 days of work remain.
 
 ## The five parts
@@ -16,7 +16,7 @@ About 3–4 days of work remain.
 |---|---|---|---|
 | P1 | dotCMS call tracing | Would time each call the site makes to dotCMS | Deferred (D3) |
 | P2 | Doctor | Checks the site's settings and its dotCMS connection before deploy | Built; Stage 1b next |
-| P3 | Watchdog | Checks a running site: every page, article and image loads. Run by hand for now | Stage 2 |
+| P3 | Watchdog | Checks a running site: its key pages, newest articles and their images. Run by hand for now | Stage 2 |
 | P4 | Image fixes | Fixes image quality and how the main image loads | Stage 3 |
 | P5 | Speed checks | Lighthouse fails the run when pages get slower or heavier | Stage 4 |
 
@@ -24,7 +24,7 @@ About 3–4 days of work remain.
 
 | Doc | What's in it |
 |---|---|
-| [Decisions](./01-decisions.md) | What we decided and why (D1–D15), and what's out of scope |
+| [Decisions](./01-decisions.md) | What we decided and why (D1–D16), and what's out of scope |
 | [Evidence](./02-evidence.md) | Measurements, what we verified in the code, problems found (F1–F6) |
 | [Plan](./03-plan.md) | The build, stage by stage, including the doctor's bugs (B1–B7) |
 | [Business case](./04-business-case.md) | Why build it, cost, risks, market and packaging |
@@ -34,7 +34,7 @@ About 3–4 days of work remain.
 1. **The client's dotCMS is read-only.** It's their live dev system. We only read from it.
 2. **It's rate-limited.** Keep requests few.
 3. **Keep scope small.** Build only what's needed, not what we could (D5).
-4. **No CITGO-specific code in the tools.** CITGO's details go in `vip/config.json` (D15).
+4. **No CITGO-specific code in the tools.** CITGO's details are settings in the env file (D15).
 5. **The doctor installs nothing.** It runs on plain Node 22.18 or newer (D9).
 6. **Follow the repo conventions** in `AGENTS.md`.
 
@@ -60,6 +60,7 @@ D6, D10, D11 and D15.
 | 2026-11-02 | Plan audited and rewritten; doctor bugs and three more problems found |
 | 2026-11-03 | Tracing deferred; doctor made install-free; low-value items cut |
 | 2026-11-03 | Open questions answered: client-agnostic and server-rendered only; no SEO extras; no image caching; watchdog next, run by hand |
+| 2026-11-04 | Watchdog scoped to the newest items (D16); project details moved to env settings |
 
 ## Next step
 
