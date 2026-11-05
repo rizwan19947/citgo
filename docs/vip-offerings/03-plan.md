@@ -207,6 +207,9 @@ npm run watchdog -- --base-url https://www.example.com --json
   citgoretailconnections.com. The three pages answered 200, but all 5 articles answered 404: a
   false alarm ([evidence](./02-evidence.md#from-the-watchdogs-third-run-2026-11-04)). The watchdog
   now works out which site a local app serves, and stops on a mismatch.
+- Run 4 (2026-11-04) passed with no `--site`, against the app pinned to citgonow.com: 10 passed,
+  no warnings or errors, in 31 seconds. The 5 articles from run 3 answered 200
+  ([evidence](./02-evidence.md#from-the-watchdogs-fourth-run-2026-11-04)).
 
 Files outside `vip/`: `package.json` (the `watchdog` script).
 

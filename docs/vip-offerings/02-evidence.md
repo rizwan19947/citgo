@@ -82,6 +82,14 @@ pinned to citgoretailconnections.com.
   citgonow.com itself.
 - Since then, the watchdog works out which site a local app serves and stops on a mismatch.
 
+### From the watchdog's fourth run (2026-11-04)
+
+Run with no `--site` against the local app, now pinned to citgonow.com: 10 passed, no warnings, no
+errors, in 31 seconds.
+- The watchdog picked citgonow.com from the env files by itself.
+- The 5 articles that answered 404 in the third run answered 200, so those were false alarms.
+- `/archives` was the slowest page at 6.5 seconds. Article pages took about 3.3 seconds each.
+
 ## How dotCMS works
 
 - **Image filters** run left to right: resize, crop, then format. The format must come last, and a

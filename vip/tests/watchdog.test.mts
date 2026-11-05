@@ -220,7 +220,7 @@ describe("newest items (D16)", () => {
 		dotcms.state.pages = { "/": 200, "/news/first": 200 };
 		const r = (await check(env(), repo(), dotcms.url, "watchdog"))["content.latest"];
 		assert.ok(r.ok, r.message);
-		assert.match(r.message, /at \/news\/\{slug\}$/);
+		assert.match(r.message, /at \/news\/\{slug}$/);
 	});
 
 	test("a type with no URL map pattern fails, saying so", async () => {

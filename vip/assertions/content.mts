@@ -132,7 +132,7 @@ function newest(ctx: CheckContext): Promise<NewestOutcome> {
  */
 function addressOf(pattern: string, item: Record<string, unknown>): string | Error {
 	const empty: string[] = [];
-	const path = pattern.replace(/\{([^}]+)\}/g, (_, field: string) => {
+	const path = pattern.replace(/\{([^}]+)}/g, (_, field: string) => {
 		const value = item[field];
 		if (value === undefined || value === null || value === "") {
 			empty.push(field);
