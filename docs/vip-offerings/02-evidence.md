@@ -119,15 +119,21 @@ What version 1.4.0 does (from its source code):
 
 ## What a page costs
 
-Every page is built fresh on each request (D6), and each build calls dotCMS. From this repo's code:
+Every page is built fresh on each request (D6), and each one calls dotCMS. From this repo's code:
 - An article page makes 5 calls: the page, the latest issue, the footer, the article's issue, and
   the list of issues. Three are heavy: two load issues three relationship levels deep, and one
   loads up to 100 issues.
 - The home page makes 3 calls, `/archives` 3, and `/search` 2.
+- A production build (`next build`) calls dotCMS too when `FRONTEND_HOST_OVERRIDE` is set, as on
+  per-site production deployments. It pre-renders the 404 page, whose layout fetches the latest
+  issue and the footer: 6 requests in a build on 2026-11-05. Without the override, the 404 page
+  renders on request and the build makes none. So a CI build needs dotCMS access, and a local
+  build with the real settings touches the client's dotCMS.
 
-## Next.js 16.2.4
+## Next.js
 
-From its source code (2026-11-02):
+From its source code: read in 16.2.4 on 2026-11-02, and re-checked unchanged in 16.4.5 on
+2026-11-05.
 - A custom image loader receives the `quality` value unchanged. In development, Next warns about
   quality values not listed in its settings (by default, only 75).
 - Images load lazily unless marked `preload` (Next 16's replacement for `priority`).
@@ -159,8 +165,9 @@ From its source code (2026-11-02):
 
 ## Defects found
 
-F1–F3 were measured on 2026-09-03; F4–F6 were found in the code on 2026-11-02. None would show up
-in tests, code review or a standard Lighthouse run.
+F1–F3 were measured on 2026-09-03, F4–F6 were found in the code on 2026-11-02, and F7 came from
+an IDE dependency scan on 2026-11-04. F1–F6 wouldn't show up in tests, code review or a standard
+Lighthouse run.
 
 **F1 — The intended image cache never worked.** Our image proxy (`app/dA/[...path]/route.ts`) has
 a fallback to a one-year cache, but dotCMS always sends "don't cache", so the fallback never runs
@@ -195,6 +202,13 @@ handling is an app decision outside this project.
 `await`s each one inside it, so they run one after the other on every page. Fix: two lines; not
 scheduled — owner's call.
 
+**F7 — Next.js had 33 published security advisories.** `package.json` pinned `next` to exactly
+16.2.4, which 33 advisories affect (5 critical, 13 high); the first was published on 2026-05-11.
+None of the critical ones applied to our deployments, but one high-severity denial of service
+couldn't be ruled out. Fixed on 2026-11-05 by upgrading `next` and `eslint-config-next` to 16.4.5;
+`npm audit` now lists no Next.js advisories. CITGO's own copy needs the same upgrade. Details and
+sources are in the [security briefing](https://claude.ai/artifact/5dtFWFEWF3qD8TRC5tUJ5a).
+
 ## Sources
 
 - dotCMS:
@@ -203,7 +217,8 @@ scheduled — owner's call.
   [Data model — identifiers and inodes](https://dev.dotcms.com/docs/data-model) ·
   [core#22207 — inode `/dA` URLs break when the asset is updated](https://github.com/dotCMS/core/issues/22207)
 - npm registry data for `@dotcms/client` (2026-09-03 and 2026-11-02).
-- Installed source code: `node_modules/next` 16.2.4, `node_modules/@dotcms/client` 1.4.0.
+- Installed source code: `node_modules/next` 16.2.4, then 16.4.5 from 2026-11-05;
+  `node_modules/@dotcms/client` 1.4.0.
 - [CrUX methodology](https://developer.chrome.com/docs/crux/methodology) ·
   [CrUX eligibility](https://www.debugbear.com/blog/chrome-user-experience-report) ·
   [OpenTelemetry status](https://opentelemetry.io/status/)

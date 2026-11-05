@@ -175,3 +175,6 @@ deployment sets `SITE_INDEXING=true` (none do). JSON-LD and a sitemap were delib
 
 - `next.config.ts`: `assetPrefix` is set **only in dev** (a bare `undefined` in prod broke the Vercel build — keep it
   conditionally spread).
+- `next build` calls DotCMS when `FRONTEND_HOST_OVERRIDE` is set: it pre-renders the 404 page, whose layout fetches the
+  latest issue and footer. To build locally without touching the client's DotCMS, point `DOTCMS_HOST` at a dead
+  address for that run (`DOTCMS_HOST=http://127.0.0.1:9 npm run build`).

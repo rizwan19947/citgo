@@ -106,7 +106,7 @@ Bugs found in the 2026-11-02 audit (each reproduced against a fake dotCMS or con
 | B4 | If dotCMS returns an image field as an object instead of text, `proxy.round-trip` fails wrongly | Read the field the way `utils/resolveImage.ts` does |
 | B5 | Site IDs with dashes are flagged as inodes, but older dotCMS sites do use dashed IDs | Remove `env.site-identifier-shape`. In `sites.resolve`, compare the configured ID with what dotCMS returns, and say so if it's an inode |
 | B6 | `process.exit()` can cut off long output | Set `process.exitCode` instead |
-| B7 | The doctor reads fewer settings files than Next does (it skips `.env.production` and the like) | Load the same files, in the same order, as [Next does](./02-evidence.md#nextjs-1624). `$VAR` references stay unexpanded |
+| B7 | The doctor reads fewer settings files than Next does (it skips `.env.production` and the like) | Load the same files, in the same order, as [Next does](./02-evidence.md#nextjs). `$VAR` references stay unexpanded |
 
 Also in this stage:
 - **Work for any project (D15):** take CITGO's content types out of the checks.
@@ -194,7 +194,7 @@ npm run watchdog -- --base-url https://www.example.com --json
 - Only the type's image fields are checked, not images inside the body text (Block Editor or
   migrated Markdown).
 - A missing page has to answer 404. It does in this setup; a project that streams its pages
-  answers 200 ([evidence](./02-evidence.md#nextjs-1624)).
+  answers 200 ([evidence](./02-evidence.md#nextjs)).
 
 **2.4 Live runs** (each needs the owner's OK)
 - Run 1 (2026-11-04) had no site running, so no pages loaded. It did confirm the content type
@@ -226,7 +226,7 @@ Both done 2026-11-04.
 Today the loader picks a quality from the pixel width the browser asks for. That goes wrong in
 three ways:
 - **Quality follows the screen, not the image.** The browser asks for more pixels on sharper
-  screens ([how Next picks sizes](./02-evidence.md#nextjs-1624)). A full-width image on a phone
+  screens ([how Next picks sizes](./02-evidence.md#nextjs)). A full-width image on a phone
   asks for about 1,200px and gets the top quality (q75), the opposite of the README's "lower quality
   for smaller screens". A featured card gets q30 on a normal screen and q50 on a sharp one.
 - **It compresses where there are no bytes to save:**

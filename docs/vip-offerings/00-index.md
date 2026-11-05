@@ -25,7 +25,7 @@ image fixes (Stage 3) are next. About 1–1.5 days of work remain.
 | Doc | What's in it |
 |---|---|
 | [Decisions](./01-decisions.md) | What we decided and why (D1–D16), and what's out of scope |
-| [Evidence](./02-evidence.md) | Measurements, what we verified in the code, problems found (F1–F6) |
+| [Evidence](./02-evidence.md) | Measurements, what we verified in the code, problems found (F1–F7) |
 | [Plan](./03-plan.md) | The build, stage by stage, including the doctor's bugs (B1–B7) |
 | [Business case](./04-business-case.md) | Why build it, cost, risks, market and packaging |
 
@@ -64,6 +64,7 @@ D6, D10, D11 and D15.
 | 2026-11-04 | Stage 1b done. Its live run found dotCMS upgraded to 26.10.13-01 since handover |
 | 2026-11-04 | Watchdog built; the image-proxy checks moved to it from the doctor (D7) |
 | 2026-11-04 | Watchdog's live run passed on dotCMS 26.10.13-01; the version baseline moved to it |
+| 2026-11-05 | Next.js upgraded from 16.2.4 to 16.4.5 to fix 33 published security advisories (F7) |
 
 ## Next step
 
