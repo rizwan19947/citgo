@@ -78,9 +78,9 @@ Checked 2026-09-09.
 
 ## Effort
 
-About 1–1.5 days remain; stage estimates are in the [plan](./03-plan.md#status). The doctor and the
-watchdog are built, and the remaining stages are well understood. The first estimate was 8.5–11
-days. Dropping browser monitoring (D2) and tracing (D3) removed the riskiest
+About half a day remains; stage estimates are in the [plan](./03-plan.md#status). The doctor, the
+watchdog and the image fixes are done, and the speed checks are well understood. The first
+estimate was 8.5–11 days. Dropping browser monitoring (D2) and tracing (D3) removed the riskiest
 work, and cutting low-value items and answering the open questions (both on 2026-11-03) removed
 another 1–2 days.
 

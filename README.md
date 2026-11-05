@@ -315,8 +315,9 @@ images: {
 This means all `<Image>` components automatically use the loader — no need to pass a `loader` prop. The loader:
 
 - Routes through the `/dA/` asset proxy
-- Appends DotCMS transformation parameters (`/{width}maxw/{quality}q`)
-- Applies adaptive quality based on viewport width (lower quality for smaller screens)
+- Appends DotCMS transformation parameters (`/{width}maxw/60q`)
+- Uses one quality, 60, for every image and width, and ignores the `quality` prop. Resizing already keeps small images
+  small, and they lose detail fastest when compressed. Asking DotCMS for a quality makes it return WebP.
 - Passes through external URLs, GIFs, and SVGs unchanged
 
 Usage:
@@ -324,6 +325,10 @@ Usage:
 ```tsx
 <Image src={`/dA/${identifier}`} width={800} height={600} alt="..."/>
 ```
+
+The largest image above the fold loads first. The home page hero is a `<picture>` built with `getImageProps()`, with
+the desktop image from 768px up, so only one image downloads; it loads eagerly with `fetchPriority="high"`. The article
+detail photo uses `preload` and `fetchPriority="high"`.
 
 The `resolveImage()` utility (`utils/resolveImage.ts`) normalizes DotCMS image fields — whether they come back as a
 string, or an object with `idPath` or `identifier` — into a consistent identifier string.

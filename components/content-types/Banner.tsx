@@ -29,7 +29,6 @@ export default function Banner({
 					width={0}
 					height={0}
 					sizes="100vw"
-					quality={75}
 					className={`h-auto w-full ${hasMobileImage ? "hidden md:block" : ""}`}
 				/>
 			) : (
@@ -42,7 +41,6 @@ export default function Banner({
 					width={0}
 					height={0}
 					sizes="100vw"
-					quality={75}
 					className="h-auto w-full md:hidden"
 				/>
 			)}

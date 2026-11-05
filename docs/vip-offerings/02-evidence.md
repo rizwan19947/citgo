@@ -90,6 +90,27 @@ errors, in 31 seconds.
 - The 5 articles that answered 404 in the third run answered 200, so those were false alarms.
 - `/archives` was the slowest page at 6.5 seconds. Article pages took about 3.3 seconds each.
 
+## Image fixes: before and after
+
+Measured on 2026-11-05 with Lighthouse 13.5.0 against a local production build for citgonow.com,
+one run each, before and after Stage 3.
+
+| Page, screen | Image bytes | LCP | Server response | Main image: wait / download |
+|---|---|---|---|---|
+| Home, mobile | 165.5 → 193.5 KB (+17%) | 3,494 → 3,269 ms | 1,351 → 497 ms | 26 / 491 → 11 / 340 ms |
+| Home, desktop | 113.6 → 138.6 KB (+22%) | 723 → 677 ms | 1,371 → 1,034 ms | 27 / 505 → 8 / 351 ms |
+| Article, mobile | 84.9 → 100.5 KB (+18%) | 7,361 → 7,010 ms | 8,139 → 4,031 ms | 38 / 1,081 → 14 / 419 ms |
+| Article, desktop | 71.3 → 81.3 KB (+14%) | 1,271 → 1,271 ms | 3,595 → 3,475 ms | main element is text |
+
+- Before, images were requested at qualities 25 to 75, mostly 25 to 37. After, all at 60.
+- Image bytes went up 14–22%. Most images are thumbnails, which moved from quality 25–50 to 60.
+  The hero saved almost nothing: it's a simple graphic, 11 KB at 1920px and quality 75.
+- The main image on both pages no longer loads lazily and now has high priority. The wait before
+  it starts fell from 26–38 ms to 8–14 ms, and its download time by 30–61%.
+- Server response, not images, sets LCP here: 0.5–1.4 s on the home page and 3.5–8.1 s on article
+  pages, varying by seconds between runs. Article pages make 5 dotCMS calls, and every page's
+  layout makes two that wait for each other (F6).
+
 ## How dotCMS works
 
 - **Image filters** run left to right: resize, crop, then format. The format must come last, and a
@@ -171,14 +192,16 @@ Lighthouse run.
 
 **F1 — The intended image cache never worked.** Our image proxy (`app/dA/[...path]/route.ts`) has
 a fallback to a one-year cache, but dotCMS always sends "don't cache", so the fallback never runs
-and every image downloads again on every page. Not fixed, on purpose: browser caching stays off for
-now, and caching is each client's CDN decision (D11). Stage 3 removes the dead fallback.
+and every image downloads again on every page. Browser caching stays off on purpose: caching is
+each client's CDN decision (D11). Stage 3 removed the dead fallback on 2026-11-05: the proxy now
+passes on dotCMS's header, or `no-cache` when there is none.
 
 **F2 — Image quality is backwards.** `getAdaptiveQuality()` in `utils/imageLoader.ts` picks a
 quality from the pixel width the browser asks for: q25 for the smallest, rising to q75 for the
 largest. So quality follows screen sharpness rather than the image, compression lands where there
 are fewest bytes to save, and small images get hit hardest even though they degrade fastest.
-Fix: Stage 3.
+Fixed on 2026-11-05 (Stage 3): one quality, 60, for every image. Small images look better, and
+pages carry 14–22% more image bytes ([before and after](#image-fixes-before-and-after)).
 
 **F3 — The SDK is on an old version line.** `1.4.0` (old numbering) ran against dotCMS
 `26.08.19-04` (date-based) at handover, and against `26.10.13-01` by 2026-11-04. Not fixed:
@@ -188,8 +211,10 @@ baseline moved to it.
 
 **F4 — The home page's main image loads late.** The hero image in `components/HomePage.tsx` is the
 largest thing on the page, but it loads lazily. Its mobile and desktop versions are both on the
-page, one hidden with CSS. Today probably only the visible one downloads, but loading both early
-would download both. Fix: Stage 3.
+page, one hidden with CSS. Only the visible one downloads, but loading both early would download
+both. Article pages have the same problem with their main photo. Fixed on 2026-11-05 (Stage 3): the
+hero is one `<picture>` that loads straight away at high priority, so only one image downloads, and
+the article photo preloads at high priority.
 
 **F5 — Loading failures are silent.** Every dotCMS fetch (`utils/getDotCMSPage.ts`,
 `utils/getDotCMSContent.ts`) catches errors and returns nothing. The page then shows "not found"

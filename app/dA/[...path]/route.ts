@@ -22,7 +22,9 @@ export async function GET(
 	}
 
 	const contentType = res.headers.get("content-type") || "application/octet-stream";
-	const cacheControl = res.headers.get("cache-control") || "public, max-age=31536000, immutable";
+	// Pass on dotCMS's own cache header, or no-cache when it sends none. Long-term caching is left to
+	// each site's CDN.
+	const cacheControl = res.headers.get("cache-control") || "no-cache";
 
 	return new Response(res.body, {
 		status: 200,

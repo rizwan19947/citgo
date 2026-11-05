@@ -22,7 +22,6 @@ export default function Issue({ title, slug, publishDate, image, articles }: Iss
 					width={0}
 					height={0}
 					sizes="(max-width: 768px) 100vw, 600px"
-					quality={75}
 					className="h-auto w-full"
 				/>
 			)}

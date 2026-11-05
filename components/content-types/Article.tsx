@@ -37,6 +37,7 @@ function getContentlet(props: ArticleProps): ArticleContentlet {
 }
 
 // Lives inside .prose (not the aside) so the body text wraps around the float; stacks on mobile.
+// Usually the largest thing on screen, so it loads first, at high priority.
 function FloatingArticleImage({ src, alt }: { src: string; alt: string }) {
 	return (
 		<figure className="not-prose w-full mb-5 md:float-right md:ml-6 md:mb-3 md:w-[45%] md:max-w-[380px]">
@@ -46,6 +47,8 @@ function FloatingArticleImage({ src, alt }: { src: string; alt: string }) {
 				width={680}
 				height={510}
 				sizes="(max-width: 768px) 100vw, 380px"
+				preload
+				fetchPriority="high"
 				className="h-auto w-full"
 			/>
 		</figure>
@@ -137,7 +140,6 @@ export default function Article(props: ArticleProps) {
 													alt={article.title || ""}
 													width={100}
 													height={65}
-													quality={75}
 													className="shrink-0 object-cover"
 												/>
 											) : (

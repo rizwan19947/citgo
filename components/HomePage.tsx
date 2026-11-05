@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { DotCMSEditableText, useEditableDotCMSPage } from "@dotcms/react";
 import type { DotCMSComposedPageResponse, DotCMSPageResponse } from "@dotcms/types";
@@ -31,26 +31,31 @@ function HeroBanner({ banner, issue }: { banner: BannerContentlet; issue: IssueC
 	const article = Array.isArray(banner.article) ? banner.article[0] : banner.article;
 	if (!article) return null;
 
+	// The hero is the largest thing on the page, so it loads straight away at high priority. One
+	// <picture> means the browser downloads only the image for its screen size.
+	const heroProps = (src: string) =>
+		getImageProps({
+			src: `/dA/${src}`,
+			alt: "",
+			fill: true,
+			sizes: "100vw",
+			loading: "eager",
+			fetchPriority: "high",
+		}).props;
+	const desktop = bgImage ? heroProps(bgImage) : undefined;
+	const mobile = mobileBgImage ? heroProps(mobileBgImage) : undefined;
+	const hero = mobile ?? desktop;
+
 	return (
 		<div data-full-bleed className="relative w-screen min-h-[400px] md:min-h-[500px] flex items-center">
 			<div className="absolute inset-0 bg-citgo-red" />
-			{bgImage && (
-				<Image
-					src={`/dA/${bgImage}`}
-					alt=""
-					fill
-					quality={75}
-					className={`absolute inset-0 object-cover ${mobileBgImage ? "hidden md:block" : ""}`}
-				/>
-			)}
-			{mobileBgImage && (
-				<Image
-					src={`/dA/${mobileBgImage}`}
-					alt=""
-					fill
-					quality={75}
-					className="absolute inset-0 object-cover md:hidden"
-				/>
+			{hero && (
+				<picture>
+					{desktop && mobile && (
+						<source media="(min-width: 768px)" srcSet={desktop.srcSet} sizes={desktop.sizes} />
+					)}
+					<img {...hero} alt="" className={`absolute inset-0 object-cover ${desktop ? "" : "md:hidden"}`} />
+				</picture>
 			)}
 			<div className="absolute inset-0" />
 			<div className="relative z-10 max-w-7xl mx-8 md:mx-32 lg:mx-72 px-6 md:px-12 py-12 md:py-16">
@@ -77,9 +82,9 @@ function HeroBanner({ banner, issue }: { banner: BannerContentlet; issue: IssueC
 }
 
 function FeaturedArticleCard({
-	article,
-	issueTitle,
-}: {
+								 article,
+								 issueTitle,
+							 }: {
 	article: ArticleContentlet;
 	issueTitle: string;
 }) {
@@ -93,7 +98,6 @@ function FeaturedArticleCard({
 					alt={article.title || ""}
 					width={400}
 					height={250}
-					quality={75}
 					className="w-full h-52 object-cover"
 				/>
 			) : (
@@ -123,9 +127,9 @@ function FeaturedArticleCard({
 }
 
 function AlsoInThisIssueCard({
-	article,
-	issueTitle,
-}: {
+								 article,
+								 issueTitle,
+							 }: {
 	article: ArticleContentlet;
 	issueTitle: string;
 }) {
@@ -139,7 +143,6 @@ function AlsoInThisIssueCard({
 					alt={article.title || ""}
 					width={200}
 					height={150}
-					quality={75}
 					className="w-40 md:w-48 shrink-0 object-cover"
 				/>
 			) : (

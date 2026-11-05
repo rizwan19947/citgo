@@ -1,26 +1,22 @@
 const MAX_WIDTH = 1920;
-const DEFAULT_QUALITY = 75;
-const FORCE_QUALITY = 95;
 
-const WIDTH_XS = 375;
-const WIDTH_SM = 640;
-const WIDTH_MD = 768;
-const WIDTH_LG = 1024;
-
-const QUALITY_DIVISOR_XS = 3;
-const QUALITY_DIVISOR_SM = 2.5;
-const QUALITY_DIVISOR_MD = 2;
-const QUALITY_DIVISOR_LG = 1.5;
+/*
+ * One quality for every image and width. Resizing already keeps small images small, and they lose
+ * detail fastest when compressed, so they get the same quality as large ones. Set it here, not on
+ * each <Image>: the loader ignores the `quality` prop.
+ *
+ * Asking dotCMS for a quality makes it send WebP. Keep it that way: AVIF came out 27% larger in our
+ * tests, and dotCMS turns it back into WebP as soon as a quality is set.
+ */
+const QUALITY = 60;
 
 function getDotcmsImageURL({
 	src,
 	width,
-	quality,
 	raw = false,
 }: {
 	src: string;
 	width: number | null;
-	quality: number;
 	raw?: boolean;
 }) {
 	if (!src || typeof src !== "string") return "";
@@ -35,60 +31,29 @@ function getDotcmsImageURL({
 
 	if (raw) return imageSRC;
 
-	if (width == null) return `${imageSRC}/${quality || DEFAULT_QUALITY}q`;
+	if (width == null) return `${imageSRC}/${QUALITY}q`;
 
 	const maxWidth = Math.min(width, MAX_WIDTH);
-	return `${imageSRC}/${maxWidth}maxw/${quality || DEFAULT_QUALITY}q`;
-}
-
-function getAdaptiveQuality(width: number | null, baseQuality: number) {
-	if (!width) return baseQuality;
-	if (width <= WIDTH_XS) return Math.floor(baseQuality / QUALITY_DIVISOR_XS);
-	if (width <= WIDTH_SM) return Math.floor(baseQuality / QUALITY_DIVISOR_SM);
-	if (width <= WIDTH_MD) return Math.floor(baseQuality / QUALITY_DIVISOR_MD);
-	if (width <= WIDTH_LG) return Math.floor(baseQuality / QUALITY_DIVISOR_LG);
-	return baseQuality;
+	return `${imageSRC}/${maxWidth}maxw/${QUALITY}q`;
 }
 
 function loadImageFromAsset({ src, width }: { src: string; width?: number }) {
 	return `${src.trim()}${width ? "?w=" + width : ""}`;
 }
 
-function loadImageFromDotCMS({
-	src,
-	width,
-	quality,
-	forceHighQuality,
-}: {
-	src: string;
-	width?: number;
-	quality?: number;
-	forceHighQuality?: boolean;
-}) {
+function loadImageFromDotCMS({ src, width }: { src: string; width?: number }) {
 	const normalizedWidth = width && width !== 0 ? Number(width) : null;
 	const limitedWidth = normalizedWidth ? Math.min(normalizedWidth, MAX_WIDTH) : null;
 
-	const finalQuality = forceHighQuality
-		? FORCE_QUALITY
-		: getAdaptiveQuality(limitedWidth, quality ?? DEFAULT_QUALITY);
-
-	return getDotcmsImageURL({ src, width: limitedWidth, quality: finalQuality });
+	return getDotcmsImageURL({ src, width: limitedWidth });
 }
 
-const ImageLoader = ({ src, width, quality }: { src: string; width: number; quality?: number }) => {
+const ImageLoader = ({ src, width }: { src: string; width: number; quality?: number }) => {
 	const assetsRegex = /^\/assets\//;
-
-	const shouldForceHighQuality = quality === 101;
-	const normalizedQuality = quality === 101 ? undefined : quality;
 
 	return assetsRegex.test(src)
 		? loadImageFromAsset({ src, width })
-		: loadImageFromDotCMS({
-				src,
-				width,
-				quality: normalizedQuality,
-				forceHighQuality: shouldForceHighQuality,
-			});
+		: loadImageFromDotCMS({ src, width });
 };
 
 export default ImageLoader;

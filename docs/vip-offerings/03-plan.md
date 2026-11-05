@@ -10,11 +10,11 @@ The build, stage by stage. Reasons are in [Decisions](./01-decisions.md); facts 
 | 1 | Doctor (P2) | ~2 days | Done 2026-09-11 |
 | 1b | Harden the doctor | 1–1.5 days | Done 2026-11-04 |
 | 2 | Watchdog (P3) | ~1 day | Done 2026-11-04 |
-| 3 | Image fixes (P4) | 0.5–1 day | Planned |
+| 3 | Image fixes (P4) | 0.5–1 day | Done 2026-11-05 |
 | 4 | Speed checks (P5), then the demo | ~0.5 day | Planned |
 | — | dotCMS call tracing (P1) | — | Deferred (D3) |
 
-About 1–1.5 days remain. There's no fixed deadline.
+About half a day remains. There's no fixed deadline.
 
 ## Where the code lives
 
@@ -217,53 +217,37 @@ Files outside `vip/`: `package.json` (the `watchdog` script).
 images, and the tests show a missing article and a missing image each failing the run by name.
 Both done 2026-11-04.
 
-## Stage 3: Image fixes (P4)
+## Stage 3: Image fixes (P4) (done)
 
-**Goal:** sensible image quality, and the home page's main image loading first.
+**Goal:** sensible image quality, and the main image on each page loading first.
 
-**3.1 Fix image quality (F2)**
+**Status:** done 2026-11-05. Before/after numbers are in the
+[evidence](./02-evidence.md#image-fixes-before-and-after).
 
-Today the loader picks a quality from the pixel width the browser asks for. That goes wrong in
-three ways:
-- **Quality follows the screen, not the image.** The browser asks for more pixels on sharper
-  screens ([how Next picks sizes](./02-evidence.md#nextjs)). A full-width image on a phone
-  asks for about 1,200px and gets the top quality (q75), the opposite of the README's "lower quality
-  for smaller screens". A featured card gets q30 on a normal screen and q50 on a sharp one.
-- **It compresses where there are no bytes to save:**
+**What changed**
+- **One quality (F2).** `utils/imageLoader.ts` uses quality 60 for every image and width, and
+  ignores the `quality` prop. The nine `quality={75}` props and the unused "force high quality"
+  path (`quality={101}`) are gone. A comment in the loader says why images stay WebP (D11).
+- **Main image first (F4).** The home hero is one `<picture>` built with Next's `getImageProps()`:
+  the desktop image from 768px up, the mobile one below, loaded straight away at high priority, so
+  only one image downloads. Article pages had the same problem with their main photo, which now
+  uses `preload` and `fetchPriority="high"`.
+- **No cache fallback (F1).** The image proxy passes on dotCMS's cache header, or `no-cache` when
+  there is none, so caching can't switch on by surprise.
 
-  | Image width | Quality today | Size | Size at q75 | Saved |
-  |---|---|---|---|---|
-  | 100px | 25 | 2,128 B | 3,674 B | 1,546 B |
-  | 400px | 30 | 14,142 B | 26,530 B | 12,388 B |
-  | 1920px (hero) | 75 | 135,808 B | 135,808 B | 0 B |
+**What we learned**
+- Image bytes went up 14–22% per page. This plan's estimates were wrong: thumbnails cost more than
+  1 KB each at quality 60, and the hero saved under 1 KB, not 20 KB, because it's a simple graphic.
+  The trade is sharper small images. If the bytes matter more, 55 is the low end of the agreed
+  range.
+- Server response, not images, sets LCP on these pages, and F6 adds to it on every page.
 
-  Moving the hero to q60 would save roughly 20 KB per page view (estimated from the measured
-  quality ratios).
-- **Small images handle compression worse.** A thumbnail is a shrunken photo packed with detail.
-  At low quality, each compression block covers a big share of it, so it turns blotchy. Big photos
-  hide moderate compression well. WebP photos start to look worse at around q40–50.
-
-**Fix:** one quality, between 55 and 65, for every size; resizing already keeps small images small.
-Thumbnails cost about 1 KB more each (estimated) and stop looking blotchy. Set the quality in
-`utils/imageLoader.ts`, not on each image (Next warns about quality values it doesn't know), and
-delete the unused "force high quality" path (`quality={101}`). Add a comment in the loader saying
-why images stay WebP (D11), so nobody adds AVIF back.
-
-**3.2 Load the main image first (F4)**
-- First, check in DevTools which hero images download today, on mobile and desktop (2 minutes).
-- Rebuild the hero with Next's `getImageProps()` and a `<picture>` element (one source for mobile,
-  one for desktop), marked `preload` with high fetch priority. Only one image downloads, and it
-  downloads first.
-
-**3.3 Remove the dead cache fallback (F1)**
-- If dotCMS ever stopped sending "don't cache", the image proxy would fall back to a one-year cache.
-  Pass on dotCMS's header as it is, and send `no-cache` when there's none, so the code matches D11
-  and caching can't switch on by surprise.
-
-Files: `utils/imageLoader.ts`, `components/HomePage.tsx`, `app/dA/[...path]/route.ts`.
+Files: `utils/imageLoader.ts`, `components/HomePage.tsx`, `components/content-types/Article.tsx`,
+`app/dA/[...path]/route.ts`, and the `quality` props in `Header.tsx`, `Banner.tsx` and `Issue.tsx`.
 
 **Done when:** every image uses the single quality, the hero loads first with one image per screen
-size, and the proxy has no cache fallback. Before/after numbers are captured.
+size, and the proxy has no cache fallback, with before/after numbers captured. All done
+2026-11-05.
 
 ## Stage 4: Speed checks (P5)
 
@@ -276,9 +260,11 @@ Already in place and unchanged (see `docs/seo-handover.md`): page titles and des
 - Run Lighthouse locally, with budgets in `vip/lighthouserc.json`, through an `npm run speed`
   script (`npx @lhci/cli autorun`; it needs Chrome). CI comes after the MVP (D4).
 - Fail the run on numbers that don't wobble: total image bytes, request count, and "main image
-  loaded lazily".
+  loaded lazily". Lighthouse 13 reports that last one, and a missing high priority, in its
+  `lcp-discovery-insight` audit.
 - Report timings (LCP, CLS, TBT) as warnings only, using the middle result of 3–5 runs. Machines
-  vary too much to fail on timings.
+  vary too much to fail on timings, and in Stage 3 the server response alone swung by seconds
+  between runs.
 - Check the performance score, not the SEO score. The SEO score fails on purpose while the sites
   stay hidden from search engines.
 - Then prepare the demo: collect the screenshots taken along the way, and rehearse once.

@@ -137,7 +137,6 @@ export default function Header({
 								alt={result.title || ""}
 								width={100}
 								height={65}
-								quality={75}
 								className="shrink-0 object-cover"
 							/>
 						) : (

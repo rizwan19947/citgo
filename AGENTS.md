@@ -58,6 +58,8 @@ Things that catch people out:
 - **Indentation is tabs**, not spaces (match existing files). Match surrounding comment density and naming.
 - **Don't pass `loader={...}` to `<Image>`.** The custom DotCMS loader is configured globally in `next.config.ts` (
   `images.loaderFile`). Just use `<Image src={`/dA/${identifier}`} … />`.
+- **Don't pass `quality` to `<Image>`.** The loader uses one quality (60) for every image and width, and ignores the
+  prop.
 - **Theme red is a CSS variable.** `--citgo-red: #b8292f` in `globals.css`, exposed to Tailwind as `citgo-red`. Use
   `bg-citgo-red` / `text-citgo-red` / `accent-citgo-red` — never hardcode the hex.
 - **Content links use `--citgo-link: #005DAA`** (Tailwind `citgo-link`). Base color blue; the underline/hover
@@ -132,6 +134,10 @@ and `archived` booleans.
 Global custom loader (`utils/imageLoader.ts`) via `next.config.ts`. `resolveImage()` normalizes an image field (string
 identifier, or object with `idPath`/`identifier`) to an identifier. Note: the same field can serialize as a **string** (
 in relationship arrays) or an **object** (single-contentlet fetch) — always normalize with `resolveImage()`.
+
+The largest image above the fold loads first: the home hero is one `<picture>` built with `getImageProps()` (desktop
+source from 768px, loaded eagerly with `fetchPriority="high"`), and the article photo uses `preload` +
+`fetchPriority="high"`. Don't put two `<Image>`s in the hero and hide one with CSS: eager loading would download both.
 
 ### Search
 
